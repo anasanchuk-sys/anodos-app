@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#132961" />
+    <title>Άνοδος</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css?v=78" />
+  </head>
+  <body>
+    <div class="splash" id="splash" aria-hidden="true">
+      <div class="splash-grid"></div>
+      <section class="splash-lockup" aria-label="Άνοδος. Розуміти. Діяти. Рости.">
+        <svg class="splash-mark" viewBox="0 0 112 112" role="img" aria-label="Άνοδος">
+          <circle class="mark-ring" cx="56" cy="56" r="49" />
+          <path class="mark-path" d="M28 77C38.5 59.5 46.7 45.5 56 28C65.3 45.5 73.5 59.5 84 77" />
+          <path class="mark-step mark-step-one" d="M40.8 75.8H71.2" />
+          <path class="mark-step mark-step-two" d="M46.7 64.2H65.3" />
+          <path class="mark-step mark-step-three" d="M52.5 52.5H59.5" />
+          <circle class="mark-dot" cx="56" cy="23.3" r="4.25" />
+        </svg>
+
+        <div class="splash-copy">
+          <p class="splash-name">Άνοδος</p>
+          <p class="splash-tagline">Розуміти. Діяти. Рости.</p>
+        </div>
+      </section>
+    </div>
+
+    <main class="app-shell" id="app" aria-label="Άνοδος" aria-hidden="true">
+      <header class="topbar">
+        <button class="brand-lockup" type="button" data-route="home" aria-label="На головну">
+          <svg class="brand-mark" viewBox="0 0 112 112" aria-hidden="true">
+            <circle cx="56" cy="56" r="49" />
+            <path d="M28 77C38.5 59.5 46.7 45.5 56 28C65.3 45.5 73.5 59.5 84 77" />
+            <path class="brand-step" d="M40.8 75.8H71.2" />
+            <path class="brand-step" d="M46.7 64.2H65.3" />
+            <path class="brand-step" d="M52.5 52.5H59.5" />
+            <circle class="brand-dot" cx="56" cy="23.3" r="4.25" />
+          </svg>
+          <span>
+            <span class="brand-name">Άνοδος</span>
+            <span class="brand-subtitle">Розуміти. Діяти. Рости.</span>
+          </span>
+        </button>
+
+        <button class="progress-orb" type="button" data-route="progress" aria-label="Прогрес навчання">
+          <span id="progressValue">0%</span>
+        </button>
+
+        <a class="partner-lockup" href="https://brit-mark.com/" target="_blank" rel="noopener" aria-label="BritMark">
+          <img src="./assets/britmark-logo.png" width="200" height="30" alt="BritMark" />
+        </a>
+      </header>
+
+      <section id="screen" class="screen" aria-live="polite"></section>
+
+      <nav class="bottom-nav" aria-label="Навігація">
+        <button type="button" data-route="home" class="nav-item nav-item-active">Продукти</button>
+        <button type="button" data-route="law" class="nav-item">ЗУпС</button>
+        <button type="button" data-route="glossary" class="nav-item">Словник</button>
+        <button type="button" data-route="progress" class="nav-item">Прогрес</button>
+      </nav>
+    </main>
+
+    <script src="./law-data.js?v=3"></script>
+    <script src="./munich-re-clauses.js?v=1"></script>
+    <script src="./app.js?v=85"></script>
+  </body>
+</html>
