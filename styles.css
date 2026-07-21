@@ -1422,17 +1422,46 @@ body[data-route="home"] .scenario-result-card p {
 
 body[data-route="home"].scenario-search-active .scenario-results-panel {
   display: grid;
+  grid-template-rows: auto;
   min-height: 0;
+  overflow: visible;
+  touch-action: pan-y;
+}
+
+body[data-route="home"].scenario-search-active {
+  position: relative;
+  inset: auto;
+  height: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
   touch-action: pan-y;
 }
 
 body[data-route="home"].scenario-search-active .app-shell {
+  height: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: visible;
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  overscroll-behavior-y: contain;
   touch-action: pan-y;
+}
+
+body[data-route="home"].scenario-search-active .screen {
+  grid-template-rows: auto auto auto;
+  align-content: start;
+  overflow: visible;
+}
+
+body[data-route="home"].scenario-search-active .scenario-results-panel > div {
+  grid-template-rows: auto auto;
 }
 
 body[data-route="home"].scenario-search-active .scenario-result-list {
   min-height: 0;
-  overflow-y: auto;
+  overflow: visible;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
 }
