@@ -2105,7 +2105,7 @@ function exportRegistrationData(format) {
   const exportableUsers = authorizedUsers();
   if (format === "json") {
     const payload = {
-      product: "Άνοδος",
+      product: "Anodos",
       exportedAt,
       users: exportableUsers.map((user) => ({
         id: user.id,
@@ -2760,7 +2760,7 @@ function renderHome() {
           value="${escapeHtml(scenarioSearchTerm)}"
         />
       </label>
-      ${hasScenarioQuery ? "" : `<p class="scenario-hint">Опишіть ситуацію простими словами, а Άνοδος підкаже, де шукати відповідь.</p>`}
+      ${hasScenarioQuery ? "" : `<p class="scenario-hint">Опишіть ситуацію простими словами, а Anodos підкаже, де шукати відповідь.</p>`}
     </section>
 
     <section class="scenario-results-panel" aria-live="polite">
@@ -3735,7 +3735,7 @@ function renderRegulatoryBaseDocument(source) {
             ` : ""}
           </section>
         `).join("")}
-        <p class="regulatory-source-note">Офіційне джерело: Верховна Рада України. Внутрішня версія підготовлена для роботи в Άνοδος.</p>
+        <p class="regulatory-source-note">Офіційне джерело: Верховна Рада України. Внутрішня версія підготовлена для роботи в Anodos.</p>
       </article>
     </section>
   `;
