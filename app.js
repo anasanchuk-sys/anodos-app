@@ -2836,26 +2836,6 @@ function renderRegistration() {
 function renderHome() {
   const hasScenarioQuery = scenarioSearchTerm.trim().length > 0;
   screen.innerHTML = `
-    <section class="hero-band">
-      <div class="hero-content">
-        <p class="hero-label">Навчальна карта</p>
-        <h1 class="hero-title">Страхові продукти</h1>
-        <p class="hero-copy">Модулі для швидкого входу в логіку страхового продукту.</p>
-        <div class="hero-path-line" aria-hidden="true">
-          <span></span>
-        </div>
-      </div>
-      <div class="hero-summary" aria-label="Структура навчання">
-        <div class="hero-metric">
-          <span>${lessons.length}</span>
-          <small>${productWord(lessons.length)}</small>
-        </div>
-        <div class="hero-note">
-          <span>відео · документи · тести</span>
-        </div>
-      </div>
-    </section>
-
     <section class="scenario-search-panel" aria-label="Сценарний пошук">
       <label class="scenario-search-label" for="scenarioSearch">
         <span>Сценарій пошуку</span>
