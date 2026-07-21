@@ -1124,6 +1124,7 @@ const lessons = [
     ],
     regulatoryBase: [
       {
+        id: "war-martial-law",
         title: "Закон України «Про правовий режим воєнного стану»",
         type: "Закон України",
         url: "https://zakon.rada.gov.ua/go/389-19",
@@ -1148,6 +1149,7 @@ const lessons = [
         ]
       },
       {
+        id: "war-occupied-territory",
         title: "Закон України про правовий режим тимчасово окупованої території",
         type: "Закон України",
         url: "https://zakon.rada.gov.ua/go/1207-18",
@@ -1172,6 +1174,7 @@ const lessons = [
         ]
       },
       {
+        id: "war-territory-list-procedure",
         title: "Порядок формування переліку територій бойових дій і тимчасової окупації",
         type: "Постанова КМУ № 1364",
         url: "https://zakon.rada.gov.ua/go/1364-2022-%D0%BF",
@@ -1196,6 +1199,7 @@ const lessons = [
         ]
       },
       {
+        id: "war-territory-list-current",
         title: "Актуальний перелік територій бойових дій і тимчасової окупації",
         type: "Наказ № 376",
         url: "https://zakon.rada.gov.ua/go/z0380-25",
@@ -1220,6 +1224,7 @@ const lessons = [
         ]
       },
       {
+        id: "war-eca-risks",
         title: "Перелік воєнних та політичних ризиків для страхування ЕКА",
         type: "Постанова КМУ № 388",
         url: "https://zakon.rada.gov.ua/go/388-2024-%D0%BF",
@@ -1244,6 +1249,7 @@ const lessons = [
         ]
       },
       {
+        id: "war-export-support-law",
         title: "Закон України «Про фінансові механізми стимулювання експортної діяльності»",
         type: "Закон України",
         url: "https://zakon.rada.gov.ua/go/1792-19",
@@ -1268,6 +1274,7 @@ const lessons = [
         ]
       },
       {
+        id: "war-compensation-premiums",
         title: "Компенсація пошкодженого майна та премій за договорами страхування від воєнних ризиків",
         type: "Постанова КМУ № 1541",
         url: "https://zakon.rada.gov.ua/go/1541-2025-%D0%BF",
@@ -2930,7 +2937,7 @@ function renderArticleCards(item) {
 
 function renderRegulatoryBaseCards(item) {
   return filteredRegulatoryBaseSources(item).map((source) => `
-    <button class="article-card contract-template-card regulatory-source-card" type="button" data-open-regulatory-source="${escapeHtml(source.url)}">
+    <button class="article-card contract-template-card regulatory-source-card" type="button" data-open-regulatory-source="${escapeHtml(source.id)}">
       <div>
         <span class="article-topic">${escapeHtml(source.type)}</span>
         <h3>${highlightLawText(source.title, regulatoryBaseTerms())}</h3>
@@ -3003,7 +3010,7 @@ function renderRegulatoryBaseResults(item = getLesson(activeLessonId)) {
   const total = item.regulatoryBase?.length || 0;
   const results = filteredRegulatoryBaseSources(item);
   const terms = regulatoryBaseTerms();
-  const activeSource = (item.regulatoryBase || []).find((source) => source.url === activeRegulatoryBaseSourceId);
+  const activeSource = (item.regulatoryBase || []).find((source) => source.id === activeRegulatoryBaseSourceId);
 
   if (!results.length) {
     resultsNode.innerHTML = `
