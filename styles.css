@@ -2368,6 +2368,102 @@ body[data-route="home"] .module-arrow {
   word-break: break-word;
 }
 
+.state-program-document {
+  display: grid;
+  gap: 12px;
+}
+
+.state-program-cover,
+.state-program-section {
+  border: 1px solid rgba(19, 41, 97, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.state-program-cover {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+}
+
+.state-program-cover h2 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 28px;
+  line-height: 1.08;
+}
+
+.state-program-cover p:last-child {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.state-program-section {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.state-program-section h3 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 19px;
+  line-height: 1.2;
+}
+
+.state-program-section p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.52;
+}
+
+.state-program-points {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 20px;
+  color: var(--ink);
+}
+
+.state-program-points li {
+  padding-left: 2px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.state-program-links {
+  display: grid;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.state-program-links a {
+  display: grid;
+  gap: 3px;
+  padding: 11px 12px;
+  border: 1px solid rgba(46, 139, 104, 0.2);
+  border-radius: 8px;
+  color: var(--navy);
+  background: rgba(248, 251, 247, 0.9);
+  text-decoration: none;
+}
+
+.state-program-links span {
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.state-program-links small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .law-toolbar p {
   margin: 0;
   color: var(--green);
