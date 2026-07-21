@@ -1124,12 +1124,6 @@ const lessons = [
     ],
     regulatoryBase: [
       {
-        title: "Закон України «Про страхування»",
-        type: "Закон України",
-        url: "https://zakon.rada.gov.ua/go/1909-20",
-        why: "Базовий закон для договорів страхування, прав Клієнта, обов'язків страховика, страхових продуктів і врегулювання."
-      },
-      {
         title: "Закон України «Про правовий режим воєнного стану»",
         type: "Закон України",
         url: "https://zakon.rada.gov.ua/go/389-19",
@@ -1642,6 +1636,8 @@ let presentationTimer = null;
 let lawSearchTerm = "";
 let activeLawEntryId = "preamble";
 let lawSearchTimer = null;
+let regulatoryBaseSearchTerm = "";
+let regulatoryBaseSearchTimer = null;
 let glossarySearchTerm = "";
 let glossaryResultsExpanded = false;
 let activeGlossaryTermId = "glossary-abandonment";
@@ -2655,7 +2651,7 @@ function moduleSectionDefinitions(item, briefing) {
       id: "regulatory-base",
       title: "Нормативна База",
       meta: `${item.regulatoryBase.length} джерел`,
-      content: renderRegulatoryBaseCards(item)
+      content: renderRegulatoryBaseSearchShell(item)
     });
   }
 
@@ -2772,6 +2768,10 @@ function renderModuleSection(item, sectionId) {
       </div>
     </section>
   `;
+
+  if (section.id === "regulatory-base") {
+    renderRegulatoryBaseResults(item);
+  }
 }
 
 function renderPanel(title, meta, content, open = false) {
@@ -2802,16 +2802,94 @@ function renderArticleCards(item) {
 }
 
 function renderRegulatoryBaseCards(item) {
-  return item.regulatoryBase.map((source) => `
+  return filteredRegulatoryBaseSources(item).map((source) => `
     <article class="article-card article-card-text">
       <div>
         <span class="article-topic">${escapeHtml(source.type)}</span>
-        <h3>${escapeHtml(source.title)}</h3>
-        <p>${escapeHtml(source.why)}</p>
+        <h3>${highlightLawText(source.title, regulatoryBaseTerms())}</h3>
+        <p>${highlightLawText(source.why, regulatoryBaseTerms())}</p>
       </div>
       <a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">Відкрити</a>
     </article>
   `).join("");
+}
+
+function renderRegulatoryBaseSearchShell(item) {
+  return `
+    <section class="law-search-panel regulatory-base-search-panel">
+      <label class="law-search-label" for="regulatoryBaseSearch">
+        <span>Пошук у нормативній базі</span>
+        <input
+          id="regulatoryBaseSearch"
+          type="search"
+          autocomplete="off"
+          placeholder="територія, окупація, ЕКА, компенсація"
+          value="${escapeHtml(regulatoryBaseSearchTerm)}"
+        />
+      </label>
+      <div id="regulatoryBaseResults"></div>
+    </section>
+  `;
+}
+
+function regulatoryBaseTerms() {
+  return regulatoryBaseSearchTerm
+    .trim()
+    .split(/\s+/)
+    .map(normalizeSemanticText)
+    .filter(Boolean);
+}
+
+function regulatoryBaseSearchText(source) {
+  if (!source.searchText) {
+    source.searchText = normalizeSemanticText([
+      source.title,
+      source.type,
+      source.why
+    ].join(" "));
+  }
+  return source.searchText;
+}
+
+function filteredRegulatoryBaseSources(item) {
+  const terms = regulatoryBaseTerms();
+  if (!terms.length) {
+    return item.regulatoryBase || [];
+  }
+
+  return (item.regulatoryBase || []).filter((source) =>
+    terms.every((term) => regulatoryBaseSearchText(source).includes(term))
+  );
+}
+
+function renderRegulatoryBaseResults(item = getLesson(activeLessonId)) {
+  const resultsNode = document.getElementById("regulatoryBaseResults");
+  if (!resultsNode) {
+    return;
+  }
+
+  const total = item.regulatoryBase?.length || 0;
+  const results = filteredRegulatoryBaseSources(item);
+  const terms = regulatoryBaseTerms();
+
+  if (!results.length) {
+    resultsNode.innerHTML = `
+      <div class="law-empty">
+        <strong>Нічого не знайдено</strong>
+        <p>Спробуй інше слово: територія, окупація, воєнний стан, ЕКА, компенсація.</p>
+      </div>
+    `;
+    return;
+  }
+
+  resultsNode.innerHTML = `
+    <div class="law-toolbar regulatory-base-toolbar">
+      <p>${terms.length ? `${results.length} з ${total}` : `${total} джерел`}</p>
+    </div>
+    <div class="article-list">
+      ${renderRegulatoryBaseCards(item)}
+    </div>
+  `;
 }
 
 function renderArticleShelf(item) {
@@ -4847,6 +4925,15 @@ document.addEventListener("input", (event) => {
     lawSearchTerm = event.target.value;
     window.clearTimeout(lawSearchTimer);
     lawSearchTimer = window.setTimeout(renderLawContent, 180);
+    return;
+  }
+
+  if (event.target.id === "regulatoryBaseSearch") {
+    regulatoryBaseSearchTerm = event.target.value;
+    window.clearTimeout(regulatoryBaseSearchTimer);
+    regulatoryBaseSearchTimer = window.setTimeout(() => {
+      renderRegulatoryBaseResults(getLesson(activeLessonId));
+    }, 160);
     return;
   }
 

@@ -2269,6 +2269,10 @@ body[data-route="home"] .module-arrow {
   padding: 18px;
 }
 
+.regulatory-base-search-panel {
+  padding: 0;
+}
+
 .law-search-label {
   display: grid;
   gap: 8px;
@@ -2304,6 +2308,10 @@ body[data-route="home"] .module-arrow {
   grid-template-columns: 92px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
+}
+
+.regulatory-base-toolbar {
+  grid-template-columns: 1fr;
 }
 
 .law-toolbar p {
