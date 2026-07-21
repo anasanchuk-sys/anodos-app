@@ -2373,6 +2373,19 @@ body[data-route="home"] .module-arrow {
   gap: 12px;
 }
 
+.state-program-choices {
+  display: grid;
+  gap: 12px;
+}
+
+.state-program-choice {
+  min-height: 68px;
+}
+
+.state-program-choice span {
+  font-size: 17px;
+}
+
 .state-program-cover,
 .state-program-section {
   border: 1px solid rgba(19, 41, 97, 0.08);

@@ -61,6 +61,7 @@ function openModuleButton(button) {
   pendingContractTemplateId = "";
   contractPasswordError = "";
   activeModuleSectionId = "";
+  activeStateCompensationView = "";
   markOpeningModule(button);
   setRoute("module", lessonId);
 
@@ -84,6 +85,7 @@ function openModuleSectionButton(button) {
   }
 
   activeModuleSectionId = sectionId;
+  activeStateCompensationView = "";
   if (sectionId === "contracts" && !contractAccessGranted) {
     contractPasswordError = "";
     setRoute("contract-auth", lessonId);
@@ -1899,6 +1901,7 @@ const contractAccessPassword = "02022004";
 let route = "home";
 let activeLessonId = "property";
 let activeModuleSectionId = "";
+let activeStateCompensationView = "";
 let quizAnswers = {};
 let quizResult = null;
 let taskResponseDrafts = {};
@@ -2936,12 +2939,6 @@ function moduleSectionDefinitions(item, briefing) {
       meta: item.stateCompensationProgram.meta,
       content: renderStateCompensationProgram(item)
     });
-    sections.push({
-      id: "state-compensation-calculator",
-      title: "Калькулятор компенсації",
-      meta: "ліміт · тариф · сума компенсації",
-      content: renderStateCompensationCalculator()
-    });
   }
 
   if (item.contractTemplates?.length) {
@@ -3041,9 +3038,15 @@ function renderModuleSection(item, sectionId) {
   }
 
   activeModuleSectionId = section.id;
+  const isStateCompensationDetail = section.id === "state-compensation" && activeStateCompensationView;
   screen.innerHTML = `
     <section class="module-head">
-      <button class="ghost-button" type="button" data-open-module="${escapeHtml(item.id)}" aria-label="Назад">←</button>
+      <button
+        class="ghost-button"
+        type="button"
+        ${isStateCompensationDetail ? 'data-state-compensation-view=""' : `data-open-module="${escapeHtml(item.id)}"`}
+        aria-label="Назад"
+      >←</button>
       <div>
         <p class="eyebrow">${escapeHtml(item.title)}</p>
         <h1>${escapeHtml(section.title)}</h1>
@@ -3220,6 +3223,29 @@ function renderStateCompensationProgram(item) {
     return "";
   }
 
+  if (activeStateCompensationView === "guide") {
+    return renderStateCompensationGuide(program);
+  }
+
+  if (activeStateCompensationView === "calculator") {
+    return renderStateCompensationCalculator();
+  }
+
+  return `
+    <section class="state-program-choices" aria-label="Державна програма компенсації">
+      <button class="article-panel-link module-section-row state-program-choice" type="button" data-state-compensation-view="guide">
+        <span>Покрокова інструкція</span>
+        <small>алгоритм · строки · пакет</small>
+      </button>
+      <button class="article-panel-link module-section-row state-program-choice" type="button" data-state-compensation-view="calculator">
+        <span>Калькулятор компенсації</span>
+        <small>ліміт · тариф · сума</small>
+      </button>
+    </section>
+  `;
+}
+
+function renderStateCompensationGuide(program) {
   return `
     <article class="state-program-document">
       <header class="state-program-cover">
@@ -5052,6 +5078,7 @@ document.addEventListener("click", async (event) => {
   const cancelProfileEditButton = event.target.closest("[data-cancel-profile-edit]");
   const moduleButton = event.target.closest("[data-open-module]");
   const moduleSectionButton = event.target.closest("[data-open-module-section]");
+  const stateCompensationViewButton = event.target.closest("[data-state-compensation-view]");
   const quizButton = event.target.closest("[data-open-quiz]");
   const lawQuizButton = event.target.closest("[data-open-law-quiz]");
   const presentationButton = event.target.closest("[data-open-presentation]");
@@ -5072,6 +5099,19 @@ document.addEventListener("click", async (event) => {
   const munichNextButton = event.target.closest("[data-munich-next]");
   const taskAnswerButton = event.target.closest("[data-show-task-answer]");
   const taskCheckButton = event.target.closest("[data-check-task-answer]");
+
+  if (stateCompensationViewButton) {
+    activeStateCompensationView = stateCompensationViewButton.dataset.stateCompensationView || "";
+    activeModuleSectionId = "state-compensation";
+    renderModuleSection(getLesson(activeLessonId), "state-compensation");
+    window.requestAnimationFrame(() => {
+      screen.scrollIntoView({
+        behavior: prefersReducedMotion ? "auto" : "smooth",
+        block: "start"
+      });
+    });
+    return;
+  }
 
   if (regulatorySourceButton) {
     activeRegulatoryBaseSourceId = regulatorySourceButton.dataset.openRegulatorySource || "";
