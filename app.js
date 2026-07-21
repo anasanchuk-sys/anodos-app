@@ -1915,6 +1915,8 @@ let lawSearchTimer = null;
 let regulatoryBaseSearchTerm = "";
 let regulatoryBaseSearchTimer = null;
 let activeRegulatoryBaseSourceId = "";
+let scenarioSearchTerm = "";
+let scenarioSearchTimer = null;
 let glossarySearchTerm = "";
 let glossaryResultsExpanded = false;
 let activeGlossaryTermId = "glossary-abandonment";
@@ -2740,10 +2742,422 @@ function renderHome() {
       </div>
     </section>
 
+    <section class="scenario-search-panel" aria-label="Сценарний пошук">
+      <label class="scenario-search-label" for="scenarioSearch">
+        <span>Сценарний пошук</span>
+        <input
+          id="scenarioSearch"
+          type="search"
+          autocomplete="off"
+          placeholder="Опишіть ситуацію Клієнта"
+          value="${escapeHtml(scenarioSearchTerm)}"
+        />
+      </label>
+      <div id="scenarioSearchResults"></div>
+    </section>
+
     <section class="module-grid" aria-label="Навчальні продукти">
       ${lessons.map(renderModuleCard).join("")}
     </section>
   `;
+  renderScenarioSearchResults();
+}
+
+const scenarioSearchClusters = [
+  {
+    label: "воєнні ризики",
+    triggers: ["воєн", "війна", "ракета", "бпла", "обстріл", "ппо", "про", "окупац", "територ", "харків", "запоріж", "донецьк", "суми", "херсон"],
+    terms: ["воєнний ризик", "воєнні ризики", "збройна агресія", "ракета", "бпла", "ппо", "окупована територія", "територія"]
+  },
+  {
+    label: "компенсація премії",
+    triggers: ["компенсац", "прем", "ека", "5000", "ліміт", "тариф", "держав"],
+    terms: ["компенсація", "премія", "страхова премія", "ека", "ліміт", "тариф", "державна програма"]
+  },
+  {
+    label: "майно",
+    triggers: ["майно", "склад", "будів", "нерух", "обладн", "товар", "запас", "пожеж", "затоп", "вода"],
+    terms: ["майно", "страхова сума", "застраховане майно", "пожежа", "товарні запаси", "обладнання"]
+  },
+  {
+    label: "договір",
+    triggers: ["догов", "умов", "винят", "франш", "субліміт", "ліміт", "покрит", "all risk", "named"],
+    terms: ["договір", "умови", "винятки", "франшиза", "субліміт", "ліміт", "покриття"]
+  },
+  {
+    label: "відповідальність",
+    triggers: ["відповід", "трет", "шкода", "претенз", "позов", "регрес"],
+    terms: ["відповідальність", "шкода третім особам", "претензія", "регрес"]
+  },
+  {
+    label: "вантажі",
+    triggers: ["вантаж", "перевез", "маршрут", "товар", "порт", "зерно", "морськ"],
+    terms: ["вантажі", "перевезення", "маршрут", "товар", "морські вантажі"]
+  },
+  {
+    label: "будівельно-монтажні ризики",
+    triggers: ["будів", "монтаж", "підряд", "об'єкт", "проект", "застереження", "munich"],
+    terms: ["будівельно-монтажні ризики", "застереження", "munich re", "підрядник", "об'єкт"]
+  },
+  {
+    label: "закон",
+    triggers: ["закон", "норма", "статт", "зу", "зупс", "регул"],
+    terms: ["закон", "стаття", "страхування", "нормативна база"]
+  }
+];
+
+function scenarioQueryProfile() {
+  const normalizedQuery = normalizeSemanticText(scenarioSearchTerm);
+  const terms = new Set(splitSearchTerms(scenarioSearchTerm));
+  const labels = new Set();
+
+  scenarioSearchClusters.forEach((cluster) => {
+    if (cluster.triggers.some((trigger) => normalizedQuery.includes(normalizeSemanticText(trigger)))) {
+      labels.add(cluster.label);
+      cluster.terms.forEach((term) => splitSearchTerms(term).forEach((entry) => terms.add(entry)));
+    }
+  });
+
+  return {
+    query: normalizedQuery,
+    terms: uniqueTerms([...terms]).sort((first, second) => second.length - first.length),
+    labels: [...labels]
+  };
+}
+
+function scenarioEntryText(entry) {
+  if (!entry.searchText) {
+    entry.searchText = normalizeSemanticText([
+      entry.category,
+      entry.title,
+      entry.meta,
+      entry.description,
+      entry.text
+    ].join(" "));
+  }
+  return entry.searchText;
+}
+
+function scoreScenarioEntry(entry, profile) {
+  if (!profile.terms.length) {
+    return 0;
+  }
+
+  const title = normalizeSemanticText(entry.title);
+  const meta = normalizeSemanticText(entry.meta);
+  const haystack = scenarioEntryText(entry);
+  let score = entry.boost || 0;
+
+  profile.terms.forEach((term) => {
+    if (!term) {
+      return;
+    }
+    if (title.includes(term)) {
+      score += 16;
+    }
+    if (meta.includes(term)) {
+      score += 7;
+    }
+    if (haystack.includes(term)) {
+      const matches = haystack.split(term).length - 1;
+      score += Math.min(matches, 7);
+    }
+  });
+
+  if (entry.action === "state-calculator" && /(ліміт|тариф|розрах|компенсац|прем)/u.test(profile.query)) {
+    score += 42;
+  }
+
+  if (entry.action === "state-guide" && /(держав|ека|компенсац|прем)/u.test(profile.query)) {
+    score += 18;
+  }
+
+  return score;
+}
+
+function stateCompensationSearchText(program) {
+  if (!program) {
+    return "";
+  }
+  return [
+    program.title,
+    program.subtitle,
+    program.updated,
+    program.meta,
+    ...(program.sections || []).flatMap((section) => [
+      section.kicker,
+      section.title,
+      ...(section.paragraphs || []),
+      ...(section.points || []),
+      ...(section.links || []).flatMap((link) => [link.label, link.description])
+    ])
+  ].join(" ");
+}
+
+function scenarioSearchEntries() {
+  const entries = [];
+
+  lessons.forEach((item) => {
+    const moduleText = [
+      item.title,
+      item.shortTitle,
+      item.focus,
+      item.outcome,
+      item.sourceStatus,
+      ...(item.briefing || []),
+      ...(item.checklist || []),
+      ...(item.lessons || []).flatMap((lesson) => [lesson.title, lesson.text]),
+      ...(item.articles || []).flatMap((article) => [article.title, article.topic, article.why]),
+      ...(item.regulatoryBase || []).flatMap((source) => [source.title, source.type, source.why]),
+      stateCompensationSearchText(item.stateCompensationProgram)
+    ].join(" ");
+
+    entries.push({
+      id: `module-${item.id}`,
+      category: "Продукт",
+      title: item.title,
+      meta: item.focus,
+      description: item.outcome,
+      text: moduleText,
+      action: "module",
+      lessonId: item.id,
+      boost: 10
+    });
+
+    (item.articles || []).forEach((article, index) => {
+      entries.push({
+        id: `article-${item.id}-${index}`,
+        category: "Стаття BritMark",
+        title: article.title,
+        meta: item.title,
+        description: article.why,
+        text: [article.topic, article.why].join(" "),
+        action: "external",
+        url: article.url,
+        boost: 4
+      });
+    });
+
+    (item.regulatoryBase || []).forEach((source) => {
+      entries.push({
+        id: `regulatory-${source.id}`,
+        category: "Нормативна база",
+        title: source.title,
+        meta: source.type,
+        description: source.why,
+        text: (source.document || []).flatMap((section) => [
+          section.heading,
+          ...(section.paragraphs || []),
+          ...(section.points || [])
+        ]).join(" "),
+        action: "external",
+        url: source.url,
+        boost: 9
+      });
+    });
+
+    if (item.stateCompensationProgram) {
+      entries.push({
+        id: "state-compensation-guide",
+        category: "Державна програма",
+        title: "Покрокова інструкція",
+        meta: "Воєнні ризики",
+        description: "Алгоритм участі, пакет документів, строки подання і типові помилки.",
+        text: stateCompensationSearchText(item.stateCompensationProgram),
+        action: "state-guide",
+        lessonId: item.id,
+        boost: 22
+      });
+      entries.push({
+        id: "state-compensation-calculator",
+        category: "Калькулятор",
+        title: "Калькулятор компенсації",
+        meta: "ліміт · тариф · сума компенсації",
+        description: "Розрахунок компенсації: тариф понад 1% помножити на ліміт, але не більше 3 000 000 грн.",
+        text: "компенсація премії тариф ліміт страхова сума воєнний ризик ека державна програма розрахунок 3000000",
+        action: "state-calculator",
+        lessonId: item.id,
+        boost: 24
+      });
+    }
+  });
+
+  lawEntries().forEach((entry) => {
+    entries.push({
+      id: `law-${entry.id}`,
+      category: "ЗУпС",
+      title: entryLabel(entry),
+      meta: entry.section || "Закон України «Про страхування»",
+      description: (entry.paragraphs || []).slice(0, 1).join(" ").slice(0, 180),
+      text: [entry.number, entry.title, entry.section, ...(entry.paragraphs || [])].join(" "),
+      action: "law",
+      entryId: entry.id,
+      boost: 7
+    });
+  });
+
+  glossaryTerms.forEach((term) => {
+    entries.push({
+      id: `glossary-${term.id}`,
+      category: "Словник",
+      title: glossaryTermLabel(term),
+      meta: term.group,
+      description: term.definition,
+      text: [term.practice, term.note, ...(term.related || []), ...(term.examples || [])].join(" "),
+      action: "glossary",
+      termId: term.id,
+      boost: 8
+    });
+  });
+
+  munichClauses().forEach((clause) => {
+    entries.push({
+      id: `munich-${clause.id}`,
+      category: "Munich Re",
+      title: munichClauseLabel(clause),
+      meta: "Будівельно-монтажні ризики",
+      description: (clause.paragraphs || []).slice(0, 1).join(" ").slice(0, 180),
+      text: [clause.number, clause.title, ...(clause.paragraphs || [])].join(" "),
+      action: "munich",
+      clauseId: clause.id,
+      boost: 8
+    });
+  });
+
+  return entries;
+}
+
+function scenarioSearchResults() {
+  const profile = scenarioQueryProfile();
+  if (!profile.terms.length) {
+    return { profile, results: [] };
+  }
+
+  const results = scenarioSearchEntries()
+    .map((entry) => ({ ...entry, score: scoreScenarioEntry(entry, profile) }))
+    .filter((entry) => entry.score > (entry.boost || 0))
+    .sort((first, second) => second.score - first.score || (second.boost || 0) - (first.boost || 0))
+    .slice(0, 9);
+
+  return { profile, results };
+}
+
+function scenarioResultAttributes(result) {
+  if (result.action === "external") {
+    return `href="${escapeHtml(result.url || "#")}" target="_blank" rel="noopener noreferrer"`;
+  }
+  return [
+    `href="#"`,
+    `data-scenario-action="${escapeHtml(result.action)}"`,
+    result.lessonId ? `data-scenario-lesson="${escapeHtml(result.lessonId)}"` : "",
+    result.entryId ? `data-scenario-entry="${escapeHtml(result.entryId)}"` : "",
+    result.termId ? `data-scenario-term="${escapeHtml(result.termId)}"` : "",
+    result.clauseId ? `data-scenario-clause="${escapeHtml(result.clauseId)}"` : ""
+  ].filter(Boolean).join(" ");
+}
+
+function renderScenarioResultCard(result) {
+  const title = capitalizeClientWord(result.title);
+  const description = capitalizeClientWord(result.description || result.meta || "");
+  return `
+    <a class="scenario-result-card" ${scenarioResultAttributes(result)}>
+      <div>
+        <span class="article-topic">${escapeHtml(result.category)}</span>
+        <h3>${escapeHtml(title)}</h3>
+        <p>${escapeHtml(description)}</p>
+      </div>
+      <span class="article-action" aria-hidden="true">${result.action === "external" ? "Джерело" : "Відкрити"}</span>
+    </a>
+  `;
+}
+
+function capitalizeClientWord(value) {
+  return String(value || "").replace(
+    /(^|[^А-Яа-яІіЇїЄєҐґA-Za-z])клієнт([а-яіїєґ]*)/giu,
+    (_match, prefix, ending) => `${prefix}Клієнт${ending}`
+  );
+}
+
+function renderScenarioSearchResults() {
+  const node = document.getElementById("scenarioSearchResults");
+  if (!node) {
+    return;
+  }
+
+  const { profile, results } = scenarioSearchResults();
+
+  if (!profile.terms.length) {
+    node.innerHTML = `
+      <div class="scenario-empty">
+        <p>Опишіть ситуацію простими словами. Άνοδος підкаже, де шукати відповідь.</p>
+        <div class="scenario-examples">
+          ${[
+            "Клієнт страхує склад у Харківській області і питає про компенсацію премії",
+            "Потрібно перевірити винятки в майновому договорі",
+            "Будівельний проєкт і застереження Munich Re"
+          ].map((example) => `<button type="button" data-scenario-example="${escapeHtml(example)}">${escapeHtml(example)}</button>`).join("")}
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if (!results.length) {
+    node.innerHTML = `
+      <div class="scenario-empty">
+        <p>Нічого точного не знайшов. Спробуйте коротше: компенсація премії, воєнні ризики, франшиза, вантажі, БМР.</p>
+      </div>
+    `;
+    return;
+  }
+
+  node.innerHTML = `
+    <div class="scenario-result-meta">
+      <span>${results.length} результатів</span>
+      ${profile.labels.length ? `<small>${profile.labels.map(escapeHtml).join(" · ")}</small>` : ""}
+    </div>
+    <div class="scenario-result-list">
+      ${results.map(renderScenarioResultCard).join("")}
+    </div>
+  `;
+}
+
+function openScenarioResult(target) {
+  const action = target.dataset.scenarioAction;
+
+  if (action === "module") {
+    setRoute("module", target.dataset.scenarioLesson);
+    return;
+  }
+
+  if (action === "state-guide" || action === "state-calculator") {
+    activeModuleSectionId = "state-compensation";
+    activeStateCompensationView = action === "state-guide" ? "guide" : "calculator";
+    setRoute("module-section", target.dataset.scenarioLesson || "war");
+    return;
+  }
+
+  if (action === "law") {
+    activeLawEntryId = target.dataset.scenarioEntry || activeLawEntryId;
+    lawSearchTerm = scenarioSearchTerm;
+    setRoute("law");
+    return;
+  }
+
+  if (action === "glossary") {
+    activeGlossaryTermId = target.dataset.scenarioTerm || activeGlossaryTermId;
+    glossarySearchTerm = scenarioSearchTerm;
+    glossaryResultsExpanded = false;
+    setRoute("glossary");
+    return;
+  }
+
+  if (action === "munich") {
+    activeMunichClauseId = target.dataset.scenarioClause || activeMunichClauseId;
+    munichSearchTerm = scenarioSearchTerm;
+    munichResultsExpanded = false;
+    setRoute("munich", "construction");
+  }
 }
 
 function renderModuleIcon(id) {
@@ -5099,6 +5513,25 @@ document.addEventListener("click", async (event) => {
   const munichNextButton = event.target.closest("[data-munich-next]");
   const taskAnswerButton = event.target.closest("[data-show-task-answer]");
   const taskCheckButton = event.target.closest("[data-check-task-answer]");
+  const scenarioExampleButton = event.target.closest("[data-scenario-example]");
+  const scenarioAction = event.target.closest("[data-scenario-action]");
+
+  if (scenarioExampleButton) {
+    scenarioSearchTerm = scenarioExampleButton.dataset.scenarioExample || "";
+    renderHome();
+    window.requestAnimationFrame(() => {
+      const input = document.getElementById("scenarioSearch");
+      input?.focus();
+      input?.setSelectionRange(input.value.length, input.value.length);
+    });
+    return;
+  }
+
+  if (scenarioAction) {
+    event.preventDefault();
+    openScenarioResult(scenarioAction);
+    return;
+  }
 
   if (stateCompensationViewButton) {
     activeStateCompensationView = stateCompensationViewButton.dataset.stateCompensationView || "";
@@ -5426,6 +5859,13 @@ document.addEventListener("focusin", (event) => {
 });
 
 document.addEventListener("input", (event) => {
+  if (event.target.id === "scenarioSearch") {
+    scenarioSearchTerm = event.target.value;
+    window.clearTimeout(scenarioSearchTimer);
+    scenarioSearchTimer = window.setTimeout(renderScenarioSearchResults, 120);
+    return;
+  }
+
   if (event.target.id === "stateCompensationLimit" || event.target.id === "stateCompensationRate") {
     updateStateCompensationCalculator();
     return;
