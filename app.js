@@ -31,6 +31,10 @@ function isHomeRoute() {
   return body.dataset.route === "home";
 }
 
+function isScenarioSearchActive() {
+  return isHomeRoute() && scenarioSearchTerm.trim().length > 0;
+}
+
 function lockStaticUiElements() {
   document.querySelectorAll("a, button, img, svg, video").forEach((element) => {
     element.setAttribute("draggable", "false");
@@ -141,13 +145,14 @@ document.addEventListener("contextmenu", (event) => {
 
 document.addEventListener("touchmove", (event) => {
   const isContractPinch = event.touches?.length > 1 && isContractViewerElement(event.target);
-  if ((isHomeRoute() || event.touches?.length > 1) && !isContractPinch) {
+  const isBlockedHomeScroll = isHomeRoute() && !isScenarioSearchActive();
+  if ((isBlockedHomeScroll || event.touches?.length > 1) && !isContractPinch) {
     event.preventDefault();
   }
 }, { passive: false });
 
 document.addEventListener("wheel", (event) => {
-  if (isHomeRoute()) {
+  if (isHomeRoute() && !isScenarioSearchActive()) {
     event.preventDefault();
   }
 }, { passive: false });

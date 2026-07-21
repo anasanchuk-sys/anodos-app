@@ -1,4 +1,4 @@
-const CACHE_NAME = "platform-shell-v141";
+const CACHE_NAME = "platform-shell-v142";
 const ASSETS = [
   "./",
   "./index.html",
@@ -6,7 +6,7 @@ const ASSETS = [
   "./law-data.js?v=3",
   "./munich-re-clauses.js?v=1",
   "./sync-config.js?v=1",
-  "./app.js?v=108",
+  "./app.js?v=109",
   "./manifest.webmanifest",
   "./assets/icon.svg",
   "./assets/britmark-logo.png"
