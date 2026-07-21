@@ -2936,6 +2936,12 @@ function moduleSectionDefinitions(item, briefing) {
       meta: item.stateCompensationProgram.meta,
       content: renderStateCompensationProgram(item)
     });
+    sections.push({
+      id: "state-compensation-calculator",
+      title: "Калькулятор компенсації",
+      meta: "ліміт · тариф · сума компенсації",
+      content: renderStateCompensationCalculator()
+    });
   }
 
   if (item.contractTemplates?.length) {
@@ -3221,7 +3227,6 @@ function renderStateCompensationProgram(item) {
         <h2>${escapeHtml(program.title)}</h2>
         <p>${escapeHtml(program.updated)}</p>
       </header>
-      ${renderStateCompensationCalculator()}
       ${program.sections.map(renderStateCompensationSection).join("")}
     </article>
   `;
