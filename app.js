@@ -1901,7 +1901,9 @@ const usersKey = "anodos-users-v1";
 const currentUserKey = "anodos-current-user-v1";
 const progressByUserKey = "anodos-progress-by-user-v1";
 const centralParticipantsKey = "anodos-central-participants-v1";
+const accuracyReportsKey = "anodos-accuracy-reports-v1";
 const contractAccessPassword = "02022004";
+const contentReviewDate = "22.07.2026";
 
 let route = "home";
 let activeLessonId = "property";
@@ -1909,6 +1911,10 @@ let activeModuleSectionId = "";
 let activeStateCompensationView = "";
 let quizAnswers = {};
 let quizResult = null;
+let activeAccuracyReportId = "";
+let accuracyReportDrafts = {};
+let accuracyReportSavedId = "";
+let accuracyReportErrorId = "";
 let taskResponseDrafts = {};
 let taskFeedback = {};
 let activeSlideIndex = 0;
@@ -1941,6 +1947,7 @@ let currentUserId = localStorage.getItem(currentUserKey) || "";
 let progressByUser = readJson(progressByUserKey, {});
 let progress = progressForCurrentUser();
 let centralParticipants = readJson(centralParticipantsKey, []);
+let accuracyReports = readJson(accuracyReportsKey, []);
 let syncStatus = {
   state: syncConfigured() ? "idle" : "disabled",
   message: syncConfigured() ? "Центральна синхронізація готова до перевірки." : "Центральну базу ще не підключено.",
@@ -2161,6 +2168,123 @@ function escapeHtml(value) {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+function quizReportId(scope, lessonId, questionIndex) {
+  return `${scope}:${lessonId}:${questionIndex}`;
+}
+
+function quizTrustSource(scope, item) {
+  if (scope === "law") {
+    return "ЗУпС + внутрішня редакція";
+  }
+  if (item?.id === "property") {
+    return "Внутрішня експертна редакція";
+  }
+  return "Внутрішня редакція продукту";
+}
+
+function renderAccuracyReportForm(reportId) {
+  return `
+    <div class="accuracy-report-form" data-accuracy-report-form="${escapeHtml(reportId)}" data-active-report-form>
+      <label>
+        <span>Що саме потребує перевірки?</span>
+        <textarea name="accuracyReportNote" rows="3" placeholder="Наприклад: варіант B звучить надто широко; у договорі треба перевірити виняток або субліміт.">${escapeHtml(accuracyReportDrafts[reportId] || "")}</textarea>
+      </label>
+      ${accuracyReportErrorId === reportId ? `<p class="accuracy-report-error">Додайте короткий зміст зауваження.</p>` : ""}
+      <div class="accuracy-report-actions">
+        <button class="secondary-action" type="button" data-save-accuracy-report>Зберегти зауваження</button>
+        <button class="ghost-text-button" type="button" data-cancel-accuracy-report>Скасувати</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderQuestionTrustBlock(scope, item, question, questionIndex) {
+  const reportId = quizReportId(scope, item.id, questionIndex);
+  const localReportCount = accuracyReports.filter((report) => report.reportId === reportId).length;
+  return `
+    <div class="question-trust-panel">
+      <div class="question-trust-meta" aria-label="Актуальність питання">
+        <span>Актуально на ${contentReviewDate}</span>
+        <span>${escapeHtml(quizTrustSource(scope, item))}</span>
+        <span>Статус: перевірено</span>
+      </div>
+      <button class="trust-report-button" type="button" data-report-issue="${escapeHtml(reportId)}">
+        Повідомити про неточність
+      </button>
+      ${localReportCount ? `<p class="accuracy-report-saved">За цим питанням є ${localReportCount} локальне зауваження.</p>` : ""}
+      ${accuracyReportSavedId === reportId ? `<p class="accuracy-report-saved">Зауваження збережено локально.</p>` : ""}
+    </div>
+    ${activeAccuracyReportId === reportId ? renderAccuracyReportForm(reportId) : ""}
+  `;
+}
+
+function saveAccuracyReport(reportId, note) {
+  const [scope, lessonId, questionIndexText] = reportId.split(":");
+  const questionIndex = Number(questionIndexText);
+  const item = getLesson(lessonId);
+  const test = scope === "law" ? item.lawTests : item;
+  const question = test?.quiz?.[questionIndex];
+  if (!item || !question) {
+    return false;
+  }
+
+  const selected = quizAnswers[questionIndex];
+  const user = currentUser();
+  accuracyReports.unshift({
+    id: `accuracy-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+    reportId,
+    scope,
+    lessonId: item.id,
+    lessonTitle: item.title,
+    testTitle: test.title || item.quizTitle || item.title,
+    questionIndex,
+    question: question.question,
+    correctAnswer: question.options[question.answer],
+    selectedAnswer: selected === null || selected === undefined ? "" : question.options[selected] || "",
+    note,
+    status: "new",
+    reviewedAt: contentReviewDate,
+    createdAt: new Date().toISOString(),
+    userName: user?.fullName || "",
+    userEmail: user?.email || ""
+  });
+  writeJson(accuracyReportsKey, accuracyReports);
+  return true;
+}
+
+function exportAccuracyReports() {
+  const rows = [[
+    "Дата",
+    "Модуль",
+    "Тест",
+    "Питання",
+    "Правильна відповідь",
+    "Обрана відповідь",
+    "Зауваження",
+    "Користувач",
+    "Email",
+    "Статус"
+  ]];
+
+  accuracyReports.forEach((report) => {
+    rows.push([
+      report.createdAt || "",
+      report.lessonTitle || "",
+      report.testTitle || "",
+      report.question || "",
+      report.correctAnswer || "",
+      report.selectedAnswer || "",
+      report.note || "",
+      report.userName || "",
+      report.userEmail || "",
+      report.status || "new"
+    ]);
+  });
+
+  const csv = rows.map((row) => row.map(escapeCsv).join(",")).join("\n");
+  downloadTextFile(`anodos-accuracy-reports-${Date.now()}.csv`, csv, "text/csv;charset=utf-8");
 }
 
 function totalProgress() {
@@ -4521,6 +4645,7 @@ function renderQuiz(item) {
       ${item.quiz.map((question, questionIndex) => `
         <fieldset class="question-block">
           <legend>${escapeHtml(question.question)}</legend>
+          ${renderQuestionTrustBlock("quiz", item, question, questionIndex)}
           ${question.options.map((option, optionIndex) => `
             <label class="answer-row" data-answer="${questionIndex}-${optionIndex}">
               <input type="radio" name="q${questionIndex}" value="${optionIndex}" ${quizAnswers[questionIndex] === optionIndex ? "checked" : ""} />
@@ -4555,6 +4680,7 @@ function renderQuizResult(item) {
             <h3>${escapeHtml(question.question)}</h3>
             <p><strong>Відповідь:</strong> ${escapeHtml(question.options[question.answer])}</p>
             ${question.explanation ? `<p>${escapeHtml(question.explanation)}</p>` : ""}
+            ${renderQuestionTrustBlock("quiz", item, question, index)}
           </article>
         `;
       }).join("")}
@@ -4594,6 +4720,7 @@ function renderLawQuiz(item) {
       ${test.quiz.map((question, questionIndex) => `
         <fieldset class="question-block">
           <legend>${escapeHtml(question.question)}</legend>
+          ${renderQuestionTrustBlock("law", item, question, questionIndex)}
           ${question.options.map((option, optionIndex) => `
             <label class="answer-row" data-answer="${questionIndex}-${optionIndex}">
               <input type="radio" name="q${questionIndex}" value="${optionIndex}" ${quizAnswers[questionIndex] === optionIndex ? "checked" : ""} />
@@ -4628,6 +4755,7 @@ function renderLawQuizResult(test) {
             <h3>${escapeHtml(question.question)}</h3>
             <p><strong>Відповідь:</strong> ${escapeHtml(question.options[question.answer])}</p>
             ${question.explanation ? `<p>${escapeHtml(question.explanation)}</p>` : ""}
+            ${renderQuestionTrustBlock("law", getLesson(activeLessonId), question, index)}
           </article>
         `;
       }).join("")}
@@ -5535,6 +5663,7 @@ function renderProgress() {
       </div>
       <div class="profile-actions">
         <button class="secondary-action" type="button" data-edit-profile>Редагувати профіль</button>
+        ${accuracyReports.length ? `<button class="secondary-action" type="button" data-export-accuracy-reports>Експорт неточностей</button>` : ""}
       </div>
     </section>
   `;
@@ -5595,6 +5724,7 @@ document.addEventListener("click", async (event) => {
   const useUserButton = event.target.closest("[data-use-user]");
   const deleteUserButton = event.target.closest("[data-delete-user]");
   const exportUsersButton = event.target.closest("[data-export-users]");
+  const exportAccuracyReportsButton = event.target.closest("[data-export-accuracy-reports]");
   const syncPushButton = event.target.closest("[data-sync-push]");
   const syncRefreshButton = event.target.closest("[data-sync-refresh]");
   const registerNewButton = event.target.closest("[data-register-new]");
@@ -5623,8 +5753,51 @@ document.addEventListener("click", async (event) => {
   const munichNextButton = event.target.closest("[data-munich-next]");
   const taskAnswerButton = event.target.closest("[data-show-task-answer]");
   const taskCheckButton = event.target.closest("[data-check-task-answer]");
+  const reportIssueButton = event.target.closest("[data-report-issue]");
+  const saveAccuracyReportButton = event.target.closest("[data-save-accuracy-report]");
+  const cancelAccuracyReportButton = event.target.closest("[data-cancel-accuracy-report]");
   const scenarioExampleButton = event.target.closest("[data-scenario-example]");
   const scenarioAction = event.target.closest("[data-scenario-action]");
+
+  if (reportIssueButton) {
+    activeAccuracyReportId = reportIssueButton.dataset.reportIssue || "";
+    accuracyReportSavedId = "";
+    accuracyReportErrorId = "";
+    render();
+    window.requestAnimationFrame(() => {
+      document.querySelector("[data-active-report-form] textarea")?.focus();
+    });
+    return;
+  }
+
+  if (saveAccuracyReportButton) {
+    const reportPanel = saveAccuracyReportButton.closest("[data-accuracy-report-form]");
+    const reportId = reportPanel?.dataset.accuracyReportForm || "";
+    const note = String(reportPanel?.querySelector("textarea")?.value || "").trim();
+
+    if (!note) {
+      accuracyReportErrorId = reportId;
+      activeAccuracyReportId = reportId;
+      render();
+      return;
+    }
+
+    if (saveAccuracyReport(reportId, note)) {
+      accuracyReportDrafts[reportId] = "";
+      activeAccuracyReportId = "";
+      accuracyReportErrorId = "";
+      accuracyReportSavedId = reportId;
+      render();
+    }
+    return;
+  }
+
+  if (cancelAccuracyReportButton) {
+    activeAccuracyReportId = "";
+    accuracyReportErrorId = "";
+    render();
+    return;
+  }
 
   if (scenarioExampleButton) {
     scenarioSearchTerm = scenarioExampleButton.dataset.scenarioExample || "";
@@ -5749,6 +5922,11 @@ document.addEventListener("click", async (event) => {
 
   if (exportUsersButton) {
     exportRegistrationData(exportUsersButton.dataset.exportUsers);
+    return;
+  }
+
+  if (exportAccuracyReportsButton) {
+    exportAccuracyReports();
     return;
   }
 
@@ -5969,6 +6147,12 @@ document.addEventListener("focusin", (event) => {
 });
 
 document.addEventListener("input", (event) => {
+  const accuracyReportForm = event.target.closest("[data-accuracy-report-form]");
+  if (accuracyReportForm && event.target.name === "accuracyReportNote") {
+    accuracyReportDrafts[accuracyReportForm.dataset.accuracyReportForm] = event.target.value;
+    return;
+  }
+
   if (event.target.id === "scenarioSearch") {
     scenarioSearchTerm = event.target.value;
     body.classList.toggle("scenario-search-active", scenarioSearchTerm.trim().length > 0);
