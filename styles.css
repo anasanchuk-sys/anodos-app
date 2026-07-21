@@ -410,6 +410,7 @@ p {
 .registration-panel,
 .profile-panel,
 .scenario-search-panel,
+.scenario-results-panel,
 .law-search-panel,
 .law-article-shell,
 .law-empty,
@@ -530,14 +531,14 @@ h3 {
 
 .scenario-search-panel {
   display: grid;
-  gap: 12px;
-  padding: 14px;
-  box-shadow: 0 14px 32px rgba(19, 41, 97, 0.08);
+  gap: 7px;
+  padding: 11px 12px;
+  box-shadow: 0 8px 18px rgba(19, 41, 97, 0.045);
 }
 
 .scenario-search-label {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .scenario-search-label span {
@@ -551,13 +552,13 @@ h3 {
 .scenario-search-label input {
   width: 100%;
   min-width: 0;
-  height: 44px;
-  padding: 0 13px;
+  height: 38px;
+  padding: 0 11px;
   border: 1px solid rgba(19, 41, 97, 0.12);
   border-radius: 8px;
   color: var(--ink);
   background: rgba(255, 255, 255, 0.9);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.3;
   outline: none;
 }
@@ -577,6 +578,14 @@ h3 {
 
 .scenario-empty p {
   margin: 0;
+}
+
+.scenario-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 620;
+  line-height: 1.25;
 }
 
 .scenario-examples {
@@ -617,7 +626,7 @@ h3 {
 .scenario-result-list {
   display: grid;
   gap: 8px;
-  max-height: min(34vh, 260px);
+  max-height: none;
   overflow-y: auto;
   padding-right: 2px;
   overscroll-behavior: contain;
@@ -655,6 +664,14 @@ h3 {
 .scenario-result-card .article-action {
   opacity: 0.72;
   white-space: nowrap;
+}
+
+.scenario-results-panel {
+  display: none;
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px;
+  box-shadow: 0 10px 24px rgba(19, 41, 97, 0.06);
 }
 
 .hero-metric {
@@ -1326,23 +1343,28 @@ body[data-route="home"] .hero-note span {
 }
 
 body[data-route="home"] .scenario-search-panel {
-  gap: 8px;
-  padding: 10px;
-  box-shadow: 0 8px 18px rgba(19, 41, 97, 0.06);
+  gap: 5px;
+  padding: 8px 10px;
+  box-shadow: 0 6px 14px rgba(19, 41, 97, 0.04);
 }
 
 body[data-route="home"] .scenario-search-label {
-  gap: 5px;
+  gap: 4px;
 }
 
 body[data-route="home"] .scenario-search-label span {
-  font-size: 8.5px;
+  font-size: 8px;
 }
 
 body[data-route="home"] .scenario-search-label input {
-  height: 36px;
+  height: 34px;
   padding: 0 10px;
   font-size: 12px;
+}
+
+body[data-route="home"] .scenario-hint {
+  font-size: 9.5px;
+  line-height: 1.18;
 }
 
 body[data-route="home"] .scenario-empty {
@@ -1373,19 +1395,29 @@ body[data-route="home"] .scenario-examples button {
 }
 
 body[data-route="home"] .scenario-result-list {
-  max-height: min(26vh, 210px);
+  max-height: 100%;
 }
 
 body[data-route="home"] .scenario-result-card {
-  padding: 8px 9px;
+  min-height: 58px;
+  padding: 8px 10px;
 }
 
 body[data-route="home"] .scenario-result-card h3 {
-  font-size: 12px;
+  font-size: 12.5px;
 }
 
 body[data-route="home"] .scenario-result-card p {
   font-size: 10px;
+}
+
+body[data-route="home"].scenario-search-active .scenario-results-panel {
+  display: grid;
+  min-height: 0;
+}
+
+body[data-route="home"].scenario-search-active .module-grid {
+  display: none;
 }
 
 body[data-route="home"] .module-grid {
@@ -1420,17 +1452,19 @@ body[data-route="home"] .module-icon svg {
 }
 
 body[data-route="home"] .module-copy {
+  align-content: center;
   gap: 2px;
 }
 
 body[data-route="home"] .module-title {
-  font-size: 13.5px;
-  line-height: 1.05;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
 }
 
 body[data-route="home"] .module-focus {
-  font-size: 10.5px;
-  line-height: 1.15;
+  display: none;
 }
 
 body[data-route="home"] .module-row-end {

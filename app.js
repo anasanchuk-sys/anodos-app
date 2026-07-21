@@ -2608,6 +2608,7 @@ function render() {
 
   body.classList.remove("registration-mode");
   body.dataset.route = route;
+  body.classList.toggle("scenario-search-active", route === "home" && scenarioSearchTerm.trim().length > 0);
   progressValue.textContent = `${totalProgress()}%`;
   document.querySelectorAll(".nav-item").forEach((button) => {
     button.classList.toggle("nav-item-active", button.dataset.route === route);
@@ -2721,6 +2722,7 @@ function renderRegistration() {
 }
 
 function renderHome() {
+  const hasScenarioQuery = scenarioSearchTerm.trim().length > 0;
   screen.innerHTML = `
     <section class="hero-band">
       <div class="hero-content">
@@ -2744,7 +2746,7 @@ function renderHome() {
 
     <section class="scenario-search-panel" aria-label="Сценарний пошук">
       <label class="scenario-search-label" for="scenarioSearch">
-        <span>Сценарний пошук</span>
+        <span>Сценарій пошуку</span>
         <input
           id="scenarioSearch"
           type="search"
@@ -2753,6 +2755,10 @@ function renderHome() {
           value="${escapeHtml(scenarioSearchTerm)}"
         />
       </label>
+      ${hasScenarioQuery ? "" : `<p class="scenario-hint">Опишіть ситуацію простими словами, а Άνοδος підкаже, де шукати відповідь.</p>`}
+    </section>
+
+    <section class="scenario-results-panel" aria-live="polite">
       <div id="scenarioSearchResults"></div>
     </section>
 
@@ -2766,18 +2772,21 @@ function renderHome() {
 const scenarioSearchClusters = [
   {
     label: "воєнні ризики",
-    triggers: ["воєн", "війна", "ракета", "бпла", "обстріл", "ппо", "про", "окупац", "територ", "харків", "запоріж", "донецьк", "суми", "херсон"],
-    terms: ["воєнний ризик", "воєнні ризики", "збройна агресія", "ракета", "бпла", "ппо", "окупована територія", "територія"]
+    domain: "war",
+    triggers: ["воєн", "війна", "ракета", "бпла", "дрон", "обстріл", "ппо", "окупац", "бойов", "тероризм", "політичн"],
+    terms: ["воєнний ризик", "воєнні ризики", "збройна агресія", "ракета", "бпла", "дрон", "ппо", "окупована територія", "бойові дії"]
   },
   {
     label: "компенсація премії",
-    triggers: ["компенсац", "прем", "ека", "5000", "ліміт", "тариф", "держав"],
+    domain: "war",
+    triggers: ["компенсац", "прем", "ека", "5000", "держав"],
     terms: ["компенсація", "премія", "страхова премія", "ека", "ліміт", "тариф", "державна програма"]
   },
   {
     label: "майно",
-    triggers: ["майно", "склад", "будів", "нерух", "обладн", "товар", "запас", "пожеж", "затоп", "вода"],
-    terms: ["майно", "страхова сума", "застраховане майно", "пожежа", "товарні запаси", "обладнання"]
+    domain: "property",
+    triggers: ["майно", "склад", "будівл", "нерух", "обладн", "товар", "запас", "пожеж", "затоп", "вода", "бізнес", "центр", "офіс", "бц"],
+    terms: ["майно", "комерційне майно", "нерухомість", "бізнес центр", "будівля", "склад", "офіс", "страхова сума", "застраховане майно", "пожежа", "товарні запаси", "обладнання"]
   },
   {
     label: "договір",
@@ -2786,16 +2795,19 @@ const scenarioSearchClusters = [
   },
   {
     label: "відповідальність",
+    domain: "liability",
     triggers: ["відповід", "трет", "шкода", "претенз", "позов", "регрес"],
     terms: ["відповідальність", "шкода третім особам", "претензія", "регрес"]
   },
   {
     label: "вантажі",
+    domain: "cargo",
     triggers: ["вантаж", "перевез", "маршрут", "товар", "порт", "зерно", "морськ"],
     terms: ["вантажі", "перевезення", "маршрут", "товар", "морські вантажі"]
   },
   {
     label: "будівельно-монтажні ризики",
+    domain: "construction",
     triggers: ["будів", "монтаж", "підряд", "об'єкт", "проект", "застереження", "munich"],
     terms: ["будівельно-монтажні ризики", "застереження", "munich re", "підрядник", "об'єкт"]
   },
@@ -2806,22 +2818,67 @@ const scenarioSearchClusters = [
   }
 ];
 
+const scenarioGenericTerms = new Set([
+  "страхуемо",
+  "страхуємо",
+  "страхувати",
+  "застрахувати",
+  "страхування",
+  "страховий",
+  "страхова",
+  "страхове",
+  "страхові",
+  "клієнт",
+  "клієнта",
+  "клієнту",
+  "ситуація",
+  "ситуацію",
+  "потрібно",
+  "треба",
+  "можна",
+  "питає",
+  "питають"
+]);
+
+const scenarioFrontlineRegions = [
+  { name: "Харківська область", markers: ["харків", "харков", "харківсь"] },
+  { name: "Сумська область", markers: ["сумськ", "сумах", "м суми"] },
+  { name: "Чернігівська область", markers: ["чернігів", "чернігов", "чернігівсь"] },
+  { name: "Полтавська область", markers: ["полтав", "полтавсь"] },
+  { name: "Дніпропетровська область", markers: ["дніпропетров", "дніпро", "дніпровсь"] },
+  { name: "Херсонська область", markers: ["херсон", "херсонсь"] },
+  { name: "Одеська область", markers: ["одес", "одеськ"] }
+];
+
+const scenarioWarTextPattern = /(воєн|війна|війни|ракета|бпла|дрон|обстріл|окупац|бойов)/u;
+
 function scenarioQueryProfile() {
   const normalizedQuery = normalizeSemanticText(scenarioSearchTerm);
-  const terms = new Set(splitSearchTerms(scenarioSearchTerm));
+  const terms = new Set(splitSearchTerms(scenarioSearchTerm).filter((term) => !scenarioGenericTerms.has(term)));
   const labels = new Set();
+  const domains = new Set();
+  const frontlineRegions = scenarioFrontlineRegions
+    .filter((region) => region.markers.some((marker) => normalizedQuery.includes(normalizeSemanticText(marker))))
+    .map((region) => region.name);
 
   scenarioSearchClusters.forEach((cluster) => {
     if (cluster.triggers.some((trigger) => normalizedQuery.includes(normalizeSemanticText(trigger)))) {
       labels.add(cluster.label);
+      if (cluster.domain) {
+        domains.add(cluster.domain);
+      }
       cluster.terms.forEach((term) => splitSearchTerms(term).forEach((entry) => terms.add(entry)));
     }
   });
 
   return {
     query: normalizedQuery,
-    terms: uniqueTerms([...terms]).sort((first, second) => second.length - first.length),
-    labels: [...labels]
+    terms: uniqueTerms([...terms].filter((term) => !scenarioGenericTerms.has(term))).sort((first, second) => second.length - first.length),
+    labels: [...labels],
+    domains: [...domains],
+    frontlineRegions,
+    hasCompensationIntent: /(компенсац|держав|ека|прем)/u.test(normalizedQuery),
+    hasWarIntent: /(воєн|війна|ракета|бпла|дрон|обстріл|окупац|бойов)/u.test(normalizedQuery)
   };
 }
 
@@ -2864,6 +2921,10 @@ function scoreScenarioEntry(entry, profile) {
     }
   });
 
+  if (entry.action === "module" && entry.domain && profile.domains.includes(entry.domain)) {
+    score += 180;
+  }
+
   if (entry.action === "state-calculator" && /(ліміт|тариф|розрах|компенсац|прем)/u.test(profile.query)) {
     score += 42;
   }
@@ -2873,6 +2934,49 @@ function scoreScenarioEntry(entry, profile) {
   }
 
   return score;
+}
+
+function scenarioEntryAllowed(entry, profile) {
+  const entryText = scenarioEntryText(entry);
+
+  if (entry.action === "state-guide" || entry.action === "state-calculator") {
+    return profile.hasCompensationIntent && profile.frontlineRegions.length === 0;
+  }
+
+  if (profile.frontlineRegions.length && entry.action !== "module" && /(компенсац|премі|державна програма|ека|як застрахувати|локальні рішення|субліміт)/u.test(entryText)) {
+    return false;
+  }
+
+  if (entry.action !== "module" && !profile.hasWarIntent && !profile.hasCompensationIntent && scenarioWarTextPattern.test(entryText)) {
+    return false;
+  }
+
+  if (profile.domains.length && entry.domain && !profile.domains.includes(entry.domain)) {
+    return false;
+  }
+
+  if (profile.domains.length && !entry.domain && (entry.action === "law" || entry.action === "glossary")) {
+    return profile.labels.includes("закон") || profile.labels.includes("договір");
+  }
+
+  return true;
+}
+
+function scenarioFrontlineWarning(profile) {
+  if (!profile.frontlineRegions.length) {
+    return null;
+  }
+
+  return {
+    id: "frontline-region-warning",
+    category: "Андеррайтинг",
+    title: "Територія потребує окремої перевірки",
+    meta: profile.frontlineRegions.join(" · "),
+    description: `${profile.frontlineRegions.join(", ")}: для воєнних ризиків ці області зараз не варто подавати як стандартний варіант покриття.`,
+    action: "module",
+    lessonId: profile.hasWarIntent || profile.hasCompensationIntent ? "war" : "property",
+    score: 999
+  };
 }
 
 function stateCompensationSearchText(program) {
@@ -2921,6 +3025,7 @@ function scenarioSearchEntries() {
       text: moduleText,
       action: "module",
       lessonId: item.id,
+      domain: item.id,
       boost: 10
     });
 
@@ -2934,6 +3039,7 @@ function scenarioSearchEntries() {
         text: [article.topic, article.why].join(" "),
         action: "external",
         url: article.url,
+        domain: item.id,
         boost: 4
       });
     });
@@ -2952,6 +3058,7 @@ function scenarioSearchEntries() {
         ]).join(" "),
         action: "external",
         url: source.url,
+        domain: item.id,
         boost: 9
       });
     });
@@ -2966,6 +3073,7 @@ function scenarioSearchEntries() {
         text: stateCompensationSearchText(item.stateCompensationProgram),
         action: "state-guide",
         lessonId: item.id,
+        domain: item.id,
         boost: 22
       });
       entries.push({
@@ -2977,6 +3085,7 @@ function scenarioSearchEntries() {
         text: "компенсація премії тариф ліміт страхова сума воєнний ризик ека державна програма розрахунок 3000000",
         action: "state-calculator",
         lessonId: item.id,
+        domain: item.id,
         boost: 24
       });
     }
@@ -3020,6 +3129,7 @@ function scenarioSearchEntries() {
       text: [clause.number, clause.title, ...(clause.paragraphs || [])].join(" "),
       action: "munich",
       clauseId: clause.id,
+      domain: "construction",
       boost: 8
     });
   });
@@ -3035,9 +3145,15 @@ function scenarioSearchResults() {
 
   const results = scenarioSearchEntries()
     .map((entry) => ({ ...entry, score: scoreScenarioEntry(entry, profile) }))
+    .filter((entry) => scenarioEntryAllowed(entry, profile))
     .filter((entry) => entry.score > (entry.boost || 0))
     .sort((first, second) => second.score - first.score || (second.boost || 0) - (first.boost || 0))
-    .slice(0, 9);
+    .slice(0, 6);
+
+  const warning = scenarioFrontlineWarning(profile);
+  if (warning) {
+    results.unshift(warning);
+  }
 
   return { profile, results };
 }
@@ -3087,18 +3203,7 @@ function renderScenarioSearchResults() {
   const { profile, results } = scenarioSearchResults();
 
   if (!profile.terms.length) {
-    node.innerHTML = `
-      <div class="scenario-empty">
-        <p>Опишіть ситуацію простими словами. Άνοδος підкаже, де шукати відповідь.</p>
-        <div class="scenario-examples">
-          ${[
-            "Клієнт страхує склад у Харківській області і питає про компенсацію премії",
-            "Потрібно перевірити винятки в майновому договорі",
-            "Будівельний проєкт і застереження Munich Re"
-          ].map((example) => `<button type="button" data-scenario-example="${escapeHtml(example)}">${escapeHtml(example)}</button>`).join("")}
-        </div>
-      </div>
-    `;
+    node.innerHTML = "";
     return;
   }
 
@@ -5861,6 +5966,7 @@ document.addEventListener("focusin", (event) => {
 document.addEventListener("input", (event) => {
   if (event.target.id === "scenarioSearch") {
     scenarioSearchTerm = event.target.value;
+    body.classList.toggle("scenario-search-active", scenarioSearchTerm.trim().length > 0);
     window.clearTimeout(scenarioSearchTimer);
     scenarioSearchTimer = window.setTimeout(renderScenarioSearchResults, 120);
     return;
