@@ -2314,6 +2314,60 @@ body[data-route="home"] .module-arrow {
   grid-template-columns: 1fr;
 }
 
+.regulatory-source-card {
+  width: 100%;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.regulatory-source-card .article-action {
+  justify-self: end;
+}
+
+.regulatory-document-back {
+  width: fit-content;
+  margin-bottom: 16px;
+}
+
+.regulatory-document-lead {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.regulatory-document-section {
+  margin-top: 20px;
+}
+
+.regulatory-document-section h3 {
+  margin: 0 0 10px;
+  color: var(--navy);
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.regulatory-document-section ul {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding-left: 20px;
+  color: var(--ink);
+}
+
+.regulatory-document-section li {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.regulatory-source-note {
+  margin-top: 22px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
 .law-toolbar p {
   margin: 0;
   color: var(--green);

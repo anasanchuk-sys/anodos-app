@@ -1127,43 +1127,169 @@ const lessons = [
         title: "Закон України «Про правовий режим воєнного стану»",
         type: "Закон України",
         url: "https://zakon.rada.gov.ua/go/389-19",
-        why: "Потрібен для розуміння правового режиму воєнного стану, обмежень і контексту подій, які можуть впливати на покриття."
+        why: "Потрібен для розуміння правового режиму воєнного стану, обмежень і контексту подій, які можуть впливати на покриття.",
+        document: [
+          {
+            heading: "Для чого в страховому аналізі",
+            paragraphs: [
+              "Цей акт не створює страхове покриття сам по собі. Його функція в аналізі - дати правову рамку, в якій відбувалася подія: дата, режим, повноваження військового командування, обмеження правового режиму та контекст дій державних органів.",
+              "Для майнового або фінансового договору це допоміжний документ: він пояснює середовище події, але відповідь про покриття завжди треба шукати в договорі, правилах, застереженнях і підтвердженні андеррайтера."
+            ]
+          },
+          {
+            heading: "Що перевіряти",
+            points: [
+              "чи діяв воєнний стан на дату події;",
+              "чи пов'язана подія з військовими діями, рішеннями військового командування або обмеженнями режиму;",
+              "чи не підміняється правовий режим воєнного стану страховим покриттям воєнного ризику;",
+              "чи має значення режим воєнного стану для строків, повідомлень, доступу до об'єкта або документів."
+            ]
+          }
+        ]
       },
       {
         title: "Закон України про правовий режим тимчасово окупованої території",
         type: "Закон України",
         url: "https://zakon.rada.gov.ua/go/1207-18",
-        why: "Дає правову рамку для територій, щодо яких у договорах часто встановлюються окремі винятки або обмеження."
+        why: "Дає правову рамку для територій, щодо яких у договорах часто встановлюються окремі винятки або обмеження.",
+        document: [
+          {
+            heading: "Для чого в страховому аналізі",
+            paragraphs: [
+              "Документ потрібен, коли місце страхування, місце події або актив Клієнта можуть бути пов'язані з тимчасово окупованою територією. У страхових договорах такі території часто мають окремий режим: виняток, призупинення покриття, неможливість огляду або спеціальні умови врегулювання.",
+              "Сам факт згадки окупованої території в законодавстві не дорівнює автоматичній відмові. Потрібно накласти правовий статус території на конкретний текст договору."
+            ]
+          },
+          {
+            heading: "Що перевіряти",
+            points: [
+              "чи знаходиться об'єкт або місце події на території з особливим правовим режимом;",
+              "який статус території був саме на дату події, а не на дату аналізу;",
+              "чи передбачає договір виняток або обмеження для тимчасово окупованих територій;",
+              "чи можливо документально підтвердити збиток, огляд, причину події і розмір шкоди."
+            ]
+          }
+        ]
       },
       {
         title: "Порядок формування переліку територій бойових дій і тимчасової окупації",
         type: "Постанова КМУ № 1364",
         url: "https://zakon.rada.gov.ua/go/1364-2022-%D0%BF",
-        why: "Пояснює, як формується офіційний перелік територій. Це важливо для перевірки місця події та територіальних винятків."
+        why: "Пояснює, як формується офіційний перелік територій. Це важливо для перевірки місця події та територіальних винятків.",
+        document: [
+          {
+            heading: "Для чого в страховому аналізі",
+            paragraphs: [
+              "Цей документ пояснює, як держава формує перелік територій, на яких ведуться або велися бойові дії, а також тимчасово окупованих територій. Для страхування це не заміна договору, але важлива методична рамка для перевірки статусу місця події.",
+              "Його треба використовувати разом з актуальним переліком територій і текстом конкретного договору."
+            ]
+          },
+          {
+            heading: "Що перевіряти",
+            points: [
+              "який орган формує та оновлює перелік;",
+              "чи має територія статус бойових дій, завершених бойових дій або тимчасової окупації;",
+              "який період застосовується до конкретної території;",
+              "чи договір прив'язує покриття або виняток саме до офіційного переліку."
+            ]
+          }
+        ]
       },
       {
         title: "Актуальний перелік територій бойових дій і тимчасової окупації",
         type: "Наказ № 376",
         url: "https://zakon.rada.gov.ua/go/z0380-25",
-        why: "Практичний документ для перевірки статусу населеного пункту або громади на дату події."
+        why: "Практичний документ для перевірки статусу населеного пункту або громади на дату події.",
+        document: [
+          {
+            heading: "Для чого в страховому аналізі",
+            paragraphs: [
+              "Це практичний документ для перевірки територіального статусу. У страхуванні воєнних ризиків він допомагає відповісти на питання, чи знаходився об'єкт у зоні, яка за договором може бути виключена або потребує окремого погодження.",
+              "Ключова помилка - дивитися тільки поточний статус. Для врегулювання важлива дата події і статус території саме на цю дату."
+            ]
+          },
+          {
+            heading: "Що перевіряти",
+            points: [
+              "населений пункт, громаду, район і область місця події;",
+              "дату початку та завершення відповідного статусу території;",
+              "чи збігається статус території з формулюванням винятку в договорі;",
+              "чи потрібне окреме підтвердження андеррайтера або страховика."
+            ]
+          }
+        ]
       },
       {
         title: "Перелік воєнних та політичних ризиків для страхування ЕКА",
         type: "Постанова КМУ № 388",
         url: "https://zakon.rada.gov.ua/go/388-2024-%D0%BF",
-        why: "Корисна рамка для розуміння, які події держава відносить до воєнних та політичних ризиків у спеціальному режимі страхування."
+        why: "Корисна рамка для розуміння, які події держава відносить до воєнних та політичних ризиків у спеціальному режимі страхування.",
+        document: [
+          {
+            heading: "Для чого в страховому аналізі",
+            paragraphs: [
+              "Цей документ корисний як орієнтир для спеціального державного режиму страхування воєнних та політичних ризиків через ЕКА. Його логіка відрізняється від звичайного майнового договору: тут важливі вид діяльності, інвестиційний або експортний контекст, перелік ризиків і порядок страхування.",
+              "Для консультації Клієнта документ допомагає відрізнити комерційне майнове покриття від спеціального механізму, який працює через Експортно-кредитне агентство."
+            ]
+          },
+          {
+            heading: "Що перевіряти",
+            points: [
+              "чи підпадає ситуація Клієнта під сферу ЕКА;",
+              "який саме ризик заявляється: воєнний, політичний або змішаний;",
+              "чи йдеться про інвестицію, експортний контракт або іншу діяльність, передбачену механізмом;",
+              "чи є окремі умови страхування або перестрахування для відповідного ризику."
+            ]
+          }
+        ]
       },
       {
         title: "Закон України «Про фінансові механізми стимулювання експортної діяльності»",
         type: "Закон України",
         url: "https://zakon.rada.gov.ua/go/1792-19",
-        why: "Важливий для теми Експортно-кредитного агентства, страхування інвестицій, експортних контрактів і воєнно-політичних ризиків."
+        why: "Важливий для теми Експортно-кредитного агентства, страхування інвестицій, експортних контрактів і воєнно-політичних ризиків.",
+        document: [
+          {
+            heading: "Для чого в страховому аналізі",
+            paragraphs: [
+              "Цей закон визначає рамку роботи Експортно-кредитного агентства. Для воєнних ризиків він важливий не як загальний майновий договір, а як правова основа державної підтримки експорту, страхування, перестрахування, гарантування та спеціальних механізмів для експортної діяльності.",
+              "Його варто відкривати, коли запит Клієнта стосується експорту, інвестицій, зовнішнього контракту або можливості залучити державний інструмент замість класичного ринкового покриття."
+            ]
+          },
+          {
+            heading: "Що перевіряти",
+            points: [
+              "чи є у Клієнта експортний або інвестиційний контекст;",
+              "чи може ЕКА бути релевантним інструментом для цього ризику;",
+              "чи йдеться про страхування, перестрахування, гарантію або компенсаційний механізм;",
+              "які обмеження можуть бути встановлені спеціальними актами Кабінету Міністрів."
+            ]
+          }
+        ]
       },
       {
         title: "Компенсація пошкодженого майна та премій за договорами страхування від воєнних ризиків",
         type: "Постанова КМУ № 1541",
         url: "https://zakon.rada.gov.ua/go/1541-2025-%D0%BF",
-        why: "Дає контекст державної підтримки бізнесу у випадках пошкодження майна та компенсації частини премій за воєнні ризики."
+        why: "Дає контекст державної підтримки бізнесу у випадках пошкодження майна та компенсації частини премій за воєнні ризики.",
+        document: [
+          {
+            heading: "Для чого в страховому аналізі",
+            paragraphs: [
+              "Цей акт стосується державної підтримки бізнесу у випадках знищення або пошкодження майна внаслідок збройної агресії, а також компенсації частини страхових премій за договорами страхування від воєнних ризиків.",
+              "Для брокера це не замінює договір страхування, але може бути окремим напрямом допомоги Клієнту: чи є право на компенсацію, які документи потрібні і чи може страхова премія частково компенсуватися."
+            ]
+          },
+          {
+            heading: "Що перевіряти",
+            points: [
+              "чи підпадає Клієнт під коло суб'єктів, яким може надаватися підтримка;",
+              "чи відповідає майно або страховий договір умовам компенсаційного механізму;",
+              "які документи потрібні для підтвердження пошкодження, знищення або сплати премії;",
+              "чи не дублюється компенсація з іншими джерелами відшкодування."
+            ]
+          }
+        ]
       }
     ],
     briefing: [
@@ -1638,6 +1764,7 @@ let activeLawEntryId = "preamble";
 let lawSearchTimer = null;
 let regulatoryBaseSearchTerm = "";
 let regulatoryBaseSearchTimer = null;
+let activeRegulatoryBaseSourceId = "";
 let glossarySearchTerm = "";
 let glossaryResultsExpanded = false;
 let activeGlossaryTermId = "glossary-abandonment";
@@ -2803,14 +2930,14 @@ function renderArticleCards(item) {
 
 function renderRegulatoryBaseCards(item) {
   return filteredRegulatoryBaseSources(item).map((source) => `
-    <article class="article-card article-card-text">
+    <button class="article-card contract-template-card regulatory-source-card" type="button" data-open-regulatory-source="${escapeHtml(source.url)}">
       <div>
         <span class="article-topic">${escapeHtml(source.type)}</span>
         <h3>${highlightLawText(source.title, regulatoryBaseTerms())}</h3>
         <p>${highlightLawText(source.why, regulatoryBaseTerms())}</p>
       </div>
-      <a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">Відкрити</a>
-    </article>
+      <span class="article-action" aria-hidden="true">Документ</span>
+    </button>
   `).join("");
 }
 
@@ -2845,7 +2972,12 @@ function regulatoryBaseSearchText(source) {
     source.searchText = normalizeSemanticText([
       source.title,
       source.type,
-      source.why
+      source.why,
+      ...(source.document || []).flatMap((section) => [
+        section.heading,
+        ...(section.paragraphs || []),
+        ...(section.points || [])
+      ])
     ].join(" "));
   }
   return source.searchText;
@@ -2871,6 +3003,7 @@ function renderRegulatoryBaseResults(item = getLesson(activeLessonId)) {
   const total = item.regulatoryBase?.length || 0;
   const results = filteredRegulatoryBaseSources(item);
   const terms = regulatoryBaseTerms();
+  const activeSource = (item.regulatoryBase || []).find((source) => source.url === activeRegulatoryBaseSourceId);
 
   if (!results.length) {
     resultsNode.innerHTML = `
@@ -2882,6 +3015,11 @@ function renderRegulatoryBaseResults(item = getLesson(activeLessonId)) {
     return;
   }
 
+  if (activeSource) {
+    resultsNode.innerHTML = renderRegulatoryBaseDocument(activeSource);
+    return;
+  }
+
   resultsNode.innerHTML = `
     <div class="law-toolbar regulatory-base-toolbar">
       <p>${terms.length ? `${results.length} з ${total}` : `${total} джерел`}</p>
@@ -2889,6 +3027,34 @@ function renderRegulatoryBaseResults(item = getLesson(activeLessonId)) {
     <div class="article-list">
       ${renderRegulatoryBaseCards(item)}
     </div>
+  `;
+}
+
+function renderRegulatoryBaseDocument(source) {
+  const terms = regulatoryBaseTerms();
+  const sections = source.document || [];
+
+  return `
+    <section class="law-article-shell regulatory-document-shell" aria-live="polite">
+      <article class="law-article regulatory-document">
+        <button class="secondary-action regulatory-document-back" type="button" data-close-regulatory-source>До списку</button>
+        <p class="section-kicker">${escapeHtml(source.type)}</p>
+        <h2>${highlightLawText(source.title, terms)}</h2>
+        <p class="regulatory-document-lead">${highlightLawText(source.why, terms)}</p>
+        ${sections.map((section) => `
+          <section class="regulatory-document-section">
+            <h3>${highlightLawText(section.heading, terms)}</h3>
+            ${(section.paragraphs || []).map((paragraph) => `<p>${highlightLawText(paragraph, terms)}</p>`).join("")}
+            ${section.points?.length ? `
+              <ul>
+                ${section.points.map((point) => `<li>${highlightLawText(point, terms)}</li>`).join("")}
+              </ul>
+            ` : ""}
+          </section>
+        `).join("")}
+        <p class="regulatory-source-note">Офіційне джерело: Верховна Рада України. Внутрішня версія підготовлена для роботи в Άνοδος.</p>
+      </article>
+    </section>
   `;
 }
 
@@ -4620,11 +4786,31 @@ document.addEventListener("click", async (event) => {
   const lawEntryButton = event.target.closest("[data-law-entry]");
   const lawPrevButton = event.target.closest("[data-law-prev]");
   const lawNextButton = event.target.closest("[data-law-next]");
+  const regulatorySourceButton = event.target.closest("[data-open-regulatory-source]");
+  const regulatorySourceBackButton = event.target.closest("[data-close-regulatory-source]");
   const munichClauseButton = event.target.closest("[data-munich-clause]");
   const munichPrevButton = event.target.closest("[data-munich-prev]");
   const munichNextButton = event.target.closest("[data-munich-next]");
   const taskAnswerButton = event.target.closest("[data-show-task-answer]");
   const taskCheckButton = event.target.closest("[data-check-task-answer]");
+
+  if (regulatorySourceButton) {
+    activeRegulatoryBaseSourceId = regulatorySourceButton.dataset.openRegulatorySource || "";
+    renderRegulatoryBaseResults(getLesson(activeLessonId));
+    window.requestAnimationFrame(() => {
+      document.querySelector(".regulatory-document-shell")?.scrollIntoView({
+        behavior: prefersReducedMotion ? "auto" : "smooth",
+        block: "start"
+      });
+    });
+    return;
+  }
+
+  if (regulatorySourceBackButton) {
+    activeRegulatoryBaseSourceId = "";
+    renderRegulatoryBaseResults(getLesson(activeLessonId));
+    return;
+  }
 
   if (taskAnswerButton) {
     const answerPanel = document.getElementById(taskAnswerButton.getAttribute("aria-controls"));
@@ -4930,6 +5116,7 @@ document.addEventListener("input", (event) => {
 
   if (event.target.id === "regulatoryBaseSearch") {
     regulatoryBaseSearchTerm = event.target.value;
+    activeRegulatoryBaseSourceId = "";
     window.clearTimeout(regulatoryBaseSearchTimer);
     regulatoryBaseSearchTimer = window.setTimeout(() => {
       renderRegulatoryBaseResults(getLesson(activeLessonId));
