@@ -3221,9 +3221,90 @@ function renderStateCompensationProgram(item) {
         <h2>${escapeHtml(program.title)}</h2>
         <p>${escapeHtml(program.updated)}</p>
       </header>
+      ${renderStateCompensationCalculator()}
       ${program.sections.map(renderStateCompensationSection).join("")}
     </article>
   `;
+}
+
+function renderStateCompensationCalculator() {
+  return `
+    <section class="state-program-section state-compensation-calculator" aria-label="Калькулятор компенсації">
+      <p class="article-topic">Калькулятор</p>
+      <h3>Розрахувати суму компенсації</h3>
+      <p>Вкажіть ліміт відповідальності або страхову суму за воєнним ризиком і тариф у відсотках.</p>
+      <div class="state-calculator-grid">
+        <label>
+          <span>Ліміт відповідальності, грн</span>
+          <input id="stateCompensationLimit" type="text" inputmode="decimal" autocomplete="off" placeholder="500 000 000" />
+        </label>
+        <label>
+          <span>Тариф, %</span>
+          <input id="stateCompensationRate" type="text" inputmode="decimal" autocomplete="off" placeholder="2" />
+        </label>
+      </div>
+      <div class="state-calculator-result" aria-live="polite">
+        <span>Сума компенсації</span>
+        <strong id="stateCompensationResult">—</strong>
+        <small id="stateCompensationNote">Формула: (тариф - 1%) × ліміт, але не більше 3 000 000 грн.</small>
+      </div>
+    </section>
+  `;
+}
+
+function parseStateCompensationNumber(value) {
+  const normalized = String(value || "")
+    .replace(/\s/g, "")
+    .replace(",", ".")
+    .replace(/[^\d.]/g, "");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatStateCompensationMoney(value) {
+  return new Intl.NumberFormat("uk-UA", {
+    style: "currency",
+    currency: "UAH",
+    maximumFractionDigits: 2
+  }).format(value);
+}
+
+function updateStateCompensationCalculator() {
+  const limitInput = document.getElementById("stateCompensationLimit");
+  const rateInput = document.getElementById("stateCompensationRate");
+  const resultNode = document.getElementById("stateCompensationResult");
+  const noteNode = document.getElementById("stateCompensationNote");
+
+  if (!limitInput || !rateInput || !resultNode || !noteNode) {
+    return;
+  }
+
+  const limit = parseStateCompensationNumber(limitInput.value);
+  const rate = parseStateCompensationNumber(rateInput.value);
+  const annualCap = 3000000;
+
+  if (!limit || !rate) {
+    resultNode.textContent = "—";
+    noteNode.textContent = "Формула: (тариф - 1%) × ліміт, але не більше 3 000 000 грн.";
+    return;
+  }
+
+  const compensableRate = Math.max(rate - 1, 0) / 100;
+  const calculated = limit * compensableRate;
+  const compensation = Math.min(calculated, annualCap);
+  const premium = limit * rate / 100;
+
+  resultNode.textContent = formatStateCompensationMoney(compensation);
+
+  if (rate <= 1) {
+    noteNode.textContent = `Премія за воєнним ризиком: ${formatStateCompensationMoney(premium)}. Компенсація не виникає, бо тариф не перевищує 1%.`;
+    return;
+  }
+
+  const capNote = calculated > annualCap
+    ? ` Розрахунок дає ${formatStateCompensationMoney(calculated)}, тому застосовано ліміт 3 000 000 грн.`
+    : "";
+  noteNode.textContent = `Премія за воєнним ризиком: ${formatStateCompensationMoney(premium)}. До компенсації: (${rate}% - 1%) × ${formatStateCompensationMoney(limit)}.${capNote}`;
 }
 
 function renderStateCompensationSection(section) {
@@ -5300,6 +5381,11 @@ document.addEventListener("focusin", (event) => {
 });
 
 document.addEventListener("input", (event) => {
+  if (event.target.id === "stateCompensationLimit" || event.target.id === "stateCompensationRate") {
+    updateStateCompensationCalculator();
+    return;
+  }
+
   if (event.target.id === "lawSearch") {
     lawSearchTerm = event.target.value;
     window.clearTimeout(lawSearchTimer);

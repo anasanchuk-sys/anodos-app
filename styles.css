@@ -2420,6 +2420,77 @@ body[data-route="home"] .module-arrow {
   line-height: 1.52;
 }
 
+.state-compensation-calculator {
+  border-color: rgba(46, 139, 104, 0.22);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 251, 247, 0.92));
+}
+
+.state-calculator-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(96px, 0.6fr);
+  gap: 10px;
+}
+
+.state-calculator-grid label {
+  display: grid;
+  gap: 6px;
+}
+
+.state-calculator-grid span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.state-calculator-grid input {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  border: 1px solid rgba(19, 41, 97, 0.12);
+  border-radius: 8px;
+  padding: 0 12px;
+  color: var(--navy);
+  background: rgba(255, 255, 255, 0.9);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 750;
+}
+
+.state-calculator-grid input:focus {
+  border-color: rgba(46, 139, 104, 0.54);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(46, 139, 104, 0.1);
+}
+
+.state-calculator-result {
+  display: grid;
+  gap: 5px;
+  margin-top: 2px;
+  padding: 14px;
+  border-radius: 8px;
+  background: rgba(19, 41, 97, 0.96);
+}
+
+.state-calculator-result span {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.state-calculator-result strong {
+  color: #fff;
+  font-size: 26px;
+  line-height: 1.05;
+}
+
+.state-calculator-result small {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .state-program-points {
   display: grid;
   gap: 8px;
