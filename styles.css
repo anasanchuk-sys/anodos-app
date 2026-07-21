@@ -626,11 +626,13 @@ h3 {
 .scenario-result-list {
   display: grid;
   gap: 8px;
+  min-height: 0;
   max-height: none;
   overflow-y: auto;
   padding-right: 2px;
   overscroll-behavior: contain;
   touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 .scenario-result-card {
@@ -668,10 +670,17 @@ h3 {
 
 .scenario-results-panel {
   display: none;
+  grid-template-rows: minmax(0, 1fr);
   min-height: 0;
   overflow: hidden;
   padding: 10px;
   box-shadow: 0 10px 24px rgba(19, 41, 97, 0.06);
+}
+
+.scenario-results-panel > div {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
 }
 
 .hero-metric {
@@ -1414,6 +1423,18 @@ body[data-route="home"] .scenario-result-card p {
 body[data-route="home"].scenario-search-active .scenario-results-panel {
   display: grid;
   min-height: 0;
+  touch-action: pan-y;
+}
+
+body[data-route="home"].scenario-search-active .app-shell {
+  touch-action: pan-y;
+}
+
+body[data-route="home"].scenario-search-active .scenario-result-list {
+  min-height: 0;
+  overflow-y: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 body[data-route="home"].scenario-search-active .module-grid {
