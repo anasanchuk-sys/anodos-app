@@ -2937,14 +2937,14 @@ function renderArticleCards(item) {
 
 function renderRegulatoryBaseCards(item) {
   return filteredRegulatoryBaseSources(item).map((source) => `
-    <button class="article-card contract-template-card regulatory-source-card" type="button" data-open-regulatory-source="${escapeHtml(source.id)}">
+    <a class="article-card contract-template-card regulatory-source-card" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">
       <div>
         <span class="article-topic">${escapeHtml(source.type)}</span>
         <h3>${highlightLawText(source.title, regulatoryBaseTerms())}</h3>
         <p>${highlightLawText(source.why, regulatoryBaseTerms())}</p>
       </div>
-      <span class="article-action" aria-hidden="true">Документ</span>
-    </button>
+      <span class="article-action" aria-hidden="true">Відкрити</span>
+    </a>
   `).join("");
 }
 
@@ -2974,23 +2974,12 @@ function regulatoryBaseTerms() {
     .filter(Boolean);
 }
 
-function getWarRegulatoryDocument(sourceId) {
-  const documents = window.warRegulatoryData?.documents || [];
-  return documents.find((document) => document.id === sourceId);
-}
-
 function regulatoryBaseSearchText(source) {
   if (!source.searchText) {
-    const fullDocument = getWarRegulatoryDocument(source.id);
-
     source.searchText = normalizeSemanticText([
       source.title,
       source.type,
       source.why,
-      fullDocument?.title,
-      fullDocument?.type,
-      fullDocument?.sourceLabel,
-      ...(fullDocument?.paragraphs || []),
       ...(source.document || []).flatMap((section) => [
         section.heading,
         ...(section.paragraphs || []),
@@ -3021,7 +3010,6 @@ function renderRegulatoryBaseResults(item = getLesson(activeLessonId)) {
   const total = item.regulatoryBase?.length || 0;
   const results = filteredRegulatoryBaseSources(item);
   const terms = regulatoryBaseTerms();
-  const activeSource = (item.regulatoryBase || []).find((source) => source.id === activeRegulatoryBaseSourceId);
 
   if (!results.length) {
     resultsNode.innerHTML = `
@@ -3030,11 +3018,6 @@ function renderRegulatoryBaseResults(item = getLesson(activeLessonId)) {
         <p>Спробуй інше слово: територія, окупація, воєнний стан, ЕКА, компенсація.</p>
       </div>
     `;
-    return;
-  }
-
-  if (activeSource) {
-    resultsNode.innerHTML = renderRegulatoryBaseDocument(activeSource);
     return;
   }
 
@@ -3050,24 +3033,6 @@ function renderRegulatoryBaseResults(item = getLesson(activeLessonId)) {
 
 function renderRegulatoryBaseDocument(source) {
   const terms = regulatoryBaseTerms();
-  const fullDocument = getWarRegulatoryDocument(source.id);
-
-  if (fullDocument?.paragraphs?.length) {
-    return `
-      <section class="law-article-shell regulatory-document-shell" aria-live="polite">
-        <article class="law-article regulatory-document">
-          <button class="secondary-action regulatory-document-back" type="button" data-close-regulatory-source>До списку</button>
-          <p class="section-kicker">${escapeHtml(fullDocument.type || source.type)}</p>
-          <h2>${highlightLawText(fullDocument.title || source.title, terms)}</h2>
-          <p class="regulatory-document-lead">${escapeHtml(fullDocument.sourceLabel || "Офіційна база Верховної Ради України")} · локальна офлайн-копія для Άνοδος</p>
-          <div class="law-body regulatory-document-text">
-            ${fullDocument.paragraphs.map((paragraph) => `<p>${highlightLawText(paragraph, terms)}</p>`).join("")}
-          </div>
-        </article>
-      </section>
-    `;
-  }
-
   const sections = source.document || [];
 
   return `
