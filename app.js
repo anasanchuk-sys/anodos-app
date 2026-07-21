@@ -1903,7 +1903,6 @@ const progressByUserKey = "anodos-progress-by-user-v1";
 const centralParticipantsKey = "anodos-central-participants-v1";
 const accuracyReportsKey = "anodos-accuracy-reports-v1";
 const contractAccessPassword = "02022004";
-const contentReviewDate = "22.07.2026";
 
 let route = "home";
 let activeLessonId = "property";
@@ -2174,16 +2173,6 @@ function quizReportId(scope, lessonId, questionIndex) {
   return `${scope}:${lessonId}:${questionIndex}`;
 }
 
-function quizTrustSource(scope, item) {
-  if (scope === "law") {
-    return "ЗУпС + внутрішня редакція";
-  }
-  if (item?.id === "property") {
-    return "Внутрішня експертна редакція";
-  }
-  return "Внутрішня редакція продукту";
-}
-
 function renderAccuracyReportForm(reportId) {
   return `
     <div class="accuracy-report-form" data-accuracy-report-form="${escapeHtml(reportId)}" data-active-report-form>
@@ -2204,17 +2193,12 @@ function renderQuestionTrustBlock(scope, item, question, questionIndex) {
   const reportId = quizReportId(scope, item.id, questionIndex);
   const localReportCount = accuracyReports.filter((report) => report.reportId === reportId).length;
   return `
-    <div class="question-trust-panel">
-      <div class="question-trust-meta" aria-label="Актуальність питання">
-        <span>Актуально на ${contentReviewDate}</span>
-        <span>${escapeHtml(quizTrustSource(scope, item))}</span>
-        <span>Статус: перевірено</span>
-      </div>
+    <div class="question-report-line">
       <button class="trust-report-button" type="button" data-report-issue="${escapeHtml(reportId)}">
         Повідомити про неточність
       </button>
-      ${localReportCount ? `<p class="accuracy-report-saved">За цим питанням є ${localReportCount} локальне зауваження.</p>` : ""}
-      ${accuracyReportSavedId === reportId ? `<p class="accuracy-report-saved">Зауваження збережено локально.</p>` : ""}
+      ${localReportCount ? `<span class="accuracy-report-saved">є локальне зауваження</span>` : ""}
+      ${accuracyReportSavedId === reportId ? `<span class="accuracy-report-saved">збережено локально</span>` : ""}
     </div>
     ${activeAccuracyReportId === reportId ? renderAccuracyReportForm(reportId) : ""}
   `;
@@ -2245,7 +2229,6 @@ function saveAccuracyReport(reportId, note) {
     selectedAnswer: selected === null || selected === undefined ? "" : question.options[selected] || "",
     note,
     status: "new",
-    reviewedAt: contentReviewDate,
     createdAt: new Date().toISOString(),
     userName: user?.fullName || "",
     userEmail: user?.email || ""
