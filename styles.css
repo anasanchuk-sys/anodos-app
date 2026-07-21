@@ -792,6 +792,119 @@ h3 {
   gap: 8px;
 }
 
+.admin-registry-panel {
+  gap: 16px;
+}
+
+.registry-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.registry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.sync-state {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(19, 41, 97, 0.08);
+  border-radius: 8px;
+  color: var(--muted);
+  background: rgba(248, 251, 247, 0.78);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.sync-state-ok {
+  border-color: rgba(46, 139, 104, 0.18);
+  color: var(--green);
+  background: rgba(168, 207, 163, 0.16);
+}
+
+.sync-state-error {
+  border-color: rgba(176, 54, 54, 0.18);
+  color: #8a2d2d;
+  background: rgba(176, 54, 54, 0.06);
+}
+
+.participant-table {
+  overflow-x: auto;
+  border: 1px solid rgba(19, 41, 97, 0.08);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.participant-row {
+  display: grid;
+  grid-template-columns: minmax(178px, 1.45fr) 72px repeat(6, 74px) 86px;
+  min-width: 820px;
+  border-top: 1px solid rgba(19, 41, 97, 0.07);
+}
+
+.participant-row:first-child {
+  border-top: 0;
+}
+
+.participant-row span {
+  display: grid;
+  align-content: center;
+  min-height: 52px;
+  padding: 9px 10px;
+  color: var(--navy);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.participant-row-head span {
+  min-height: 38px;
+  color: var(--green);
+  background: rgba(248, 251, 247, 0.82);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.participant-row strong,
+.participant-row small {
+  display: block;
+}
+
+.participant-row small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.participant-total {
+  color: var(--green) !important;
+  font-size: 15px !important;
+}
+
+.registry-empty {
+  padding: 14px;
+  border: 1px dashed rgba(19, 41, 97, 0.16);
+  border-radius: 8px;
+  background: rgba(248, 251, 247, 0.68);
+}
+
+.registry-empty strong {
+  color: var(--navy);
+  font-size: 15px;
+}
+
 .profile-delete {
   min-height: 30px;
   padding: 0 10px;
@@ -1651,6 +1764,104 @@ body[data-route="home"] .module-arrow {
 .task-question {
   color: var(--navy) !important;
   font-weight: 750;
+}
+
+.task-response-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.task-response-field span {
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.task-response-field textarea {
+  width: 100%;
+  min-height: 132px;
+  padding: 12px;
+  border: 1px solid rgba(19, 41, 97, 0.12);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.86);
+  font-size: 14px;
+  line-height: 1.42;
+  resize: vertical;
+}
+
+.task-check-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  margin-top: 12px;
+  padding: 0 18px;
+  border: 1px solid rgba(46, 139, 104, 0.2);
+  border-radius: 999px;
+  color: var(--navy);
+  background: rgba(168, 207, 163, 0.18);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.task-feedback-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 13px;
+  border: 1px solid rgba(46, 139, 104, 0.16);
+  border-radius: 8px;
+  background: rgba(248, 251, 247, 0.94);
+}
+
+.task-feedback-score {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.task-feedback-score strong {
+  color: var(--green);
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.task-feedback-score span {
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.task-feedback-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.task-feedback-columns > div {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.task-feedback-columns span {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.task-feedback-note {
+  margin: 0 !important;
+  color: var(--muted) !important;
+  font-size: 12px !important;
 }
 
 .task-answer-toggle {
@@ -2669,6 +2880,27 @@ body[data-route="glossary"] .law-search-label input {
   .progress-orb {
     width: 42px;
     height: 42px;
+  }
+
+  .registry-head {
+    grid-template-columns: 1fr;
+  }
+
+  .registry-actions {
+    justify-content: stretch;
+  }
+
+  .registry-actions .primary-action,
+  .registry-actions .secondary-action {
+    width: 100%;
+  }
+
+  .sync-state {
+    display: grid;
+  }
+
+  .task-feedback-columns {
+    grid-template-columns: 1fr;
   }
 
   .partner-lockup {

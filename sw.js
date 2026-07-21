@@ -1,11 +1,12 @@
-const CACHE_NAME = "platform-shell-v116";
+const CACHE_NAME = "platform-shell-v121";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=78",
+  "./styles.css?v=81",
   "./law-data.js?v=3",
   "./munich-re-clauses.js?v=1",
-  "./app.js?v=85",
+  "./sync-config.js?v=1",
+  "./app.js?v=90",
   "./manifest.webmanifest",
   "./assets/icon.svg",
   "./assets/britmark-logo.png"
@@ -67,6 +68,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  const url = new URL(event.request.url);
+  const isFreshAsset =
+    event.request.destination === "script" ||
+    event.request.destination === "style" ||
+    url.pathname.endsWith("/sw.js");
+
   if (event.request.headers.has("range")) {
     event.respondWith(rangeResponse(event.request));
     return;
@@ -74,6 +81,19 @@ self.addEventListener("fetch", (event) => {
 
   if (event.request.mode === "navigate") {
     event.respondWith(fetch(event.request).catch(() => caches.match("./index.html")));
+    return;
+  }
+
+  if (isFreshAsset) {
+    event.respondWith(
+      fetch(event.request).then((response) => {
+        if (response?.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        }
+        return response;
+      }).catch(() => caches.match(event.request))
+    );
     return;
   }
 
