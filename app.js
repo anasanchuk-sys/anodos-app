@@ -2974,12 +2974,23 @@ function regulatoryBaseTerms() {
     .filter(Boolean);
 }
 
+function getWarRegulatoryDocument(sourceId) {
+  const documents = window.warRegulatoryData?.documents || [];
+  return documents.find((document) => document.id === sourceId);
+}
+
 function regulatoryBaseSearchText(source) {
   if (!source.searchText) {
+    const fullDocument = getWarRegulatoryDocument(source.id);
+
     source.searchText = normalizeSemanticText([
       source.title,
       source.type,
       source.why,
+      fullDocument?.title,
+      fullDocument?.type,
+      fullDocument?.sourceLabel,
+      ...(fullDocument?.paragraphs || []),
       ...(source.document || []).flatMap((section) => [
         section.heading,
         ...(section.paragraphs || []),
@@ -3039,6 +3050,24 @@ function renderRegulatoryBaseResults(item = getLesson(activeLessonId)) {
 
 function renderRegulatoryBaseDocument(source) {
   const terms = regulatoryBaseTerms();
+  const fullDocument = getWarRegulatoryDocument(source.id);
+
+  if (fullDocument?.paragraphs?.length) {
+    return `
+      <section class="law-article-shell regulatory-document-shell" aria-live="polite">
+        <article class="law-article regulatory-document">
+          <button class="secondary-action regulatory-document-back" type="button" data-close-regulatory-source>До списку</button>
+          <p class="section-kicker">${escapeHtml(fullDocument.type || source.type)}</p>
+          <h2>${highlightLawText(fullDocument.title || source.title, terms)}</h2>
+          <p class="regulatory-document-lead">${escapeHtml(fullDocument.sourceLabel || "Офіційна база Верховної Ради України")} · локальна офлайн-копія для Άνοδος</p>
+          <div class="law-body regulatory-document-text">
+            ${fullDocument.paragraphs.map((paragraph) => `<p>${highlightLawText(paragraph, terms)}</p>`).join("")}
+          </div>
+        </article>
+      </section>
+    `;
+  }
+
   const sections = source.document || [];
 
   return `
