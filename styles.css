@@ -270,16 +270,17 @@ p {
 
 .brand-lockup > span {
   display: grid;
-  gap: 3px;
-  width: 73px;
+  gap: 0;
+  width: 70px;
   justify-items: stretch;
+  transform: translateY(2px);
 }
 
 .brand-lockup > span::after {
   content: "";
   width: 100%;
   height: 3px;
-  margin-top: 1px;
+  margin-top: -1px;
   border-radius: 999px;
   background:
     radial-gradient(circle at calc(100% - 2px) 50%, var(--amber) 0 2px, transparent 2.2px),
@@ -321,20 +322,8 @@ p {
   color: var(--navy);
   font-size: 19px;
   font-weight: 650;
-  line-height: 1;
+  line-height: 0.98;
   text-align: center;
-}
-
-.brand-subtitle {
-  display: block;
-  width: 100%;
-  color: var(--green);
-  font-size: 5.65px;
-  font-weight: 500;
-  line-height: 1.25;
-  text-align: justify;
-  text-align-last: justify;
-  white-space: nowrap;
 }
 
 .progress-orb {
@@ -3489,8 +3478,8 @@ body[data-route="glossary"] .law-search-label input {
   }
 
   .brand-lockup > span {
-    width: 63px;
-    gap: 3px;
+    width: 66px;
+    gap: 0;
   }
 
   .topbar {
@@ -3531,10 +3520,6 @@ body[data-route="glossary"] .law-search-label input {
 
   .partner-lockup img {
     max-width: 112px;
-  }
-
-  .brand-subtitle {
-    font-size: 5.25px;
   }
 
   .hero-band {
