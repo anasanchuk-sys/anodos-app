@@ -260,7 +260,8 @@ p {
 .brand-lockup {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 6px;
+  min-height: 42px;
   padding: 0;
   color: inherit;
   background: transparent;
@@ -271,16 +272,16 @@ p {
 .brand-lockup > span {
   display: grid;
   gap: 0;
-  width: 70px;
+  width: 72px;
   justify-items: stretch;
-  transform: translateY(2px);
+  transform: translateY(1px);
 }
 
 .brand-lockup > span::after {
   content: "";
   width: 100%;
   height: 3px;
-  margin-top: -1px;
+  margin-top: 0;
   border-radius: 999px;
   background:
     radial-gradient(circle at calc(100% - 2px) 50%, var(--amber) 0 2px, transparent 2.2px),
@@ -288,8 +289,8 @@ p {
 }
 
 .brand-mark {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   flex: 0 0 auto;
 }
 
@@ -320,9 +321,9 @@ p {
   display: block;
   width: 100%;
   color: var(--navy);
-  font-size: 19px;
+  font-size: 20px;
   font-weight: 650;
-  line-height: 0.98;
+  line-height: 0.96;
   text-align: center;
 }
 
@@ -3474,11 +3475,11 @@ body[data-route="glossary"] .law-search-label input {
   }
 
   .brand-name {
-    font-size: 18px;
+    font-size: 19px;
   }
 
   .brand-lockup > span {
-    width: 66px;
+    width: 68px;
     gap: 0;
   }
 
