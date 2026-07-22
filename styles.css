@@ -258,72 +258,23 @@ p {
 }
 
 .brand-lockup {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: grid;
+  place-items: center;
+  justify-content: center;
   min-height: 42px;
   padding: 0;
   color: inherit;
   background: transparent;
-  text-align: left;
-  justify-self: start;
-}
-
-.brand-lockup > span {
-  display: grid;
-  gap: 0;
-  width: 72px;
-  justify-items: stretch;
-  transform: translateY(1px);
-}
-
-.brand-lockup > span::after {
-  content: "";
-  width: 100%;
-  height: 3px;
-  margin-top: 0;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at calc(100% - 2px) 50%, var(--amber) 0 2px, transparent 2.2px),
-    linear-gradient(rgba(46, 139, 104, 0.66) 0 0) 0 50% / calc(100% - 9px) 1px no-repeat;
-}
-
-.brand-mark {
-  width: 38px;
-  height: 38px;
-  flex: 0 0 auto;
-}
-
-.brand-mark circle:first-child {
-  fill: rgba(255, 255, 255, 0.5);
-  stroke: var(--navy);
-  stroke-width: 4.9;
-}
-
-.brand-mark path {
-  fill: none;
-  stroke: var(--navy);
-  stroke-width: 4.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.brand-mark .brand-step {
-  stroke: var(--green);
-  stroke-width: 4.1;
-}
-
-.brand-dot {
-  fill: var(--amber);
+  text-align: center;
+  justify-self: stretch;
 }
 
 .brand-name {
   display: block;
-  width: 100%;
   color: var(--navy);
-  font-size: 20px;
-  font-weight: 650;
-  line-height: 0.96;
+  font-size: 25px;
+  font-weight: 680;
+  line-height: 1;
   text-align: center;
 }
 
@@ -3475,12 +3426,7 @@ body[data-route="glossary"] .law-search-label input {
   }
 
   .brand-name {
-    font-size: 19px;
-  }
-
-  .brand-lockup > span {
-    width: 68px;
-    gap: 0;
+    font-size: 24px;
   }
 
   .topbar {
