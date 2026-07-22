@@ -1,6 +1,6 @@
 {
-  "name": "Anodos",
-  "short_name": "Anodos",
+  "name": "Άνοδος",
+  "short_name": "Άνοδος",
   "description": "Розуміти. Діяти. Рости.",
   "start_url": "./index.html",
   "display": "standalone",
@@ -8,7 +8,7 @@
   "theme_color": "#132961",
   "icons": [
     {
-      "src": "./assets/icon.svg?v=2",
+      "src": "./assets/icon.svg?v=4",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

@@ -7,5 +7,5 @@
   <path d="M228 270.5H284" stroke="#2E8B68" stroke-width="14" stroke-linecap="round"/>
   <path d="M245.5 235.5H266.5" stroke="#2E8B68" stroke-width="14" stroke-linecap="round"/>
   <circle cx="256" cy="148" r="14" fill="#E9B44C"/>
-  <text x="256" y="445" text-anchor="middle" fill="#132961" font-family="Avenir Next, Helvetica Neue, Arial, sans-serif" font-size="54" font-weight="600">Anodos</text>
+  <text x="256" y="445" text-anchor="middle" fill="#132961" font-family="Avenir Next, Helvetica Neue, Arial, sans-serif" font-size="54" font-weight="600">Άνοδος</text>
 </svg>
