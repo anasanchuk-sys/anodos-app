@@ -1204,6 +1204,246 @@ h3 {
   font-weight: 750;
 }
 
+body[data-route="progress"] {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+body[data-route="progress"] .app-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100svh;
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+body[data-route="progress"] button,
+body[data-route="progress"] a {
+  touch-action: manipulation;
+}
+
+body[data-route="progress"] .progress-orb {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+body[data-route="progress"] .screen {
+  display: grid;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.progress-card {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 12px;
+  border: 1px solid rgba(19, 41, 97, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: var(--shadow);
+}
+
+.progress-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 82px;
+}
+
+.progress-hero h1 {
+  max-width: none;
+  margin: 2px 0 4px;
+  font-size: 31px;
+  line-height: 0.98;
+}
+
+.progress-hero p:not(.eyebrow) {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.progress-total-orb {
+  display: grid;
+  place-items: center;
+  width: 66px;
+  height: 66px;
+  border: 1px solid rgba(46, 139, 104, 0.24);
+  border-radius: 50%;
+  color: var(--navy);
+  background: rgba(248, 251, 247, 0.94);
+  font-size: 19px;
+  font-weight: 850;
+}
+
+.progress-profile-compact,
+.progress-profile-edit-card {
+  min-height: 58px;
+  padding: 8px;
+  border: 1px solid rgba(19, 41, 97, 0.08);
+  border-radius: 8px;
+  background: rgba(248, 251, 247, 0.84);
+}
+
+.progress-profile-compact {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+}
+
+.progress-profile-compact .profile-avatar,
+.progress-profile-edit-head .profile-avatar {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+}
+
+.progress-profile-compact h2 {
+  margin: 1px 0 0;
+  overflow: hidden;
+  color: var(--navy);
+  font-size: 15px;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progress-profile-compact p:not(.eyebrow) {
+  margin: 1px 0 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progress-profile-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+.progress-profile-edit {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid rgba(19, 41, 97, 0.08);
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.74);
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.progress-profile-edit-card {
+  display: grid;
+  gap: 8px;
+}
+
+.progress-profile-edit-head,
+.progress-edit-fields {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.progress-edit-fields {
+  grid-template-columns: 1fr 1fr;
+}
+
+.progress-profile-edit-card label {
+  gap: 4px;
+}
+
+.progress-profile-edit-card input {
+  height: 34px;
+  font-size: 13px;
+}
+
+.progress-photo-control strong {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+.progress-module-list {
+  display: grid;
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+  min-height: 0;
+}
+
+.progress-module-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 0;
+  padding: 7px 9px;
+  border: 1px solid rgba(19, 41, 97, 0.07);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.progress-module-copy {
+  display: grid;
+  grid-template-columns: 23px minmax(0, 1fr);
+  gap: 7px;
+  align-items: center;
+  min-width: 0;
+}
+
+.progress-module-index {
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.progress-module-row h3 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--navy);
+  font-size: 13px;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progress-module-row p {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progress-module-row strong {
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 850;
+}
+
 body[data-route="home"] {
   position: fixed;
   inset: 0;
@@ -3431,6 +3671,47 @@ body[data-route="glossary"] .law-search-label input {
   .progress-orb {
     width: 42px;
     height: 42px;
+  }
+
+  .progress-card {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .progress-hero {
+    min-height: 72px;
+  }
+
+  .progress-hero h1 {
+    font-size: 28px;
+  }
+
+  .progress-total-orb {
+    width: 58px;
+    height: 58px;
+    font-size: 17px;
+  }
+
+  .progress-profile-compact {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .progress-profile-actions {
+    grid-column: 1 / -1;
+  }
+
+  .progress-profile-edit {
+    min-height: 24px;
+    padding: 0 8px;
+    font-size: 9px;
+  }
+
+  .progress-module-row {
+    padding: 6px 8px;
+  }
+
+  .progress-module-row p {
+    display: none;
   }
 
   .registry-head {

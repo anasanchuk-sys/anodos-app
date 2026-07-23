@@ -5585,20 +5585,19 @@ function renderAdminRegistry() {
 
 function renderProgress() {
   const user = currentUser();
-  const localProfiles = authorizedUsers();
   const profileDetails = user?.email || "Локальна реєстрація";
+  const total = totalProgress();
   const profileBlock = profileEditMode ? `
-    <section class="profile-panel">
-      <form id="profileEditForm" class="registration-form profile-edit-form">
+    <form id="profileEditForm" class="registration-form profile-edit-form progress-profile-edit-card">
+      <div class="progress-profile-edit-head">
+        ${renderProfileAvatar(user)}
         <p class="eyebrow">Редагувати профіль</p>
-        <div class="profile-photo-field">
-          ${renderProfileAvatar(user, "large")}
-          <label class="profile-photo-control">
-            <span>Фото</span>
-            <input id="profilePhotoInput" name="photo" type="file" accept="image/*" />
-            <strong>${user?.photo ? "Змінити фото" : "Додати фото"}</strong>
-          </label>
-        </div>
+        <label class="profile-photo-control progress-photo-control">
+          <input id="profilePhotoInput" name="photo" type="file" accept="image/*" />
+          <strong>${user?.photo ? "Фото" : "Додати фото"}</strong>
+        </label>
+      </div>
+      <div class="progress-edit-fields">
         <label>
           <span>ПІБ</span>
           <input name="fullName" autocomplete="name" required value="${escapeHtml(user?.fullName || "")}" />
@@ -5607,77 +5606,59 @@ function renderProgress() {
           <span>Email</span>
           <input name="email" type="email" autocomplete="email" autocapitalize="none" spellcheck="false" required value="${escapeHtml(user?.email || "")}" />
         </label>
-        ${loginError ? `<p class="registration-error">${escapeHtml(loginError)}</p>` : ""}
-        <div class="profile-actions">
-          <button class="primary-action" type="submit">Зберегти</button>
-          <button class="secondary-action" type="button" data-cancel-profile-edit>Скасувати</button>
-        </div>
-      </form>
-    </section>
-  ` : `
-    <section class="profile-panel">
-      <div class="profile-summary">
-        ${renderProfileAvatar(user)}
-        <div>
-          <p class="eyebrow">Профіль</p>
-          <h2>${escapeHtml(user?.fullName || "Співробітник")}</h2>
-          <p>${escapeHtml(profileDetails)}</p>
-        </div>
       </div>
-      <div class="profile-actions">
-        <button class="secondary-action" type="button" data-edit-profile>Редагувати профіль</button>
+      ${loginError ? `<p class="registration-error">${escapeHtml(loginError)}</p>` : ""}
+      <div class="progress-profile-actions">
+        <button class="primary-action" type="submit">Зберегти</button>
+        <button class="secondary-action" type="button" data-cancel-profile-edit>Скасувати</button>
+      </div>
+    </form>
+  ` : `
+    <section class="progress-profile-compact">
+      ${renderProfileAvatar(user)}
+      <div>
+        <p class="eyebrow">Профіль</p>
+        <h2>${escapeHtml(user?.fullName || "Співробітник")}</h2>
+        <p>${escapeHtml(profileDetails)}</p>
+      </div>
+      <div class="progress-profile-actions">
+        <button class="progress-profile-edit" type="button" data-edit-profile>Редагувати</button>
         ${accuracyReports.length ? `<button class="secondary-action" type="button" data-export-accuracy-reports>Експорт неточностей</button>` : ""}
       </div>
     </section>
   `;
 
   screen.innerHTML = `
-    <section class="hero-band hero-band-compact">
-      <div>
-        <p class="eyebrow">Прогрес</p>
-        <h1>${totalProgress()}% програми</h1>
-        <p class="hero-copy">${escapeHtml(user?.fullName || "Профіль")} · оцінка складається з проходження модулів і результатів тестів.</p>
+    <section class="progress-card">
+      <div class="progress-hero">
+        <div>
+          <p class="eyebrow">Прогрес</p>
+          <h1>${total}% програми</h1>
+          <p>Оцінка складається з проходження модулів і результатів тестів.</p>
+        </div>
+        <div class="progress-total-orb">${total}%</div>
       </div>
-    </section>
 
-    ${profileBlock}
+      ${profileBlock}
 
-    ${renderAdminRegistry()}
-
-    <section class="analytics-grid">
-      ${lessons.map((item) => {
+      <section class="progress-module-list" aria-label="Прогрес за продуктами">
+        ${lessons.map((item) => {
         const stored = progress[item.id];
         const percent = moduleProgress(item);
         return `
-          <article class="analytics-row">
-            <div>
-              <span class="module-index">${item.index}</span>
-              <h3>${escapeHtml(item.shortTitle)}</h3>
-              <p>${stored?.score ? `тест: ${stored.score}%` : item.focus}</p>
+          <article class="progress-module-row">
+            <div class="progress-module-copy">
+              <span class="progress-module-index">${item.index}</span>
+              <div>
+                <h3>${escapeHtml(item.shortTitle)}</h3>
+                <p>${stored?.score ? `тест ${stored.score}%` : item.focus}</p>
+              </div>
             </div>
-            <div class="analytics-value">${percent}%</div>
+            <strong>${percent}%</strong>
           </article>
         `;
       }).join("")}
-    </section>
-
-    <section class="profile-panel">
-      <div>
-        <p class="eyebrow">Локальний список</p>
-        <h2>${localProfiles.length} ${profileWord(localProfiles.length)}</h2>
-        <p>Це список профілів з робочою поштою BritMark, створених саме на цьому пристрої. Для загального реєстру використай експорт.</p>
-      </div>
-      <div class="profile-list">
-        ${localProfiles.map((item) => `
-          <div class="profile-row">
-            <div>
-              <strong>${escapeHtml(item.fullName)}</strong>
-              <span>${escapeHtml(item.email || "локальний профіль")}</span>
-            </div>
-            <button class="profile-delete" type="button" data-delete-user="${escapeHtml(item.id)}">Видалити</button>
-          </div>
-        `).join("")}
-      </div>
+      </section>
     </section>
   `;
 }
