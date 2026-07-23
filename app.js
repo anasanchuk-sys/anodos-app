@@ -3508,18 +3508,32 @@ function renderModuleCard(item) {
   `;
 }
 
+function renderModuleContextHead({ item, eyebrow, title, copy, backAttributes, className = "" }) {
+  const headClasses = ["module-head", "module-context-head", "primary-tab-card", className].filter(Boolean).join(" ");
+  return `
+    <section class="${headClasses}">
+      <button class="ghost-button module-back-button" type="button" ${backAttributes} aria-label="Назад">←</button>
+      <div class="module-context-copy">
+        <p class="eyebrow">${escapeHtml(eyebrow)}</p>
+        <h1>${escapeHtml(title)}</h1>
+        <p class="hero-copy">${escapeHtml(copy)}</p>
+      </div>
+      <span class="module-head-icon module-icon module-icon-${escapeHtml(item.id)}" aria-hidden="true">${renderModuleIcon(item.id)}</span>
+    </section>
+  `;
+}
+
 function renderModule(item) {
   const draft = draftFor(item.id);
   const briefing = draft.briefing ? draft.briefing.split("\n").filter(Boolean) : item.briefing;
   screen.innerHTML = `
-    <section class="module-head">
-      <button class="ghost-button" type="button" data-route="home" aria-label="Назад">←</button>
-      <div>
-        <p class="eyebrow">${escapeHtml(item.focus)}</p>
-        <h1>${escapeHtml(draft.title || item.title)}</h1>
-        <p class="hero-copy">${escapeHtml(draft.outcome || item.outcome)}</p>
-      </div>
-    </section>
+    ${renderModuleContextHead({
+      item,
+      eyebrow: item.focus,
+      title: draft.title || item.title,
+      copy: draft.outcome || item.outcome,
+      backAttributes: 'data-route="home"'
+    })}
 
     ${renderModuleSectionMenu(item, briefing)}
   `;
@@ -3654,19 +3668,13 @@ function renderModuleSection(item, sectionId) {
   activeModuleSectionId = section.id;
   const isStateCompensationDetail = section.id === "state-compensation" && activeStateCompensationView;
   screen.innerHTML = `
-    <section class="module-head">
-      <button
-        class="ghost-button"
-        type="button"
-        ${isStateCompensationDetail ? 'data-state-compensation-view=""' : `data-open-module="${escapeHtml(item.id)}"`}
-        aria-label="Назад"
-      >←</button>
-      <div>
-        <p class="eyebrow">${escapeHtml(item.title)}</p>
-        <h1>${escapeHtml(section.title)}</h1>
-        <p class="hero-copy">${escapeHtml(section.meta)}</p>
-      </div>
-    </section>
+    ${renderModuleContextHead({
+      item,
+      eyebrow: item.title,
+      title: section.title,
+      copy: section.meta,
+      backAttributes: isStateCompensationDetail ? 'data-state-compensation-view=""' : `data-open-module="${escapeHtml(item.id)}"`
+    })}
 
     <section class="module-section-content" aria-label="${escapeHtml(section.title)}">
       <div class="article-list">
@@ -4355,14 +4363,13 @@ function renderPresentation(item) {
   const slide = slides[activeSlideIndex] || slides[0];
   const percent = Math.round(((activeSlideIndex + 1) / slides.length) * 100);
   screen.innerHTML = `
-    <section class="module-head">
-      <button class="ghost-button" type="button" data-open-module="${item.id}" aria-label="Назад">←</button>
-      <div>
-        <p class="eyebrow">Відео-презентація</p>
-        <h1>${escapeHtml(item.title)}</h1>
-        <p class="hero-copy">${escapeHtml(item.focus)}</p>
-      </div>
-    </section>
+    ${renderModuleContextHead({
+      item,
+      eyebrow: "Відео-презентація",
+      title: item.title,
+      copy: item.focus,
+      backAttributes: `data-open-module="${escapeHtml(item.id)}"`
+    })}
 
     <section class="presentation-stage" aria-label="Навчальна відео-презентація">
       <div class="presentation-progress" aria-label="Слайд ${activeSlideIndex + 1} з ${slides.length}">
@@ -4430,14 +4437,13 @@ function renderContractTemplateCards(item) {
 
 function renderContractAccess(item) {
   screen.innerHTML = `
-    <section class="module-head">
-      <button class="ghost-button" type="button" data-open-module="${escapeHtml(item.id)}" aria-label="Назад">←</button>
-      <div>
-        <p class="eyebrow">${escapeHtml(item.title)}</p>
-        <h1>Шаблони договорів</h1>
-        <p class="hero-copy">Введіть пароль, щоб відкрити внутрішні шаблони договорів.</p>
-      </div>
-    </section>
+    ${renderModuleContextHead({
+      item,
+      eyebrow: item.title,
+      title: "Шаблони договорів",
+      copy: "Введіть пароль, щоб відкрити внутрішні шаблони договорів.",
+      backAttributes: `data-open-module="${escapeHtml(item.id)}"`
+    })}
 
     <section class="registration-panel contract-access-panel">
       <p class="eyebrow">Доступ до документів</p>
@@ -4471,14 +4477,14 @@ function renderContractTemplateViewer(template) {
   const item = getLesson(template.lessonId || "property");
   const pages = template.pages || [];
   screen.innerHTML = `
-    <section class="module-head contract-viewer-head">
-      <button class="ghost-button" type="button" data-open-module="${escapeHtml(item.id)}" aria-label="Назад">←</button>
-      <div>
-        <p class="eyebrow">Шаблони договорів</p>
-        <h1>${escapeHtml(template.label)}</h1>
-        <p class="hero-copy">DOCX · ${pages.length} сторінок</p>
-      </div>
-    </section>
+    ${renderModuleContextHead({
+      item,
+      eyebrow: "Шаблони договорів",
+      title: template.label,
+      copy: `DOCX · ${pages.length} сторінок`,
+      backAttributes: `data-open-module="${escapeHtml(item.id)}"`,
+      className: "contract-viewer-head"
+    })}
 
     <section class="contract-viewer-panel" style="--contract-page-width: ${contractZoomPercent()};" aria-label="${escapeHtml(template.label)}">
       <div class="contract-viewer-toolbar">
@@ -4520,14 +4526,13 @@ function renderMunichReShelf(item) {
 
 function renderVideoPresentation(item) {
   screen.innerHTML = `
-    <section class="module-head">
-      <button class="ghost-button" type="button" data-open-module="${item.id}" aria-label="Назад">←</button>
-      <div>
-        <p class="eyebrow">Відео-презентація</p>
-        <h1>${escapeHtml(item.title)}</h1>
-        <p class="hero-copy">${escapeHtml(item.focus)}</p>
-      </div>
-    </section>
+    ${renderModuleContextHead({
+      item,
+      eyebrow: "Відео-презентація",
+      title: item.title,
+      copy: item.focus,
+      backAttributes: `data-open-module="${escapeHtml(item.id)}"`
+    })}
 
     <section class="presentation-stage presentation-stage-video" aria-label="Навчальна відео-презентація">
       <div class="presentation-video-frame">
@@ -4591,14 +4596,13 @@ function renderQuiz(item) {
   const answered = Object.values(quizAnswers).filter((value) => value !== null).length;
   const quizTitle = item.quizTitle || item.title;
   screen.innerHTML = `
-    <section class="module-head">
-      <button class="ghost-button" type="button" data-open-module="${item.id}" aria-label="Назад">←</button>
-      <div>
-        <p class="eyebrow">Тест</p>
-        <h1>${escapeHtml(quizTitle)}</h1>
-        <p class="hero-copy">Питання ${answered}/${item.quiz.length}. Прохідний результат: ${item.threshold}%.</p>
-      </div>
-    </section>
+    ${renderModuleContextHead({
+      item,
+      eyebrow: "Тест",
+      title: quizTitle,
+      copy: `Питання ${answered}/${item.quiz.length}. Прохідний результат: ${item.threshold}%.`,
+      backAttributes: `data-open-module="${escapeHtml(item.id)}"`
+    })}
 
     ${item.quizIntro || item.quizSourceUrl ? `
       <section class="quiz-source-strip">
@@ -4663,20 +4667,13 @@ function renderLawQuiz(item) {
 
   const answered = Object.values(quizAnswers).filter((value) => value !== null).length;
   screen.innerHTML = `
-    <section class="module-head">
-      <button
-        class="ghost-button"
-        type="button"
-        data-open-module-section="law-tests"
-        data-module-section-lesson="${escapeHtml(item.id)}"
-        aria-label="Назад"
-      >←</button>
-      <div>
-        <p class="eyebrow">ЗУпС</p>
-        <h1>${escapeHtml(test.title)}</h1>
-        <p class="hero-copy">Питання ${answered}/${test.quiz.length}. Прохідний результат: ${test.threshold}%.</p>
-      </div>
-    </section>
+    ${renderModuleContextHead({
+      item,
+      eyebrow: "ЗУпС",
+      title: test.title,
+      copy: `Питання ${answered}/${test.quiz.length}. Прохідний результат: ${test.threshold}%.`,
+      backAttributes: `data-open-module-section="law-tests" data-module-section-lesson="${escapeHtml(item.id)}"`
+    })}
 
     <section class="quiz-source-strip">
       <p>${escapeHtml(test.intro)}</p>
@@ -5235,14 +5232,13 @@ function shiftMunichClause(direction) {
 function renderMunichClauses() {
   const item = getLesson("construction");
   screen.innerHTML = `
-    <section class="module-head">
-      <button class="ghost-button" type="button" data-open-module="construction" aria-label="Назад">←</button>
-      <div>
-        <p class="eyebrow">${escapeHtml(item.title)}</p>
-        <h1>${escapeHtml(munichReClauses.title || "Застереження Munich Re")}</h1>
-        <p class="hero-copy">Українська редакція. Пошук за практичною ситуацією або ключовим ризиком.</p>
-      </div>
-    </section>
+    ${renderModuleContextHead({
+      item,
+      eyebrow: item.title,
+      title: munichReClauses.title || "Застереження Munich Re",
+      copy: "Українська редакція. Пошук за практичною ситуацією або ключовим ризиком.",
+      backAttributes: 'data-open-module="construction"'
+    })}
 
     <section class="law-search-panel munich-search-panel">
       <label class="law-search-label" for="munichSearch">
