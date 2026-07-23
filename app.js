@@ -2836,7 +2836,7 @@ function renderRegistration() {
 function renderHome() {
   const hasScenarioQuery = scenarioSearchTerm.trim().length > 0;
   screen.innerHTML = `
-    <section class="scenario-search-panel" aria-label="Сценарний пошук">
+    <section class="scenario-search-panel primary-tab-card primary-tab-action" aria-label="Сценарний пошук">
       <label class="scenario-search-label" for="scenarioSearch">
         <span>Сценарій пошуку</span>
         <input
@@ -2854,7 +2854,7 @@ function renderHome() {
       <div id="scenarioSearchResults"></div>
     </section>
 
-    <section class="module-grid" aria-label="Навчальні продукти">
+    <section class="module-grid primary-tab-list" aria-label="Навчальні продукти">
       ${lessons.map(renderModuleCard).join("")}
     </section>
   `;
@@ -4891,20 +4891,19 @@ function currentLawEntry(entries) {
 
 function renderLaw() {
   screen.innerHTML = `
-    <section class="reference-workspace reference-workspace-law">
-      <header class="reference-hero">
-        <div>
-          <p class="eyebrow">ЗУпС</p>
-          <h1>${escapeHtml(insuranceLaw.title)}</h1>
-          <p>Пошук по тексту закону, преамбулі та прикінцевих положеннях.</p>
-        </div>
-        <div class="reference-counter">
-          <strong>${insuranceLaw.articleCount}</strong>
-          <span>статті</span>
-        </div>
-      </header>
-
-      <section class="reference-card">
+    <section class="reference-workspace reference-workspace-law primary-tab-workspace">
+      <section class="reference-card primary-tab-card">
+        <header class="reference-card-head">
+          <div>
+            <p class="eyebrow">ЗУпС</p>
+            <h1>${escapeHtml(insuranceLaw.title)}</h1>
+            <p>Пошук по тексту закону, преамбулі та прикінцевих положеннях.</p>
+          </div>
+          <div class="reference-counter">
+            <strong>${insuranceLaw.articleCount}</strong>
+            <span>статті</span>
+          </div>
+        </header>
         <label class="law-search-label reference-search-label" for="lawSearch">
           <span>Пошук у законі</span>
           <input id="lawSearch" type="search" autocomplete="off" placeholder="франшиза, посередник, клас страхування" value="${escapeHtml(lawSearchTerm)}" />
@@ -5435,20 +5434,19 @@ function setActiveGlossaryTerm(termId) {
 
 function renderGlossary() {
   screen.innerHTML = `
-    <section class="reference-workspace reference-workspace-glossary">
-      <header class="reference-hero">
-        <div>
-          <p class="eyebrow">Словник</p>
-          <h1>Майнове страхування</h1>
-          <p>Терміни, практичні пояснення і пошук за близьким змістом.</p>
-        </div>
-        <div class="reference-counter">
-          <strong>${glossaryTerms.length}</strong>
-          <span>термінів</span>
-        </div>
-      </header>
-
-      <section class="reference-card">
+    <section class="reference-workspace reference-workspace-glossary primary-tab-workspace">
+      <section class="reference-card primary-tab-card">
+        <header class="reference-card-head">
+          <div>
+            <p class="eyebrow">Словник</p>
+            <h1>Майнове страхування</h1>
+            <p>Терміни, практичні пояснення і пошук за близьким змістом.</p>
+          </div>
+          <div class="reference-counter">
+            <strong>${glossaryTerms.length}</strong>
+            <span>термінів</span>
+          </div>
+        </header>
         <label class="law-search-label reference-search-label" for="glossarySearch">
           <span>Пошук у словнику</span>
           <input id="glossarySearch" type="search" autocomplete="off" placeholder="франшиза, інтерес, відшкодування" value="${escapeHtml(glossarySearchTerm)}" />
@@ -5641,7 +5639,7 @@ function renderProgress() {
   `;
 
   screen.innerHTML = `
-    <section class="progress-card">
+    <section class="progress-card primary-tab-card">
       <div class="progress-hero">
         <div>
           <p class="eyebrow">Прогрес</p>

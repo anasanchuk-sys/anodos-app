@@ -3425,10 +3425,26 @@ body[data-route="glossary"] .screen {
   overflow: hidden;
 }
 
+.primary-tab-card {
+  border: 1px solid rgba(19, 41, 97, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: var(--shadow);
+}
+
+.primary-tab-card .eyebrow,
+.scenario-search-label span,
+.law-search-label span {
+  color: var(--green);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .reference-workspace {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 10px;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -3465,8 +3481,8 @@ body[data-route="glossary"] .screen {
   display: grid;
   place-items: center;
   align-content: center;
-  width: 66px;
-  height: 66px;
+  width: 60px;
+  height: 60px;
   border: 1px solid rgba(46, 139, 104, 0.24);
   border-radius: 50%;
   color: var(--navy);
@@ -3475,7 +3491,7 @@ body[data-route="glossary"] .screen {
 
 .reference-counter strong {
   color: var(--navy);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 850;
   line-height: 1;
 }
@@ -3490,15 +3506,34 @@ body[data-route="glossary"] .screen {
 
 .reference-card {
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
-  gap: 10px;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  gap: 9px;
   min-height: 0;
+  height: 100%;
   padding: 12px;
-  border: 1px solid rgba(19, 41, 97, 0.08);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.78);
-  box-shadow: var(--shadow);
   overflow: hidden;
+}
+
+.reference-card-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 76px;
+}
+
+.reference-card-head h1 {
+  max-width: none;
+  margin: 2px 0 5px;
+  font-size: 23px;
+  line-height: 1.05;
+}
+
+.reference-card-head p:not(.eyebrow) {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.3;
 }
 
 .reference-search-label {
