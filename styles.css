@@ -3222,13 +3222,6 @@ body[data-route="home"] .module-arrow {
   padding: 0 10px;
 }
 
-.law-stepper {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
 .law-match-list {
   display: flex;
   gap: 8px;
@@ -3737,11 +3730,6 @@ body[data-route="glossary"] .screen {
   font-size: 12px;
 }
 
-.reference-results .law-stepper {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-}
-
 .reference-results .secondary-action {
   min-height: 32px;
   padding: 0 10px;
@@ -4180,10 +4168,6 @@ body[data-route="glossary"] .screen {
   .reference-search-label input {
     height: 35px;
     font-size: 12px;
-  }
-
-  .reference-results .law-stepper {
-    display: none;
   }
 
   .reference-results .glossary-term-select {

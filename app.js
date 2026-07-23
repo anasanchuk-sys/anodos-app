@@ -4868,15 +4868,6 @@ function setActiveLawEntry(entryId) {
   renderLawContent();
 }
 
-function shiftLawEntry(direction) {
-  const entries = filteredLawEntries();
-  const currentIndex = Math.max(entries.findIndex((entry) => entry.id === activeLawEntryId), 0);
-  const next = entries[Math.min(Math.max(currentIndex + direction, 0), entries.length - 1)];
-  if (next) {
-    setActiveLawEntry(next.id);
-  }
-}
-
 function currentLawEntry(entries) {
   if (!entries.length) {
     return null;
@@ -4966,10 +4957,6 @@ function renderLawContent() {
           <option value="" disabled ${!terms.length && currentIndex === 0 ? "selected" : ""}>Оберіть необхідну статтю</option>
           ${entries.map((entry) => `<option value="${escapeHtml(entry.id)}" ${entry.id === current.id && (terms.length || currentIndex !== 0) ? "selected" : ""}>${escapeHtml(entryLabel(entry))}</option>`).join("")}
         </select>
-        <div class="law-stepper">
-          <button class="secondary-action" type="button" data-law-prev ${currentIndex <= 0 ? "disabled" : ""}>Назад</button>
-          <button class="secondary-action" type="button" data-law-next ${currentIndex >= entries.length - 1 ? "disabled" : ""}>Далі</button>
-        </div>
       </div>
       ${terms.length ? `
         <div class="law-match-list" aria-label="Знайдені статті">
@@ -5719,8 +5706,6 @@ document.addEventListener("click", async (event) => {
   const nextSlideButton = event.target.closest("[data-slide-next]");
   const playButton = event.target.closest("[data-toggle-presentation]");
   const lawEntryButton = event.target.closest("[data-law-entry]");
-  const lawPrevButton = event.target.closest("[data-law-prev]");
-  const lawNextButton = event.target.closest("[data-law-next]");
   const collapseLawSearchButton = event.target.closest("[data-collapse-law-search]");
   const expandLawSearchButton = event.target.closest("[data-expand-law-search]");
   const regulatorySourceButton = event.target.closest("[data-open-regulatory-source]");
@@ -6014,16 +5999,6 @@ document.addEventListener("click", async (event) => {
 
   if (lawEntryButton) {
     setActiveLawEntry(lawEntryButton.dataset.lawEntry);
-    return;
-  }
-
-  if (lawPrevButton) {
-    shiftLawEntry(-1);
-    return;
-  }
-
-  if (lawNextButton) {
-    shiftLawEntry(1);
     return;
   }
 

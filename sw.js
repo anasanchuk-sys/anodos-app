@@ -1,12 +1,12 @@
-const CACHE_NAME = "platform-shell-v160";
+const CACHE_NAME = "platform-shell-v162";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=108",
+  "./styles.css?v=109",
   "./law-data.js?v=3",
   "./munich-re-clauses.js?v=1",
   "./sync-config.js?v=1",
-  "./app.js?v=120",
+  "./app.js?v=121",
   "./manifest.webmanifest?v=4",
   "./assets/icon.svg?v=4",
   "./assets/britmark-logo.png"
