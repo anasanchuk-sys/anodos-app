@@ -4900,10 +4900,6 @@ function renderLaw() {
             <h1>${escapeHtml(insuranceLaw.title)}</h1>
             <p>Пошук по тексту закону, преамбулі та прикінцевих положеннях.</p>
           </div>
-          <div class="reference-counter">
-            <strong>${insuranceLaw.articleCount}</strong>
-            <span>статті</span>
-          </div>
         </header>
         ${lawSearchCollapsed ? `
           <button class="law-search-collapsed-bar" type="button" data-expand-law-search aria-expanded="false">
@@ -4917,7 +4913,7 @@ function renderLaw() {
             </button>
             <label class="law-search-label reference-search-label" for="lawSearch">
               <span>Пошук у законі</span>
-              <input id="lawSearch" type="search" autocomplete="off" placeholder="франшиза, посередник, клас страхування" value="${escapeHtml(lawSearchTerm)}" />
+              <input id="lawSearch" type="search" autocomplete="off" placeholder="Введіть запит для пошуку" value="${escapeHtml(lawSearchTerm)}" />
             </label>
             <div id="lawResults" class="reference-results"></div>
           </section>
@@ -4967,7 +4963,8 @@ function renderLawContent() {
       <div class="law-toolbar">
         <p>${terms.length ? `${entries.length} збігів` : `${insuranceLaw.articleCount} статті`}</p>
         <select id="lawArticleSelect" aria-label="Перейти до статті">
-          ${entries.map((entry) => `<option value="${escapeHtml(entry.id)}" ${entry.id === current.id ? "selected" : ""}>${escapeHtml(entryLabel(entry))}</option>`).join("")}
+          <option value="" disabled ${!terms.length && currentIndex === 0 ? "selected" : ""}>Оберіть необхідну статтю</option>
+          ${entries.map((entry) => `<option value="${escapeHtml(entry.id)}" ${entry.id === current.id && (terms.length || currentIndex !== 0) ? "selected" : ""}>${escapeHtml(entryLabel(entry))}</option>`).join("")}
         </select>
         <div class="law-stepper">
           <button class="secondary-action" type="button" data-law-prev ${currentIndex <= 0 ? "disabled" : ""}>Назад</button>
