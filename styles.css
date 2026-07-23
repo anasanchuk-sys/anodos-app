@@ -3395,6 +3395,241 @@ body[data-route="glossary"] .law-search-label input {
   background: rgba(233, 180, 76, 0.42);
 }
 
+body[data-route="law"],
+body[data-route="glossary"] {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body[data-route="law"] .app-shell,
+body[data-route="glossary"] .app-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100svh;
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body[data-route="law"] .screen,
+body[data-route="glossary"] .screen {
+  display: grid;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.reference-workspace {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.reference-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 102px;
+  padding: 14px;
+  border: 1px solid rgba(19, 41, 97, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: var(--shadow);
+}
+
+.reference-hero h1 {
+  max-width: none;
+  margin: 2px 0 6px;
+  font-size: 25px;
+  line-height: 1.04;
+}
+
+.reference-hero p:not(.eyebrow) {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.reference-counter {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  width: 66px;
+  height: 66px;
+  border: 1px solid rgba(46, 139, 104, 0.24);
+  border-radius: 50%;
+  color: var(--navy);
+  background: rgba(248, 251, 247, 0.94);
+}
+
+.reference-counter strong {
+  color: var(--navy);
+  font-size: 20px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.reference-counter span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.reference-card {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 10px;
+  min-height: 0;
+  padding: 12px;
+  border: 1px solid rgba(19, 41, 97, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.reference-search-label {
+  gap: 5px;
+}
+
+.reference-search-label span {
+  font-size: 9px;
+}
+
+.reference-search-label input {
+  height: 38px;
+  padding: 0 11px;
+  background: rgba(248, 251, 247, 0.88);
+  font-size: 13px;
+}
+
+.reference-results {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+}
+
+.reference-results .law-toolbar {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 7px;
+}
+
+.reference-results .law-toolbar p {
+  font-size: 11px;
+}
+
+.reference-results .law-toolbar select {
+  height: 36px;
+  font-size: 12px;
+}
+
+.reference-results .law-stepper {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.reference-results .secondary-action {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+.reference-results .law-match-list {
+  gap: 6px;
+  margin-top: -2px;
+  padding-bottom: 1px;
+}
+
+.reference-results .law-match {
+  max-width: 190px;
+  padding: 7px 9px;
+  font-size: 11px;
+}
+
+.reference-results .munich-result-summary {
+  gap: 8px;
+}
+
+.reference-results .munich-result-summary strong {
+  font-size: 11px;
+}
+
+.reference-results .munich-result-summary > span {
+  max-width: min(40vw, 170px);
+  padding: 4px 8px;
+  font-size: 10px;
+}
+
+.reference-results .glossary-term-select {
+  min-height: 132px;
+  max-height: 156px;
+  font-size: 12px;
+}
+
+.reference-results .law-empty {
+  border: 0;
+  background: rgba(248, 251, 247, 0.86);
+  box-shadow: none;
+}
+
+.reference-article-shell {
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+.reference-article-shell .law-article {
+  padding: 2px 2px 10px;
+  background: transparent;
+}
+
+.reference-article-shell .section-kicker {
+  font-size: 9px;
+}
+
+.reference-article-shell .law-article h2 {
+  margin: 5px 0 12px;
+  font-size: 21px;
+  line-height: 1.16;
+}
+
+.reference-article-shell .law-body {
+  gap: 10px;
+}
+
+.reference-article-shell .law-body p {
+  font-size: 13px;
+  line-height: 1.48;
+}
+
+.reference-article-shell .glossary-related {
+  gap: 6px;
+}
+
+.reference-article-shell .glossary-related span {
+  min-height: 26px;
+  padding: 5px 8px;
+  font-size: 10px;
+}
+
 .editor-product-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -3712,6 +3947,55 @@ body[data-route="glossary"] .law-search-label input {
 
   .progress-module-row p {
     display: none;
+  }
+
+  .reference-workspace {
+    gap: 8px;
+  }
+
+  .reference-hero {
+    min-height: 88px;
+    padding: 12px;
+  }
+
+  .reference-hero h1 {
+    font-size: 21px;
+  }
+
+  .reference-counter {
+    width: 58px;
+    height: 58px;
+  }
+
+  .reference-counter strong {
+    font-size: 17px;
+  }
+
+  .reference-card {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .reference-search-label input {
+    height: 35px;
+    font-size: 12px;
+  }
+
+  .reference-results .law-stepper {
+    display: none;
+  }
+
+  .reference-results .glossary-term-select {
+    min-height: 108px;
+  }
+
+  .reference-article-shell .law-article h2 {
+    font-size: 18px;
+  }
+
+  .reference-article-shell .law-body p {
+    font-size: 12.5px;
+    line-height: 1.44;
   }
 
   .registry-head {

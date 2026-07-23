@@ -4891,23 +4891,28 @@ function currentLawEntry(entries) {
 
 function renderLaw() {
   screen.innerHTML = `
-    <section class="hero-band hero-band-compact">
-      <div>
-        <p class="eyebrow">ЗУпС</p>
-        <h1>${escapeHtml(insuranceLaw.title)}</h1>
-        <p class="hero-copy">${insuranceLaw.articleCount} статті, преамбула і прикінцеві положення. Пошук працює по окремих словах у всьому тексті.</p>
-      </div>
-    </section>
+    <section class="reference-workspace reference-workspace-law">
+      <header class="reference-hero">
+        <div>
+          <p class="eyebrow">ЗУпС</p>
+          <h1>${escapeHtml(insuranceLaw.title)}</h1>
+          <p>Пошук по тексту закону, преамбулі та прикінцевих положеннях.</p>
+        </div>
+        <div class="reference-counter">
+          <strong>${insuranceLaw.articleCount}</strong>
+          <span>статті</span>
+        </div>
+      </header>
 
-    <section class="law-search-panel">
-      <label class="law-search-label" for="lawSearch">
-        <span>Пошук у законі</span>
-        <input id="lawSearch" type="search" autocomplete="off" placeholder="франшиза, посередник, клас страхування" value="${escapeHtml(lawSearchTerm)}" />
-      </label>
-      <div id="lawResults"></div>
+      <section class="reference-card">
+        <label class="law-search-label reference-search-label" for="lawSearch">
+          <span>Пошук у законі</span>
+          <input id="lawSearch" type="search" autocomplete="off" placeholder="франшиза, посередник, клас страхування" value="${escapeHtml(lawSearchTerm)}" />
+        </label>
+        <div id="lawResults" class="reference-results"></div>
+        <section id="lawArticle" class="law-article-shell reference-article-shell" aria-live="polite"></section>
+      </section>
     </section>
-
-    <section id="lawArticle" class="law-article-shell" aria-live="polite"></section>
   `;
   renderLawContent();
 }
@@ -4966,6 +4971,7 @@ function renderLawContent() {
       </div>
     </article>
   `;
+  articleNode.scrollTop = 0;
 }
 
 const munichSearchClusters = [
@@ -5420,32 +5426,37 @@ function setActiveGlossaryTerm(termId) {
   document.getElementById("glossarySearch")?.blur();
   renderGlossaryContent();
   window.requestAnimationFrame(() => {
-    document.getElementById("glossaryTerm")?.scrollIntoView({
-      behavior: prefersReducedMotion ? "auto" : "smooth",
-      block: "start"
-    });
+    const termNode = document.getElementById("glossaryTerm");
+    if (termNode) {
+      termNode.scrollTop = 0;
+    }
   });
 }
 
 function renderGlossary() {
   screen.innerHTML = `
-    <section class="hero-band hero-band-compact">
-      <div>
-        <p class="eyebrow">Словник</p>
-        <h1>Майнове страхування</h1>
-        <p class="hero-copy">Пошук за терміном, практичною ситуацією або близьким змістом.</p>
-      </div>
-    </section>
+    <section class="reference-workspace reference-workspace-glossary">
+      <header class="reference-hero">
+        <div>
+          <p class="eyebrow">Словник</p>
+          <h1>Майнове страхування</h1>
+          <p>Терміни, практичні пояснення і пошук за близьким змістом.</p>
+        </div>
+        <div class="reference-counter">
+          <strong>${glossaryTerms.length}</strong>
+          <span>термінів</span>
+        </div>
+      </header>
 
-    <section class="law-search-panel glossary-search-panel">
-      <label class="law-search-label" for="glossarySearch">
-        <span>Пошук у словнику</span>
-        <input id="glossarySearch" type="search" autocomplete="off" value="${escapeHtml(glossarySearchTerm)}" />
-      </label>
-      <div id="glossaryResults"></div>
+      <section class="reference-card">
+        <label class="law-search-label reference-search-label" for="glossarySearch">
+          <span>Пошук у словнику</span>
+          <input id="glossarySearch" type="search" autocomplete="off" placeholder="франшиза, інтерес, відшкодування" value="${escapeHtml(glossarySearchTerm)}" />
+        </label>
+        <div id="glossaryResults" class="reference-results"></div>
+        <section id="glossaryTerm" class="law-article-shell reference-article-shell" aria-live="polite"></section>
+      </section>
     </section>
-
-    <section id="glossaryTerm" class="law-article-shell" aria-live="polite"></section>
   `;
   renderGlossaryContent();
 }
@@ -5508,6 +5519,7 @@ function renderGlossaryContent() {
       </div>
     </article>
   `;
+  termNode.scrollTop = 0;
 }
 
 function renderAdminRegistry() {
