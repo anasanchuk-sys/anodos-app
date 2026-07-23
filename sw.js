@@ -1,8 +1,8 @@
-const CACHE_NAME = "platform-shell-v151";
+const CACHE_NAME = "platform-shell-v152";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=100",
+  "./styles.css?v=101",
   "./law-data.js?v=3",
   "./munich-re-clauses.js?v=1",
   "./sync-config.js?v=1",
