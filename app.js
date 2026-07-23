@@ -1922,6 +1922,9 @@ let presentationTimer = null;
 let lawSearchTerm = "";
 let activeLawEntryId = "preamble";
 let lawSearchTimer = null;
+let lawSearchCollapsed = false;
+let lawSearchDragStartY = 0;
+let lawSearchDragPointerId = null;
 let regulatoryBaseSearchTerm = "";
 let regulatoryBaseSearchTimer = null;
 let activeRegulatoryBaseSourceId = "";
@@ -4890,9 +4893,10 @@ function currentLawEntry(entries) {
 }
 
 function renderLaw() {
+  const searchSummary = lawSearchTerm.trim() ? lawSearchTerm.trim() : "Відкрити пошук";
   screen.innerHTML = `
     <section class="reference-workspace reference-workspace-law primary-tab-workspace">
-      <section class="reference-card primary-tab-card">
+      <section class="reference-card reference-card-law primary-tab-card ${lawSearchCollapsed ? "law-search-collapsed" : ""}">
         <header class="reference-card-head">
           <div>
             <p class="eyebrow">ЗУпС</p>
@@ -4904,11 +4908,23 @@ function renderLaw() {
             <span>статті</span>
           </div>
         </header>
-        <label class="law-search-label reference-search-label" for="lawSearch">
-          <span>Пошук у законі</span>
-          <input id="lawSearch" type="search" autocomplete="off" placeholder="франшиза, посередник, клас страхування" value="${escapeHtml(lawSearchTerm)}" />
-        </label>
-        <div id="lawResults" class="reference-results"></div>
+        ${lawSearchCollapsed ? `
+          <button class="law-search-collapsed-bar" type="button" data-expand-law-search aria-expanded="false">
+            <span>Пошук у законі</span>
+            <strong>${escapeHtml(searchSummary)}</strong>
+          </button>
+        ` : `
+          <section class="law-search-drawer" data-law-search-drawer aria-label="Пошук у законі">
+            <button class="law-search-grip" type="button" data-law-search-grip data-collapse-law-search aria-label="Згорнути пошук">
+              <span aria-hidden="true"></span>
+            </button>
+            <label class="law-search-label reference-search-label" for="lawSearch">
+              <span>Пошук у законі</span>
+              <input id="lawSearch" type="search" autocomplete="off" placeholder="франшиза, посередник, клас страхування" value="${escapeHtml(lawSearchTerm)}" />
+            </label>
+            <div id="lawResults" class="reference-results"></div>
+          </section>
+        `}
         <section id="lawArticle" class="law-article-shell reference-article-shell" aria-live="polite"></section>
       </section>
     </section>
@@ -4919,7 +4935,7 @@ function renderLaw() {
 function renderLawContent() {
   const resultsNode = document.getElementById("lawResults");
   const articleNode = document.getElementById("lawArticle");
-  if (!resultsNode || !articleNode) {
+  if (!articleNode) {
     return;
   }
 
@@ -4929,37 +4945,49 @@ function renderLawContent() {
   const currentIndex = current ? entries.findIndex((entry) => entry.id === current.id) : -1;
 
   if (!current) {
-    resultsNode.innerHTML = `
-      <div class="law-empty">
-        <strong>Нічого не знайдено</strong>
-        <p>Спробуй інше слово або прибери частину запиту.</p>
-      </div>
+    if (resultsNode) {
+      resultsNode.innerHTML = `
+        <div class="law-empty">
+          <strong>Нічого не знайдено</strong>
+          <p>Спробуй інше слово або прибери частину запиту.</p>
+        </div>
+      `;
+    }
+    articleNode.innerHTML = `
+      <article class="law-article">
+        <p class="section-kicker">Пошук</p>
+        <h2>Нічого не знайдено</h2>
+        <div class="law-body">
+          <p>Відкрий пошук і спробуй інше слово або прибери частину запиту.</p>
+        </div>
+      </article>
     `;
-    articleNode.innerHTML = "";
     return;
   }
 
-  resultsNode.innerHTML = `
-    <div class="law-toolbar">
-      <p>${terms.length ? `${entries.length} збігів` : `${insuranceLaw.articleCount} статті`}</p>
-      <select id="lawArticleSelect" aria-label="Перейти до статті">
-        ${entries.map((entry) => `<option value="${escapeHtml(entry.id)}" ${entry.id === current.id ? "selected" : ""}>${escapeHtml(entryLabel(entry))}</option>`).join("")}
-      </select>
-      <div class="law-stepper">
-        <button class="secondary-action" type="button" data-law-prev ${currentIndex <= 0 ? "disabled" : ""}>Назад</button>
-        <button class="secondary-action" type="button" data-law-next ${currentIndex >= entries.length - 1 ? "disabled" : ""}>Далі</button>
+  if (resultsNode) {
+    resultsNode.innerHTML = `
+      <div class="law-toolbar">
+        <p>${terms.length ? `${entries.length} збігів` : `${insuranceLaw.articleCount} статті`}</p>
+        <select id="lawArticleSelect" aria-label="Перейти до статті">
+          ${entries.map((entry) => `<option value="${escapeHtml(entry.id)}" ${entry.id === current.id ? "selected" : ""}>${escapeHtml(entryLabel(entry))}</option>`).join("")}
+        </select>
+        <div class="law-stepper">
+          <button class="secondary-action" type="button" data-law-prev ${currentIndex <= 0 ? "disabled" : ""}>Назад</button>
+          <button class="secondary-action" type="button" data-law-next ${currentIndex >= entries.length - 1 ? "disabled" : ""}>Далі</button>
+        </div>
       </div>
-    </div>
-    ${terms.length ? `
-      <div class="law-match-list" aria-label="Знайдені статті">
-        ${entries.slice(0, 16).map((entry) => `
-          <button class="${entry.id === current.id ? "law-match law-match-active" : "law-match"}" type="button" data-law-entry="${escapeHtml(entry.id)}">
-            ${escapeHtml(entryLabel(entry))}
-          </button>
-        `).join("")}
-      </div>
-    ` : ""}
-  `;
+      ${terms.length ? `
+        <div class="law-match-list" aria-label="Знайдені статті">
+          ${entries.slice(0, 16).map((entry) => `
+            <button class="${entry.id === current.id ? "law-match law-match-active" : "law-match"}" type="button" data-law-entry="${escapeHtml(entry.id)}">
+              ${escapeHtml(entryLabel(entry))}
+            </button>
+          `).join("")}
+        </div>
+      ` : ""}
+    `;
+  }
 
   articleNode.innerHTML = `
     <article class="law-article">
@@ -5700,6 +5728,8 @@ document.addEventListener("click", async (event) => {
   const lawEntryButton = event.target.closest("[data-law-entry]");
   const lawPrevButton = event.target.closest("[data-law-prev]");
   const lawNextButton = event.target.closest("[data-law-next]");
+  const collapseLawSearchButton = event.target.closest("[data-collapse-law-search]");
+  const expandLawSearchButton = event.target.closest("[data-expand-law-search]");
   const regulatorySourceButton = event.target.closest("[data-open-regulatory-source]");
   const regulatorySourceBackButton = event.target.closest("[data-close-regulatory-source]");
   const munichClauseButton = event.target.closest("[data-munich-clause]");
@@ -5712,6 +5742,23 @@ document.addEventListener("click", async (event) => {
   const cancelAccuracyReportButton = event.target.closest("[data-cancel-accuracy-report]");
   const scenarioExampleButton = event.target.closest("[data-scenario-example]");
   const scenarioAction = event.target.closest("[data-scenario-action]");
+
+  if (collapseLawSearchButton) {
+    lawSearchCollapsed = true;
+    renderLaw();
+    return;
+  }
+
+  if (expandLawSearchButton) {
+    lawSearchCollapsed = false;
+    renderLaw();
+    window.requestAnimationFrame(() => {
+      const input = document.getElementById("lawSearch");
+      input?.focus();
+      input?.setSelectionRange(input.value.length, input.value.length);
+    });
+    return;
+  }
 
   if (reportIssueButton) {
     activeAccuracyReportId = reportIssueButton.dataset.reportIssue || "";
@@ -6010,6 +6057,14 @@ document.addEventListener("click", async (event) => {
 });
 
 document.addEventListener("pointerdown", (event) => {
+  const lawSearchGrip = event.target.closest("[data-law-search-grip]");
+  if (lawSearchGrip && route === "law") {
+    lawSearchDragStartY = event.clientY;
+    lawSearchDragPointerId = event.pointerId;
+    lawSearchGrip.setPointerCapture?.(event.pointerId);
+    return;
+  }
+
   const munichClauseButton = event.target.closest("[data-munich-clause]");
   if (munichClauseButton) {
     event.preventDefault();
@@ -6053,6 +6108,30 @@ document.addEventListener("pointerdown", (event) => {
   event.preventDefault();
   openModuleButton(moduleButton);
 }, { passive: false });
+
+document.addEventListener("pointerup", (event) => {
+  if (route !== "law" || lawSearchDragPointerId !== event.pointerId || !lawSearchDragStartY) {
+    lawSearchDragStartY = 0;
+    lawSearchDragPointerId = null;
+    return;
+  }
+
+  const dragDelta = event.clientY - lawSearchDragStartY;
+  lawSearchDragStartY = 0;
+  lawSearchDragPointerId = null;
+  if (dragDelta <= -18) {
+    event.preventDefault();
+    lawSearchCollapsed = true;
+    renderLaw();
+  }
+}, { passive: false });
+
+document.addEventListener("pointercancel", (event) => {
+  if (lawSearchDragPointerId === event.pointerId) {
+    lawSearchDragStartY = 0;
+    lawSearchDragPointerId = null;
+  }
+});
 
 document.addEventListener("touchstart", (event) => {
   if (route !== "contract" || !isContractViewerElement(event.target) || event.touches?.length !== 2) {

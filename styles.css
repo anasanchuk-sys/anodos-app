@@ -3514,6 +3514,79 @@ body[data-route="glossary"] .screen {
   overflow: hidden;
 }
 
+.reference-card-law {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.law-search-drawer {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+  padding: 0;
+}
+
+.law-search-grip {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 14px;
+  margin: -4px 0 -3px;
+  padding: 0;
+  border: 0;
+  color: var(--muted);
+  background: transparent;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.law-search-grip span {
+  width: 42px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(19, 41, 97, 0.18);
+}
+
+.law-search-grip:focus-visible {
+  outline: 2px solid rgba(46, 139, 104, 0.34);
+  outline-offset: 2px;
+}
+
+.law-search-collapsed-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgba(46, 139, 104, 0.16);
+  border-radius: 8px;
+  color: var(--navy);
+  background: rgba(248, 251, 247, 0.86);
+  text-align: left;
+}
+
+.law-search-collapsed-bar span {
+  color: var(--green);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.law-search-collapsed-bar strong {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.law-search-collapsed .reference-article-shell {
+  padding-top: 2px;
+}
+
 .reference-card-head {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
