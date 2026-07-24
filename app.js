@@ -5453,7 +5453,7 @@ function renderGlossary() {
         </header>
         <label class="law-search-label reference-search-label" for="glossarySearch">
           <span>Пошук у словнику</span>
-          <input id="glossarySearch" type="search" autocomplete="off" placeholder="франшиза, інтерес, відшкодування" value="${escapeHtml(glossarySearchTerm)}" />
+          <input id="glossarySearch" type="search" autocomplete="off" placeholder="що шукаємо?" value="${escapeHtml(glossarySearchTerm)}" />
         </label>
         <div id="glossaryResults" class="reference-results"></div>
         <section id="glossaryTerm" class="law-article-shell reference-article-shell" aria-live="polite"></section>
