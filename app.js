@@ -5652,10 +5652,9 @@ function renderProgress() {
         <header class="reference-card-head progress-hero">
           <div>
             <p class="eyebrow">Прогрес</p>
-            <h1>${total}% програми</h1>
+            <h1>Програма</h1>
             <p>Оцінка складається з проходження модулів і результатів тестів.</p>
           </div>
-          <div class="progress-total-orb">${total}%</div>
         </header>
 
         ${profileBlock}
