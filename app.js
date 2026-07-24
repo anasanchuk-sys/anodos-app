@@ -4885,19 +4885,20 @@ function renderLaw() {
   screen.innerHTML = `
     <section class="reference-workspace reference-workspace-law primary-tab-workspace">
       <section class="reference-card reference-card-law primary-tab-card ${lawSearchCollapsed ? "law-search-collapsed" : ""}">
-        <header class="reference-card-head">
+        <header class="reference-card-head reference-card-head-law">
           <div>
             <p class="eyebrow">ЗУпС</p>
             <h1>${escapeHtml(insuranceLaw.title)}</h1>
             <p>Пошук по тексту закону, преамбулі та прикінцевих положеннях.</p>
           </div>
+          ${lawSearchCollapsed ? `
+            <button class="law-search-mini-button" type="button" data-expand-law-search aria-expanded="false">
+              <span>Пошук</span>
+              <strong>${escapeHtml(searchSummary)}</strong>
+            </button>
+          ` : ""}
         </header>
-        ${lawSearchCollapsed ? `
-          <button class="law-search-collapsed-bar" type="button" data-expand-law-search aria-expanded="false">
-            <span>Пошук у законі</span>
-            <strong>${escapeHtml(searchSummary)}</strong>
-          </button>
-        ` : `
+        ${lawSearchCollapsed ? "" : `
           <section class="law-search-drawer" data-law-search-drawer aria-label="Пошук у законі">
             <button class="law-search-grip" type="button" data-law-search-grip data-collapse-law-search aria-label="Згорнути пошук">
               <span aria-hidden="true"></span>
