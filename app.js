@@ -5647,35 +5647,37 @@ function renderProgress() {
   `;
 
   screen.innerHTML = `
-    <section class="progress-card primary-tab-card">
-      <div class="progress-hero">
-        <div>
-          <p class="eyebrow">Прогрес</p>
-          <h1>${total}% програми</h1>
-          <p>Оцінка складається з проходження модулів і результатів тестів.</p>
-        </div>
-        <div class="progress-total-orb">${total}%</div>
-      </div>
+    <section class="reference-workspace reference-workspace-progress primary-tab-workspace">
+      <section class="progress-card reference-card primary-tab-card">
+        <header class="reference-card-head progress-hero">
+          <div>
+            <p class="eyebrow">Прогрес</p>
+            <h1>${total}% програми</h1>
+            <p>Оцінка складається з проходження модулів і результатів тестів.</p>
+          </div>
+          <div class="progress-total-orb">${total}%</div>
+        </header>
 
-      ${profileBlock}
+        ${profileBlock}
 
-      <section class="progress-module-list" aria-label="Прогрес за продуктами">
-        ${lessons.map((item) => {
-        const stored = progress[item.id];
-        const percent = moduleProgress(item);
-        return `
-          <article class="progress-module-row">
-            <div class="progress-module-copy">
-              <span class="progress-module-index">${item.index}</span>
-              <div>
-                <h3>${escapeHtml(item.shortTitle)}</h3>
-                <p>${stored?.score ? `тест ${stored.score}%` : item.focus}</p>
+        <section class="progress-module-list" aria-label="Прогрес за продуктами">
+          ${lessons.map((item) => {
+          const stored = progress[item.id];
+          const percent = moduleProgress(item);
+          return `
+            <article class="progress-module-row">
+              <div class="progress-module-copy">
+                <span class="progress-module-index">${item.index}</span>
+                <div>
+                  <h3>${escapeHtml(item.shortTitle)}</h3>
+                  <p>${stored?.score ? `тест ${stored.score}%` : item.focus}</p>
+                </div>
               </div>
-            </div>
-            <strong>${percent}%</strong>
-          </article>
-        `;
-      }).join("")}
+              <strong>${percent}%</strong>
+            </article>
+          `;
+        }).join("")}
+        </section>
       </section>
     </section>
   `;

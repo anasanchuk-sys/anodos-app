@@ -1232,11 +1232,6 @@ body[data-route="progress"] a {
   touch-action: manipulation;
 }
 
-body[data-route="progress"] .progress-orb {
-  visibility: hidden;
-  pointer-events: none;
-}
-
 body[data-route="progress"] .screen {
   display: grid;
   min-height: 0;
@@ -3695,6 +3690,34 @@ body[data-route="glossary"] .screen {
   line-height: 1.3;
 }
 
+.progress-card.reference-card {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.reference-card-head.progress-hero {
+  min-height: 76px;
+}
+
+.reference-card-head.progress-hero h1 {
+  max-width: none;
+  margin: 2px 0 5px;
+  font-size: 23px;
+  line-height: 1.05;
+}
+
+.reference-card-head.progress-hero p:not(.eyebrow) {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.3;
+}
+
+.reference-card-head.progress-hero .progress-total-orb {
+  width: 60px;
+  height: 60px;
+  font-size: 18px;
+}
+
 .reference-search-label {
   gap: 5px;
 }
@@ -4103,11 +4126,11 @@ body[data-route="glossary"] .screen {
   }
 
   .progress-hero {
-    min-height: 72px;
+    min-height: 76px;
   }
 
   .progress-hero h1 {
-    font-size: 28px;
+    font-size: 23px;
   }
 
   .progress-total-orb {
