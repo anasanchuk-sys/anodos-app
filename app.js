@@ -5450,10 +5450,6 @@ function renderGlossary() {
             <h1>Майнове страхування</h1>
             <p>Терміни, практичні пояснення і пошук за близьким змістом.</p>
           </div>
-          <div class="reference-counter">
-            <strong>${glossaryTerms.length}</strong>
-            <span>термінів</span>
-          </div>
         </header>
         <label class="law-search-label reference-search-label" for="glossarySearch">
           <span>Пошук у словнику</span>
