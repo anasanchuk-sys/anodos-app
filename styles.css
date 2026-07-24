@@ -3672,6 +3672,24 @@ body[data-route="glossary"] .screen {
   line-height: 1.3;
 }
 
+.reference-workspace-glossary .reference-card-head,
+.reference-workspace-progress .reference-card-head.progress-hero {
+  min-height: 64px;
+}
+
+.reference-workspace-glossary .reference-card-head h1,
+.reference-workspace-progress .reference-card-head.progress-hero h1 {
+  margin: 1px 0 3px;
+  font-size: 20px;
+  line-height: 1.05;
+}
+
+.reference-workspace-glossary .reference-card-head p:not(.eyebrow),
+.reference-workspace-progress .reference-card-head.progress-hero p:not(.eyebrow) {
+  font-size: 10.5px;
+  line-height: 1.22;
+}
+
 .reference-search-label {
   gap: 5px;
 }
