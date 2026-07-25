@@ -3046,6 +3046,44 @@ function contractReviewFormatDate(value) {
   return `${day}.${month}.${year}`;
 }
 
+function contractReviewDateToTime(value) {
+  const formatted = contractReviewFormatDate(value);
+  const match = formatted.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+  if (!match) {
+    return Number.POSITIVE_INFINITY;
+  }
+  const time = Date.UTC(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+  return Number.isFinite(time) ? time : Number.POSITIVE_INFINITY;
+}
+
+function contractReviewChronologyScore(values, fileRecord) {
+  const startTime = contractReviewDateToTime(values.startDate);
+  const endTime = contractReviewDateToTime(values.endDate);
+  const fallback = Number(fileRecord?.score || fileRecord?.lastModified || 0);
+  return {
+    startTime,
+    endTime,
+    fallback,
+    hasDates: Number.isFinite(startTime) || Number.isFinite(endTime)
+  };
+}
+
+function contractReviewCompareChronology(left, right) {
+  const leftScore = left.chronology || {};
+  const rightScore = right.chronology || {};
+  if (leftScore.hasDates !== rightScore.hasDates) {
+    return leftScore.hasDates ? -1 : 1;
+  }
+  if (leftScore.startTime !== rightScore.startTime) {
+    return leftScore.startTime - rightScore.startTime;
+  }
+  if (leftScore.endTime !== rightScore.endTime) {
+    return leftScore.endTime - rightScore.endTime;
+  }
+  return (leftScore.fallback || 0) - (rightScore.fallback || 0)
+    || left.file.name.localeCompare(right.file.name, "uk");
+}
+
 function contractReviewExtractDateRange(text) {
   const normalized = String(text || "").replace(/\s+/g, " ");
   const datePattern = "(\\d{1,2}[./]\\d{1,2}[./]\\d{2,4})";
@@ -3326,11 +3364,28 @@ async function buildContractReviewResult() {
       return;
     }
 
-    const previous = readableFiles[0];
-    const renewal = readableFiles[readableFiles.length - 1];
-    const supporting = enriched.filter((file) => file.id !== previous.id && file.id !== renewal.id);
-    const previousValues = contractReviewExtractValues(previous.text);
-    const renewalValues = contractReviewExtractValues(renewal.text);
+    const analyzedFiles = readableFiles.map((file) => {
+      const values = contractReviewExtractValues(file.text);
+      return {
+        file,
+        values,
+        chronology: contractReviewChronologyScore(values, file)
+      };
+    }).sort(contractReviewCompareChronology);
+    const previousRecord = analyzedFiles[0];
+    const renewalRecord = analyzedFiles[analyzedFiles.length - 1];
+    const previous = previousRecord.file;
+    const renewal = renewalRecord.file;
+    const selectedFileIds = new Set([previous.id, renewal.id]);
+    const supporting = enriched.filter((file) => !selectedFileIds.has(file.id));
+    const orderedFiles = [
+      previous,
+      ...enriched.filter((file) => !selectedFileIds.has(file.id)),
+      renewal
+    ];
+    contractReviewFiles = orderedFiles;
+    const previousValues = previousRecord.values;
+    const renewalValues = renewalRecord.values;
     const rows = contractReviewFields.map((field) => {
       const previousValue = previousValues[field.key] || "";
       const renewalValue = renewalValues[field.key] || "";
