@@ -258,18 +258,26 @@ p {
   backdrop-filter: blur(18px);
 }
 
+.brand-menu-shell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  width: 132px;
+  min-height: 42px;
+  transform: translateX(calc(var(--logo-spread) * -1));
+}
+
 .brand-lockup {
   display: grid;
   place-items: center;
   justify-content: center;
-  justify-self: center;
-  width: 132px;
+  width: 100%;
   min-height: 42px;
   padding: 0;
   color: inherit;
   background: transparent;
   text-align: center;
-  transform: translateX(calc(var(--logo-spread) * -1));
 }
 
 .brand-name {
@@ -279,6 +287,42 @@ p {
   font-weight: 680;
   line-height: 1;
   text-align: center;
+}
+
+.brand-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 12;
+  display: grid;
+  width: 190px;
+  padding: 6px;
+  border: 1px solid rgba(19, 41, 97, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 42px rgba(19, 41, 97, 0.16);
+  backdrop-filter: blur(18px);
+}
+
+.brand-menu[hidden] {
+  display: none;
+}
+
+.brand-menu button {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--navy);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.brand-menu button:hover,
+.brand-menu button:focus-visible {
+  background: rgba(46, 139, 104, 0.08);
 }
 
 .progress-orb {
@@ -1630,6 +1674,14 @@ body[data-route="home"].scenario-search-active .module-grid {
   display: none;
 }
 
+body[data-route="contract-review"] .app-shell {
+  padding-bottom: 28px;
+}
+
+body[data-route="contract-review"] .bottom-nav {
+  display: none;
+}
+
 body[data-route="home"] .module-grid {
   grid-template-rows: repeat(6, minmax(0, 1fr));
   gap: 6px;
@@ -2597,6 +2649,300 @@ body[data-route="home"] .module-arrow {
   font-weight: 750;
   line-height: 1;
   text-align: center;
+}
+
+.contract-review-workspace {
+  display: grid;
+  gap: 12px;
+}
+
+.contract-review-head,
+.contract-review-files-panel,
+.contract-review-rules,
+.contract-review-result {
+  border: 1px solid rgba(19, 41, 97, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 14px 34px rgba(19, 41, 97, 0.08);
+}
+
+.contract-review-head {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 14px;
+}
+
+.contract-review-head h1 {
+  max-width: none;
+  margin: 1px 0 5px;
+  font-size: 24px;
+  line-height: 1.05;
+}
+
+.contract-review-dropzone {
+  position: relative;
+  display: grid;
+  min-height: 148px;
+  border: 1px dashed rgba(46, 139, 104, 0.38);
+  border-radius: 8px;
+  background: rgba(248, 251, 247, 0.82);
+  transition:
+    border-color 140ms ease,
+    background 140ms ease;
+}
+
+.contract-review-dropzone-active {
+  border-color: rgba(46, 139, 104, 0.82);
+  background: rgba(168, 207, 163, 0.18);
+}
+
+.contract-review-dropzone input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.contract-review-dropzone label {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  padding: 22px;
+  color: var(--muted);
+  text-align: center;
+  pointer-events: none;
+}
+
+.contract-review-dropzone span {
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.contract-review-dropzone strong {
+  color: var(--navy);
+  font-size: 26px;
+  line-height: 1.05;
+}
+
+.contract-review-dropzone small {
+  max-width: 48ch;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.contract-review-files-panel,
+.contract-review-rules,
+.contract-review-result {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.contract-review-panel-head,
+.contract-review-result-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.contract-review-panel-head p {
+  margin: 0;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.contract-review-panel-head button {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(19, 41, 97, 0.1);
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.contract-review-files {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contract-review-file {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 30px;
+  gap: 8px;
+  align-items: center;
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 1px solid rgba(19, 41, 97, 0.07);
+  border-radius: 8px;
+  background: rgba(248, 251, 247, 0.82);
+}
+
+.contract-review-file strong,
+.contract-review-file small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contract-review-file strong {
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.contract-review-file small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.contract-review-file button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(19, 41, 97, 0.08);
+  border-radius: 50%;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.86);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.contract-review-empty,
+.contract-review-note,
+.contract-review-supporting,
+.contract-review-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.contract-review-status {
+  color: var(--green);
+  font-weight: 900;
+}
+
+.contract-review-rules div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.contract-review-rules span {
+  padding: 6px 9px;
+  border: 1px solid rgba(46, 139, 104, 0.16);
+  border-radius: 999px;
+  color: var(--green);
+  background: rgba(248, 251, 247, 0.82);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.contract-review-result-head h2 {
+  margin: 1px 0 0;
+  color: var(--navy);
+  font-size: 24px;
+  line-height: 1.08;
+}
+
+.contract-review-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.contract-review-pair article {
+  display: grid;
+  gap: 4px;
+  min-height: 66px;
+  padding: 10px;
+  border: 1px solid rgba(19, 41, 97, 0.08);
+  border-radius: 8px;
+  background: rgba(248, 251, 247, 0.82);
+}
+
+.contract-review-pair span {
+  color: var(--green);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.contract-review-pair strong {
+  overflow: hidden;
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contract-review-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(19, 41, 97, 0.08);
+  border-radius: 8px;
+  background: white;
+}
+
+.contract-review-table {
+  width: 100%;
+  min-width: 820px;
+  border-collapse: collapse;
+  color: var(--navy);
+  font-size: 12px;
+}
+
+.contract-review-table th,
+.contract-review-table td {
+  min-height: 34px;
+  padding: 9px 10px;
+  border: 1px solid rgba(19, 41, 97, 0.08);
+  text-align: left;
+  vertical-align: top;
+}
+
+.contract-review-table thead th {
+  color: white;
+  background: var(--navy);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.contract-review-table tbody th {
+  width: 180px;
+  color: var(--navy);
+  background: rgba(168, 207, 163, 0.14);
+  font-weight: 900;
+}
+
+.contract-review-table td {
+  min-width: 170px;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.contract-review-table td:last-child {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .criteria-panel {
@@ -4171,10 +4517,18 @@ body[data-route="glossary"] .screen {
     font-size: 24px;
   }
 
-  .brand-lockup,
+  .brand-menu-shell,
   .partner-lockup {
     width: 116px;
     min-height: 38px;
+  }
+
+  .brand-lockup {
+    min-height: 38px;
+  }
+
+  .brand-menu {
+    width: 174px;
   }
 
   .topbar {
