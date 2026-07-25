@@ -2243,14 +2243,14 @@ function contractReviewInitialStatus(fileRecord) {
   }
   if (extension === ".pdf") {
     return window.location.protocol === "file:"
-      ? "PDF у локальному режимі не читається. Для аналізу збережи як DOCX або відкрий HTTPS-версію"
+      ? "PDF у локальному режимі не читається. Для аналізу збережи як DOC/DOCX або відкрий HTTPS-версію"
       : "готовий до аналізу, якщо PDF має текстовий шар";
   }
   if (extension === ".doc") {
     return "готовий до аналізу як старий Word DOC";
   }
   if (extension === ".xls" || extension === ".xlsx") {
-    return "Excel можна додати як супровідний файл, але договір треба завантажити у DOCX";
+    return "Excel можна додати як супровідний файл, але договір треба завантажити у DOC або DOCX";
   }
   return "формат не читається автоматично";
 }
@@ -2299,6 +2299,7 @@ function contractReviewXmlToText(xml) {
 function contractReviewNormalizeText(text) {
   return String(text || "")
     .replace(/\u00a0/g, " ")
+    .replace(/\r/g, "\n")
     .replace(/[ \t]+/g, " ")
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
@@ -2534,7 +2535,7 @@ async function contractReviewReadText(fileRecord) {
       status: text
         ? "PDF прочитано"
         : window.location.protocol === "file:"
-          ? "PDF у локальному file-режимі не читається. Для аналізу збережи як DOCX або відкрий HTTPS-версію"
+          ? "PDF у локальному file-режимі не читається. Для аналізу збережи як DOC/DOCX або відкрий HTTPS-версію"
           : "PDF не містить текстового шару"
     };
   }
@@ -2556,13 +2557,14 @@ async function contractReviewReadText(fileRecord) {
 
   return {
     text: "",
-    status: `${extension.toUpperCase().replace(".", "") || "Файл"} додано, але автозчитування зараз працює для DOCX`
+    status: `${extension.toUpperCase().replace(".", "") || "Файл"} додано, але автозчитування зараз працює для DOC, DOCX і текстових PDF`
   };
 }
 
 function contractReviewCleanValue(value, maxLength = 220) {
   const cleaned = String(value || "")
     .replace(/\u00a0/g, " ")
+    .replace(/\r/g, "\n")
     .replace(/\bFORMTEXT\b/gi, " ")
     .replace(/\s+/g, " ")
     .replace(/^[\s:;,\-–—|]+/, "")
@@ -2584,7 +2586,7 @@ function contractReviewIsPlaceholderValue(value) {
 
 function contractReviewTextLines(text) {
   return String(text || "")
-    .split(/\n+/)
+    .split(/[\r\n]+/)
     .map((line) => contractReviewCleanValue(line, 400))
     .filter(Boolean);
 }
@@ -2631,6 +2633,398 @@ function contractReviewFindContext(lines, patterns, maxLength = 260) {
     return "";
   }
   return contractReviewCleanValue(lines.slice(index, index + 2).join(" "), maxLength);
+}
+
+function contractReviewFindLineIndex(lines, pattern, startIndex = 0) {
+  const regex = pattern instanceof RegExp ? pattern : new RegExp(pattern, "i");
+  return lines.findIndex((line, index) => index >= startIndex && regex.test(line));
+}
+
+function contractReviewNormalizePartyName(value) {
+  const cleaned = contractReviewCleanValue(value, 220)
+    .replace(/\s*\*\s*$/, "")
+    .replace(/\s+"/g, " «")
+    .replace(/"\s*/g, "» ")
+    .replace(/[“”]/g, "«")
+    .replace(/«\s+/g, "«")
+    .replace(/\s+»/g, "»")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleaned) {
+    return "";
+  }
+  if (/приватне акціонерне товариство.*страхова компанія.*універсальна/i.test(cleaned)) {
+    return "ПрАТ СК «Універсальна»";
+  }
+  if (/universalna|універсальна/i.test(cleaned)) {
+    return "ПрАТ СК «Універсальна»";
+  }
+  if (/^акціонерне товариство\s+отп банк$/i.test(cleaned)) {
+    return "АТ «ОТП Банк»";
+  }
+  if (/^товариство з обмеженою відповідальністю\s+магелан миколаїв$/i.test(cleaned)) {
+    return "ТОВ «Магелан Миколаїв»";
+  }
+  if (/^товариство з обмеженою відповідальністю\s+«?магелан миколаїв/i.test(cleaned)) {
+    return "ТОВ «Магелан Миколаїв»";
+  }
+  return cleaned;
+}
+
+function contractReviewLineLooksLikePartyValue(line) {
+  const normalized = contractReviewNormalizeComparable(line).replace(/[()]/g, "").trim();
+  if (!normalized || contractReviewIsPlaceholderValue(line)) {
+    return false;
+  }
+  if (/^\d[\d\s]*$/.test(normalized) || /^ua\d/i.test(normalized)) {
+    return false;
+  }
+  if (/^(в особі|посада|піб|діє|номер|дата|адреса|телефон|код єдрпоу|iban|реквізити|резидент|ідентифікаційний|повна назва|найменування)/i.test(normalized)) {
+    return false;
+  }
+  return /товариство|акціонерне|страхова компанія|банк|universalna|універсальна|магелан|бритмарк|приватне|прат|тов\b/i.test(line);
+}
+
+function contractReviewExtractParty(lines, headingPattern, options = {}) {
+  const startIndex = contractReviewFindLineIndex(lines, headingPattern);
+  if (startIndex < 0) {
+    return "";
+  }
+
+  const values = [];
+  const maxLookahead = options.maxLookahead || 16;
+  for (let index = startIndex + 1; index < Math.min(lines.length, startIndex + 1 + maxLookahead); index += 1) {
+    const line = lines[index];
+    if (/^(страховик|страхувальник|вигодонабувач|предмет договору|договір укладений|страхова сума|перелік страхових)/i.test(line)) {
+      break;
+    }
+    if (!contractReviewLineLooksLikePartyValue(line)) {
+      if (values.length) {
+        break;
+      }
+      continue;
+    }
+    values.push(line);
+    if (/universalna|універсальна|банк|магелан/i.test(line) && values.length >= 2) {
+      break;
+    }
+  }
+
+  return contractReviewNormalizePartyName(values.join(" "));
+}
+
+function contractReviewExtractInsurer(lines) {
+  const byHeader = contractReviewExtractParty(lines, /^страховик$/i);
+  if (byHeader) {
+    return byHeader;
+  }
+
+  const legalBlockIndex = contractReviewFindLineIndex(lines, /юридичні адреси.*реквізити/i);
+  if (legalBlockIndex >= 0) {
+    const fragment = lines.slice(legalBlockIndex, legalBlockIndex + 12).join(" ");
+    if (/універсальна/i.test(fragment)) {
+      return "ПрАТ СК «Універсальна»";
+    }
+  }
+  return "";
+}
+
+function contractReviewExtractInsured(lines) {
+  return contractReviewExtractParty(lines, /^страхувальник$/i, { maxLookahead: 18 });
+}
+
+function contractReviewExtractBeneficiary(lines) {
+  const inlineIndex = contractReviewFindLineIndex(lines, /вигодонабувач/i);
+  if (inlineIndex < 0) {
+    return "";
+  }
+  const values = [];
+  for (let index = inlineIndex + 1; index < Math.min(lines.length, inlineIndex + 10); index += 1) {
+    const line = lines[index];
+    if (/^(в особі|посада|піб|діє|код єдрпоу|ідентифікаційний|адреса|договір укладений|предмет договору)/i.test(line)) {
+      if (values.length) {
+        break;
+      }
+      continue;
+    }
+    if (contractReviewLineLooksLikePartyValue(line)) {
+      values.push(line);
+    }
+    if (/банк/i.test(line) && values.length >= 2) {
+      break;
+    }
+  }
+  return contractReviewNormalizePartyName(values.join(" "));
+}
+
+function contractReviewExtractInsuredAddress(lines) {
+  const propertyIndex = contractReviewFindLineIndex(lines, /майно вважається застрахованим тільки за адресою/i);
+  if (propertyIndex >= 0) {
+    const tail = contractReviewCleanValue(lines[propertyIndex].replace(/^.*майно вважається застрахованим тільки за адресою(?:\s*\([^)]*\))?:?/i, ""), 260);
+    if (tail && !contractReviewIsPlaceholderValue(tail)) {
+      return tail;
+    }
+    for (let offset = 1; offset <= 4; offset += 1) {
+      const line = lines[propertyIndex + offset] || "";
+      if (/перелік страхових|страховим випадком|страхова сума/i.test(line)) {
+        break;
+      }
+      if (/(м\.|місто|обл\.|область|вул\.|вулиц)/i.test(line)) {
+        return contractReviewCleanValue(line, 260);
+      }
+    }
+  }
+
+  return "";
+}
+
+function contractReviewExtractProductName(lines) {
+  const productIndex = contractReviewFindLineIndex(lines, /страхового продукту/i);
+  if (productIndex >= 0) {
+    const sameLine = contractReviewCleanValue(lines[productIndex].replace(/^.*страхового продукту/i, ""), 180);
+    if (sameLine && !/договір|відповідно|зусп/i.test(sameLine)) {
+      return contractReviewNormalizeProductText(sameLine);
+    }
+    const nextLine = lines[productIndex + 1] || "";
+    if (nextLine && !/договір|відповідно|зусп/i.test(nextLine)) {
+      return contractReviewNormalizeProductText(nextLine);
+    }
+  }
+
+  const titleIndex = contractReviewFindLineIndex(lines, /добровільного страхування майна/i);
+  if (titleIndex >= 0) {
+    const fragment = lines.slice(titleIndex, titleIndex + 4).join(" ");
+    const parenthetical = fragment.match(/\((для[^)]+)\)/i);
+    if (parenthetical) {
+      return `Добровільне страхування майна (${contractReviewCleanValue(parenthetical[1], 160).replace(/АТ ОТП Банк/i, "АТ «ОТП Банк»")})`;
+    }
+    return "Добровільне страхування майна";
+  }
+
+  if (lines.some((line) => /страхування майна/i.test(line))) {
+    return "Страхування майна";
+  }
+  return "";
+}
+
+function contractReviewNormalizeProductText(value) {
+  const cleaned = contractReviewCleanValue(value, 180)
+    .replace(/[«»"]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (/предмета іпотеки/i.test(cleaned)) {
+    return "Страхування предмета іпотеки";
+  }
+  return cleaned;
+}
+
+function contractReviewExtractRiskSummary(lines) {
+  const startIndex = contractReviewFindLineIndex(lines, /перелік страхових випадків|страхових ризиків/i);
+  const endIndex = contractReviewFindLineIndex(lines, /страхова сума.*страховий тариф|розмір страхов/i, Math.max(0, startIndex + 1));
+  if (startIndex < 0 || endIndex < 0 || endIndex <= startIndex) {
+    return "";
+  }
+
+  const labels = [];
+  const riskLines = lines.slice(startIndex + 1, endIndex);
+  riskLines.forEach((line) => {
+    const match = line.match(/^([А-ЯІЇЄҐ]{1,3})\.\s*([^:;.]{4,90})/);
+    if (!match) {
+      return;
+    }
+    const description = contractReviewRiskShortName(match[2]);
+    labels.push(`${match[1]} ${description}`);
+  });
+
+  if (!labels.length) {
+    return "";
+  }
+  return contractReviewCleanValue(`Названі ризики: ${labels.join("; ")}`, 320);
+}
+
+function contractReviewRiskShortName(value) {
+  const normalized = String(value || "").toLowerCase();
+  if (/пожеж|вогонь|задим|вибух|блискав/.test(normalized)) {
+    return "вогонь/вибух/блискавка";
+  }
+  if (/стих|природ|зсув|град|сніг|повін|сель|вітер/.test(normalized)) {
+    return "стихійні/природні явища";
+  }
+  if (/осідан|просідан|провал|ґрунт/.test(normalized)) {
+    return "осідання грунту";
+  }
+  if (/землетрус/.test(normalized)) {
+    return "землетрус";
+  }
+  if (/^вплив вод/.test(normalized)) {
+    return "вплив води";
+  }
+  if (/будівниц|реконструкц/.test(normalized)) {
+    return "роботи поряд із застрахованим майном";
+  }
+  if (/аварії|тепло|газопостач|електричн|виробнич/.test(normalized)) {
+    return "аварії інженерних мереж";
+  }
+  if (/вод|рідин|каналіза|опален|пожежогас/.test(normalized)) {
+    return "вплив води";
+  }
+  if (/наїзд|зіткнен|транспорт/.test(normalized)) {
+    return "наїзд/зіткнення ТЗ";
+  }
+  if (/літальн/.test(normalized)) {
+    return "падіння літальних об'єктів";
+  }
+  if (/протиправ|крадіж|грабіж|розбій|хуліган|умисн/.test(normalized)) {
+    return "протиправні дії третіх осіб";
+  }
+  if (/падіння дерев|падіння стовп|падіння.*конструкц/.test(normalized)) {
+    return "падіння дерев/конструкцій";
+  }
+  return contractReviewCleanValue(value, 70).replace(/\s*\(.*/, "");
+}
+
+function contractReviewParseNumber(value) {
+  const normalized = String(value || "")
+    .replace(/\u00a0/g, " ")
+    .replace(/\s/g, "")
+    .replace(",", ".");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function contractReviewFormatMoney(value) {
+  if (!Number.isFinite(value)) {
+    return "";
+  }
+  return `${value.toLocaleString("uk-UA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} грн`;
+}
+
+function contractReviewFormatPercent(value) {
+  if (!Number.isFinite(value)) {
+    return "";
+  }
+  return `${value.toLocaleString("uk-UA", { minimumFractionDigits: 0, maximumFractionDigits: 4 })}%`;
+}
+
+function contractReviewStandaloneNumber(line) {
+  const cleaned = String(line || "").replace(/\u00a0/g, " ").trim();
+  if (/^\d{1,3}(?: \d{3})*(?:,\d{1,4})?$/.test(cleaned) || /^\d+,\d{1,4}$/.test(cleaned)) {
+    return cleaned;
+  }
+  return "";
+}
+
+function contractReviewExtractFinancialValues(lines) {
+  const sectionIndex = contractReviewFindLineIndex(lines, /страхова сума.*страховий тариф.*франшиза/i);
+  const sectionEnd = sectionIndex >= 0
+    ? contractReviewFindLineIndex(lines, /строк дії договору|виключення зі страхових/i, sectionIndex + 1)
+    : -1;
+  const sectionLines = sectionIndex >= 0
+    ? lines.slice(sectionIndex, sectionEnd > sectionIndex ? sectionEnd : sectionIndex + 80)
+    : [];
+  const standalone = sectionLines
+    .map(contractReviewStandaloneNumber)
+    .filter(Boolean)
+    .map((raw) => ({ raw, value: contractReviewParseNumber(raw) }))
+    .filter((item) => Number.isFinite(item.value));
+  const moneyValues = standalone.filter((item) => item.value >= 1000);
+  const explicitRate = standalone.find((item) => item.value > 0 && item.value < 10);
+
+  const sumLineIndex = contractReviewFindLineIndex(lines, /загальна страхова сума складає/i);
+  const premiumLineIndex = contractReviewFindLineIndex(lines, /загальн(ий|а).*?(страховий платіж|страхова премія).*становить/i);
+  const sumInsured = contractReviewExtractMoneyAfterLine(lines, sumLineIndex)
+    || (moneyValues[1] ? contractReviewFormatMoney(moneyValues[1].value) : "");
+
+  const premium = contractReviewExtractMoneyAfterLine(lines, premiumLineIndex)
+    || contractReviewExtractPremiumFromTable(moneyValues, Boolean(explicitRate));
+  const deductible = contractReviewExtractDeductibleFromTable(moneyValues, Boolean(explicitRate));
+  const rate = explicitRate
+    ? contractReviewFormatPercent(explicitRate.value)
+    : contractReviewDeriveRate(sumInsured, premium);
+
+  return { sumInsured, rate, premium, deductible };
+}
+
+function contractReviewExtractMoneyAfterLine(lines, lineIndex) {
+  if (lineIndex < 0) {
+    return "";
+  }
+  for (let offset = 0; offset <= 4; offset += 1) {
+    const line = lines[lineIndex + offset] || "";
+    const match = line.match(/(\d{1,3}(?:[ \u00a0]\d{3})+(?:[,.]\d{1,2})?|\d{4,}(?:[,.]\d{1,2})?)\s*(?:грн)?/i);
+    if (match) {
+      return contractReviewFormatMoney(contractReviewParseNumber(match[1]));
+    }
+  }
+  return "";
+}
+
+function contractReviewExtractPremiumFromTable(moneyValues, hasExplicitRate) {
+  const money = moneyValues.map((item) => item.value).filter((value) => value >= 1000);
+  const premiumIndex = hasExplicitRate ? 2 : 2;
+  return money[premiumIndex] ? contractReviewFormatMoney(money[premiumIndex]) : "";
+}
+
+function contractReviewExtractDeductibleFromTable(moneyValues, hasExplicitRate) {
+  const money = moneyValues.map((item) => item.value).filter((value) => value >= 1000);
+  const deductibleIndex = hasExplicitRate ? 3 : 3;
+  return money[deductibleIndex] ? contractReviewFormatMoney(money[deductibleIndex]) : "";
+}
+
+function contractReviewDeriveRate(sumInsured, premium) {
+  const sum = contractReviewParseNumber(String(sumInsured).replace(/[^\d,.\s]/g, ""));
+  const premiumValue = contractReviewParseNumber(String(premium).replace(/[^\d,.\s]/g, ""));
+  if (!sum || !premiumValue) {
+    return "";
+  }
+  return contractReviewFormatPercent((premiumValue / sum) * 100);
+}
+
+function contractReviewExtractCoverageDatesFromLines(lines) {
+  const candidatePatterns = [
+    /№ періоду страхування|період \(рік\) страхування/i,
+    /строк дії договору/i,
+    /дата початку\s+дата закінчення|дата початку|початок$/i
+  ];
+
+  for (const pattern of candidatePatterns) {
+    const scheduleIndex = contractReviewFindLineIndex(lines, pattern);
+    if (scheduleIndex < 0) {
+      continue;
+    }
+    const fragment = lines.slice(scheduleIndex, scheduleIndex + 18).join(" ");
+    const dates = [...fragment.matchAll(/\d{1,2}[./]\d{1,2}[./]\d{2,4}/g)]
+      .map((match) => contractReviewFormatDate(match[0]))
+      .filter(Boolean);
+    if (dates.length >= 2) {
+      const distinctRange = dates.find((date, index) => index > 0 && date !== dates[0]);
+      if (distinctRange) {
+        return { startDate: dates[0], endDate: distinctRange };
+      }
+    }
+  }
+  return null;
+}
+
+function contractReviewExtractIntermediaryClause(lines) {
+  const index = contractReviewFindLineIndex(lines, /договір укладений за посередництва|страхов(ий|ого) посередник|бритмарк|britmark/i);
+  if (index < 0) {
+    return "";
+  }
+  const collected = [];
+  for (let offset = 0; offset <= 12; offset += 1) {
+    const line = lines[index + offset] || "";
+    if (offset > 0 && /^(зміна інформації|предмет договору|страхова сума|перелік страхових)/i.test(line)) {
+      break;
+    }
+    collected.push(line);
+  }
+  const fragment = collected.join(" ");
+  if (!/бритмарк|britmark|посередництва/i.test(fragment)) {
+    return "";
+  }
+  return contractReviewCleanValue(fragment, 620);
 }
 
 function contractReviewNormalizeComparable(value) {
@@ -2778,36 +3172,48 @@ function contractReviewExtractValuationBasis(text) {
 
 function contractReviewExtractValues(text) {
   const lines = contractReviewTextLines(text);
-  const dateRange = contractReviewExtractDateRange(text);
-  const insurer = contractReviewFindLineValue(lines, ["страховик", "страхова компанія"], { maxLength: 180 });
-  const insured = contractReviewFindLineValue(lines, ["страхувальник", "застрахована особа"], { maxLength: 180 });
+  const dateRange = contractReviewExtractCoverageDatesFromLines(lines) || contractReviewExtractDateRange(text);
+  const financialValues = contractReviewExtractFinancialValues(lines);
+  const insurer = contractReviewExtractInsurer(lines)
+    || contractReviewFindLineValue(lines, ["страховик", "страхова компанія"], { maxLength: 180 });
+  const insured = contractReviewExtractInsured(lines)
+    || contractReviewFindLineValue(lines, ["страхувальник", "застрахована особа"], { maxLength: 180 });
   const contractNumber = contractReviewFindNearPattern(text, ["договір страхування", "договір", "поліс"], /(?:№|N|No\.?)\s*([A-Za-zА-Яа-яІіЇїЄєҐґ0-9/.\-]+)/i, 160)
     || contractReviewFindLineValue(lines, ["№ договору", "номер договору"], { maxLength: 80 });
-
-  return {
-    insured,
-    address: contractReviewFindLineValue(lines, [
+  const address = contractReviewExtractInsuredAddress(lines)
+    || contractReviewFindLineValue(lines, [
       "адреса дії договору",
       "місце дії договору",
       "місце страхування",
       "територія страхування",
       "місцезнаходження майна",
-      "адреса майна",
-      "адреса"
-    ], { maxLength: 260 }),
+      "адреса майна"
+    ], { maxLength: 260 });
+  const product = contractReviewExtractProductName(lines) || contractReviewClassifyProduct(text);
+  const risks = contractReviewExtractRiskSummary(lines) || contractReviewClassifyRisks(text);
+  const beneficiary = contractReviewExtractBeneficiary(lines)
+    || contractReviewFindLineValue(lines, ["вигодонабувач", "вигодоодержувач"], { maxLength: 180 });
+
+  return {
+    insured,
+    address,
     insurer,
     contractNumber,
-    intermediaryClause: contractReviewFindContext(lines, [/посередник/i, /брокер/i, /britmark/i, /бритмарк/i, /надав.*інформац/i], 320),
-    product: contractReviewClassifyProduct(text),
-    beneficiary: contractReviewFindLineValue(lines, ["вигодонабувач", "вигодоодержувач"], { maxLength: 180 }),
+    intermediaryClause: contractReviewExtractIntermediaryClause(lines),
+    product,
+    beneficiary,
     valuationBasis: contractReviewExtractValuationBasis(text),
-    risks: contractReviewClassifyRisks(text),
+    risks,
     startDate: dateRange.startDate,
     endDate: dateRange.endDate,
-    deductible: contractReviewFindLineValue(lines, ["франшиза", "безумовна франшиза", "умовна франшиза"], { maxLength: 180 }),
-    sumInsured: contractReviewFindNearPattern(text, ["загальна страхова сума", "страхова сума", "ліміт відповідальності"], contractReviewAmountPattern(), 420),
-    rate: contractReviewFindNearPattern(text, ["страховий тариф", "тариф"], contractReviewPercentPattern(), 180),
-    premium: contractReviewFindNearPattern(text, ["загальний страховий платіж", "страховий платіж", "страхова премія", "страховий внесок"], contractReviewAmountPattern(), 420)
+    deductible: financialValues.deductible
+      || contractReviewFindLineValue(lines, ["франшиза", "безумовна франшиза", "умовна франшиза"], { maxLength: 180 }),
+    sumInsured: financialValues.sumInsured
+      || contractReviewFindNearPattern(text, ["загальна страхова сума", "страхова сума", "ліміт відповідальності"], contractReviewAmountPattern(), 420),
+    rate: financialValues.rate
+      || contractReviewFindNearPattern(text, ["страховий тариф", "тариф"], contractReviewPercentPattern(), 180),
+    premium: financialValues.premium
+      || contractReviewFindNearPattern(text, ["загальний страховий платіж", "страховий платіж", "страхова премія", "страховий внесок"], contractReviewAmountPattern(), 420)
   };
 }
 
@@ -2913,8 +3319,8 @@ async function buildContractReviewResult() {
         createdAt: new Date().toISOString()
       };
       contractReviewCopyMessage = readableFiles.length
-        ? "Порівняння не запущено: прочитано лише один договір. Додай другий DOCX."
-        : "Порівняння не запущено: Anodos не зміг прочитати текст договорів. Для автоматичного аналізу потрібні два DOCX.";
+        ? "Порівняння не запущено: прочитано лише один договір. Додай другий DOC, DOCX або текстовий PDF."
+        : "Порівняння не запущено: Anodos не зміг прочитати текст договорів. Для автоматичного аналізу потрібні два DOC, DOCX або текстові PDF.";
       contractReviewBusy = false;
       renderContractReview();
       return;
@@ -2952,7 +3358,7 @@ async function buildContractReviewResult() {
       ? `Порівняння сформовано: знайдено ${foundCount} з ${contractReviewFields.length} параметрів.`
       : readableCount
         ? "Документи прочитано, але параметри не знайдені автоматично. Перевір формат договору."
-        : "Не вдалося прочитати текст договорів. Для автоматичного аналізу завантаж DOCX.";
+        : "Не вдалося прочитати текст договорів. Для автоматичного аналізу завантаж DOC, DOCX або текстовий PDF.";
   } finally {
     contractReviewBusy = false;
   }
@@ -3693,8 +4099,8 @@ function renderContractReviewTable() {
   if (!contractReviewResult.foundCount) {
     const title = contractReviewResult.blocked ? "Порівняння не запущено" : "Дані не витягнулися";
     const explanation = contractReviewResult.blocked
-      ? "Anodos не формує порожню таблицю, якщо прочитано менше двох договорів. Додай два договори у DOCX або відкрий HTTPS-версію для PDF з текстовим шаром."
-      : "Anodos не буде показувати порожню таблицю як результат. Перевір формат файлів і завантаж заповнені договори у форматі DOCX або PDF з текстовим шаром.";
+      ? "Anodos не формує порожню таблицю, якщо прочитано менше двох договорів. Додай два договори у DOC, DOCX або PDF з текстовим шаром."
+      : "Anodos не буде показувати порожню таблицю як результат. Перевір формат файлів і завантаж заповнені договори у форматі DOC, DOCX або PDF з текстовим шаром.";
     return `
       <section class="contract-review-result contract-review-diagnostic">
         <header class="contract-review-result-head">
@@ -3707,7 +4113,7 @@ function renderContractReviewTable() {
         <ul class="contract-review-diagnostic-list">
           ${contractReviewResult.statuses.map((status) => `<li>${escapeHtml(status)}</li>`).join("")}
         </ul>
-        <p class="contract-review-note">Якщо файл має формат DOC, відкрий його у Word і вибери «Зберегти як» → DOCX. Якщо PDF є сканом, його треба спочатку розпізнати OCR.</p>
+        <p class="contract-review-note">Якщо PDF є сканом, його треба спочатку розпізнати OCR. Для старих DOC Anodos читає текст напряму, але якість залежить від структури файлу.</p>
       </section>
     `;
   }
@@ -3768,13 +4174,13 @@ function renderContractReview() {
     : contractReviewFiles.length < 2
       ? "Додай два договори"
       : readyFilesCount < 2
-        ? "Потрібен DOCX"
+        ? "Потрібні читабельні файли"
         : "Порівняти";
   const readinessClass = readyFilesCount >= 2 ? "contract-review-readiness" : "contract-review-readiness contract-review-readiness-warning";
   const readinessText = contractReviewFiles.length
     ? readyFilesCount >= 2
       ? `Готові до аналізу: ${readyFilesCount} з ${contractReviewFiles.length}.`
-      : `Готові до аналізу: ${readyFilesCount} з ${contractReviewFiles.length}. Для порівняння потрібні щонайменше два DOCX.`
+      : `Готові до аналізу: ${readyFilesCount} з ${contractReviewFiles.length}. Для порівняння потрібні щонайменше два читабельні договори.`
     : "";
   screen.innerHTML = `
     <section class="contract-review-workspace">
