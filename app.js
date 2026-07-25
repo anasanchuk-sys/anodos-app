@@ -1961,6 +1961,7 @@ let brandMenuOpen = false;
 let contractReviewFiles = [];
 let contractReviewResult = null;
 let contractReviewCopyMessage = "";
+let contractReviewBusy = false;
 let contractZoom = 1;
 let contractPinchStartDistance = 0;
 let contractPinchStartZoom = 1;
@@ -2244,6 +2245,313 @@ function contractReviewScore(file) {
   return Number(file.lastModified || 0);
 }
 
+function contractReviewDecodeEntities(value) {
+  const textarea = document.createElement("textarea");
+  textarea.innerHTML = String(value || "");
+  return textarea.value;
+}
+
+function contractReviewXmlToText(xml) {
+  return contractReviewDecodeEntities(String(xml || "")
+    .replace(/<w:tab\/>/g, "\t")
+    .replace(/<w:br\/>/g, "\n")
+    .replace(/<\/w:tc>/g, " | ")
+    .replace(/<\/w:tr>/g, "\n")
+    .replace(/<\/w:p>/g, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim());
+}
+
+async function contractReviewReadDocx(fileRecord) {
+  if (!window.JSZip) {
+    throw new Error("JSZip не завантажився.");
+  }
+
+  const zip = await window.JSZip.loadAsync(fileRecord.file);
+  const xmlNames = Object.keys(zip.files).filter((name) =>
+    /^word\/(document|header\d+|footer\d+|footnotes|endnotes|comments)\.xml$/i.test(name)
+  );
+  const xmlParts = await Promise.all(xmlNames.map((name) => zip.files[name].async("string")));
+  return xmlParts.map(contractReviewXmlToText).filter(Boolean).join("\n\n");
+}
+
+async function contractReviewReadText(fileRecord) {
+  const extension = contractReviewFileExtension(fileRecord.name);
+  if (extension === ".docx") {
+    return {
+      text: await contractReviewReadDocx(fileRecord),
+      status: "DOCX прочитано"
+    };
+  }
+
+  if (extension === ".txt") {
+    return {
+      text: await fileRecord.file.text(),
+      status: "TXT прочитано"
+    };
+  }
+
+  return {
+    text: "",
+    status: `${extension.toUpperCase().replace(".", "") || "Файл"} додано, але автозчитування зараз працює для DOCX`
+  };
+}
+
+function contractReviewCleanValue(value, maxLength = 220) {
+  const cleaned = String(value || "")
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/^[\s:;,\-–—|]+/, "")
+    .replace(/[\s;,\-–—|]+$/, "")
+    .trim();
+  if (cleaned.length <= maxLength) {
+    return cleaned;
+  }
+  return `${cleaned.slice(0, maxLength).replace(/\s+\S*$/, "")}...`;
+}
+
+function contractReviewTextLines(text) {
+  return String(text || "")
+    .split(/\n+/)
+    .map((line) => contractReviewCleanValue(line, 400))
+    .filter(Boolean);
+}
+
+function contractReviewFindLineValue(lines, labels, options = {}) {
+  const minLength = options.minLength || 2;
+  const maxLength = options.maxLength || 220;
+  const skipValue = /^(так|ні|наявний|відсутній|пункт|розділ)$/i;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const lowerLine = line.toLowerCase();
+    const matchedLabel = labels.find((label) => lowerLine.includes(label.toLowerCase()));
+    if (!matchedLabel) {
+      continue;
+    }
+
+    const labelIndex = lowerLine.indexOf(matchedLabel.toLowerCase());
+    const tail = contractReviewCleanValue(line.slice(labelIndex + matchedLabel.length), maxLength);
+    if (tail.length >= minLength && !skipValue.test(tail)) {
+      return tail;
+    }
+
+    for (let offset = 1; offset <= 3; offset += 1) {
+      const nextLine = lines[index + offset] || "";
+      if (!nextLine) {
+        continue;
+      }
+      const nextLower = nextLine.toLowerCase();
+      const looksLikeAnotherLabel = /страховик|страхувальник|вигодонабувач|франшиза|тариф|платіж|премія|адреса|догов/.test(nextLower);
+      if (!looksLikeAnotherLabel && nextLine.length >= minLength) {
+        return contractReviewCleanValue(nextLine, maxLength);
+      }
+    }
+  }
+
+  return "";
+}
+
+function contractReviewFindContext(lines, patterns, maxLength = 260) {
+  const patternList = patterns.map((pattern) => pattern instanceof RegExp ? pattern : new RegExp(pattern, "i"));
+  const index = lines.findIndex((line) => patternList.some((pattern) => pattern.test(line)));
+  if (index < 0) {
+    return "";
+  }
+  return contractReviewCleanValue(lines.slice(index, index + 2).join(" "), maxLength);
+}
+
+function contractReviewNormalizeComparable(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/[.,;:]+$/g, "")
+    .trim();
+}
+
+function contractReviewFormatDate(value) {
+  const match = String(value || "").match(/(\d{1,2})[./](\d{1,2})[./](\d{2,4})/);
+  if (!match) {
+    return "";
+  }
+  const day = match[1].padStart(2, "0");
+  const month = match[2].padStart(2, "0");
+  const year = match[3].length === 2 ? `20${match[3]}` : match[3];
+  return `${day}.${month}.${year}`;
+}
+
+function contractReviewExtractDateRange(text) {
+  const normalized = String(text || "").replace(/\s+/g, " ");
+  const datePattern = "(\\d{1,2}[./]\\d{1,2}[./]\\d{2,4})";
+  const rangePattern = new RegExp(`(?:з|від)\\s*${datePattern}\\s*(?:до|по|-)\\s*${datePattern}`, "i");
+  const range = normalized.match(rangePattern);
+  if (range) {
+    return {
+      startDate: contractReviewFormatDate(range[1]),
+      endDate: contractReviewFormatDate(range[2])
+    };
+  }
+
+  const dates = [...normalized.matchAll(/\d{1,2}[./]\d{1,2}[./]\d{2,4}/g)]
+    .map((match) => contractReviewFormatDate(match[0]))
+    .filter(Boolean);
+  return {
+    startDate: dates[0] || "",
+    endDate: dates[1] || ""
+  };
+}
+
+function contractReviewAmountPattern() {
+  return /(\d{1,3}(?:[ \u00a0]\d{3})+(?:[,.]\d{1,2})?|\d{4,}(?:[,.]\d{1,2})?)\s*(грн|uah|usd|eur|євро|\$)?/i;
+}
+
+function contractReviewPercentPattern() {
+  return /(\d{1,2}(?:[,.]\d{1,4})?)\s*%/i;
+}
+
+function contractReviewFindNearPattern(text, labels, pattern, maxWindow = 360) {
+  const normalized = String(text || "").replace(/\s+/g, " ");
+  const lowerText = normalized.toLowerCase();
+  for (const label of labels) {
+    const index = lowerText.indexOf(label.toLowerCase());
+    if (index < 0) {
+      continue;
+    }
+    const fragment = normalized.slice(index, index + maxWindow);
+    const match = fragment.match(pattern);
+    if (match) {
+      return contractReviewCleanValue(match[0], 80);
+    }
+  }
+  return "";
+}
+
+function contractReviewClassifyProduct(text) {
+  const normalized = String(text || "").toLowerCase();
+  const products = [];
+  if (/майн|нерухом|будівл|обладнан|pd\b|property/.test(normalized)) {
+    products.push("PD");
+  }
+  if (/перериван|втрата прибут|business interruption|\bbi\b/.test(normalized)) {
+    products.push("BI");
+  }
+  if (/відповідальн|цивільн|tpl\b/.test(normalized)) {
+    products.push("TPL");
+  }
+  if (/воєнн|військов|war\b|терор/.test(normalized)) {
+    products.push("WAR");
+  }
+  if (/вантаж|cargo/.test(normalized)) {
+    products.push("Cargo");
+  }
+  if (/будівельно|монтаж|car\b|ear\b/.test(normalized)) {
+    products.push(/ear\b|монтаж/i.test(text) ? "EAR" : "CAR");
+  }
+  if (/машин|поломк|machinery|mb\b/.test(normalized)) {
+    products.push("MB");
+  }
+  return [...new Set(products)].join(", ");
+}
+
+function contractReviewClassifyRisks(text) {
+  const normalized = String(text || "").toLowerCase();
+  const risks = [];
+  const hasProperty = /майн|нерухом|будівл|обладнан|pd\b|property/.test(normalized);
+  if (/all risks|усіх ризик|всіх ризик|від усіх|від всіх|будь-як(ий|і).*фізичн/.test(normalized)) {
+    risks.push("PD (AR)");
+  }
+  if (/named perils|назван(і|их) ризик|пойменован|перелічен(і|их) ризик/.test(normalized)) {
+    risks.push("PD (NP)");
+  }
+  if (!risks.length && hasProperty) {
+    risks.push("PD");
+  }
+  if (/перериван|втрата прибут|business interruption|\bbi\b/.test(normalized)) {
+    risks.push("BI");
+  }
+  if (/відповідальн|цивільн|tpl\b/.test(normalized)) {
+    risks.push("TPL");
+  }
+  if (/воєнн|військов|war\b|терор/.test(normalized)) {
+    risks.push("WAR");
+  }
+  if (/вантаж|cargo/.test(normalized)) {
+    risks.push("Cargo");
+  }
+  if (/будівельно|монтаж|car\b|ear\b/.test(normalized)) {
+    risks.push(/ear\b|монтаж/i.test(text) ? "EAR" : "CAR");
+  }
+  if (/машин|поломк|machinery|mb\b/.test(normalized)) {
+    risks.push("MB");
+  }
+  return [...new Set(risks)].join(", ");
+}
+
+function contractReviewExtractValuationBasis(text) {
+  const normalized = String(text || "").toLowerCase();
+  if (/відновлювальн|replacement|нова віднов/.test(normalized)) {
+    return "ВВ";
+  }
+  if (/дійсн(а|ою|у)? варт|actual cash|ринков/.test(normalized)) {
+    return "ДВ";
+  }
+  if (/балансов/.test(normalized)) {
+    return "Балансова вартість";
+  }
+  return "";
+}
+
+function contractReviewExtractValues(text) {
+  const lines = contractReviewTextLines(text);
+  const dateRange = contractReviewExtractDateRange(text);
+  const insurer = contractReviewFindLineValue(lines, ["страховик", "страхова компанія"], { maxLength: 180 });
+  const insured = contractReviewFindLineValue(lines, ["страхувальник", "застрахована особа"], { maxLength: 180 });
+  const contractNumber = contractReviewFindNearPattern(text, ["договір страхування", "договір", "поліс"], /(?:№|N|No\.?)\s*([A-Za-zА-Яа-яІіЇїЄєҐґ0-9/.\-]+)/i, 160)
+    || contractReviewFindLineValue(lines, ["№ договору", "номер договору"], { maxLength: 80 });
+
+  return {
+    insured,
+    address: contractReviewFindLineValue(lines, [
+      "адреса дії договору",
+      "місце дії договору",
+      "місце страхування",
+      "територія страхування",
+      "місцезнаходження майна",
+      "адреса майна",
+      "адреса"
+    ], { maxLength: 260 }),
+    insurer,
+    contractNumber,
+    intermediaryClause: contractReviewFindContext(lines, [/посередник/i, /брокер/i, /britmark/i, /бритмарк/i, /надав.*інформац/i], 320),
+    product: contractReviewClassifyProduct(text),
+    beneficiary: contractReviewFindLineValue(lines, ["вигодонабувач", "вигодоодержувач"], { maxLength: 180 }),
+    valuationBasis: contractReviewExtractValuationBasis(text),
+    risks: contractReviewClassifyRisks(text),
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
+    deductible: contractReviewFindLineValue(lines, ["франшиза", "безумовна франшиза", "умовна франшиза"], { maxLength: 180 }),
+    sumInsured: contractReviewFindNearPattern(text, ["загальна страхова сума", "страхова сума", "ліміт відповідальності"], contractReviewAmountPattern(), 420),
+    rate: contractReviewFindNearPattern(text, ["страховий тариф", "тариф"], contractReviewPercentPattern(), 180),
+    premium: contractReviewFindNearPattern(text, ["загальний страховий платіж", "страховий платіж", "страхова премія", "страховий внесок"], contractReviewAmountPattern(), 420)
+  };
+}
+
+function contractReviewCompareField(row, previousValue, renewalValue) {
+  if (!previousValue && !renewalValue) {
+    return "Не знайдено автоматично";
+  }
+  if (!previousValue || !renewalValue) {
+    return "Перевірити";
+  }
+  if (contractReviewNormalizeComparable(previousValue) === contractReviewNormalizeComparable(renewalValue)) {
+    return "Без змін";
+  }
+  return "Змінено";
+}
+
 function addContractReviewFiles(files) {
   const incoming = Array.from(files || []).filter(isContractReviewFile);
   const existingIds = new Set(contractReviewFiles.map((file) => file.id));
@@ -2254,6 +2562,7 @@ function addContractReviewFiles(files) {
       size: file.size,
       type: file.type || contractReviewFileExtension(file.name).replace(".", "").toUpperCase(),
       lastModified: file.lastModified || Date.now(),
+      file,
       score: contractReviewScore(file)
     }))
     .filter((file) => !existingIds.has(file.id));
@@ -2284,29 +2593,71 @@ function resetContractReviewFiles() {
   renderContractReview();
 }
 
-function buildContractReviewResult() {
+async function buildContractReviewResult() {
   if (contractReviewFiles.length < 2) {
     contractReviewCopyMessage = "Додай щонайменше два договори.";
     renderContractReview();
     return;
   }
 
+  contractReviewBusy = true;
+  contractReviewCopyMessage = "Читаю договори...";
+  renderContractReview();
+
   const sorted = [...contractReviewFiles].sort((a, b) => a.score - b.score || a.name.localeCompare(b.name, "uk"));
-  const previous = sorted[0];
-  const renewal = sorted[sorted.length - 1];
-  const supporting = sorted.filter((file) => file.id !== previous.id && file.id !== renewal.id);
-  contractReviewResult = {
-    previous,
-    renewal,
-    supporting,
-    rows: contractReviewFields.map((field) => ({
-      ...field,
-      previousValue: "",
-      renewalValue: ""
-    })),
-    createdAt: new Date().toISOString()
-  };
-  contractReviewCopyMessage = "Структуру порівняння сформовано.";
+  try {
+    const enriched = await Promise.all(sorted.map(async (fileRecord) => {
+      try {
+        const extracted = await contractReviewReadText(fileRecord);
+        return {
+          ...fileRecord,
+          text: extracted.text,
+          readStatus: extracted.status
+        };
+      } catch (error) {
+        return {
+          ...fileRecord,
+          text: "",
+          readStatus: error?.message || "Файл не вдалося прочитати"
+        };
+      }
+    }));
+
+    contractReviewFiles = enriched;
+    const previous = enriched[0];
+    const renewal = enriched[enriched.length - 1];
+    const supporting = enriched.filter((file) => file.id !== previous.id && file.id !== renewal.id);
+    const previousValues = contractReviewExtractValues(previous.text);
+    const renewalValues = contractReviewExtractValues(renewal.text);
+    const rows = contractReviewFields.map((field) => {
+      const previousValue = previousValues[field.key] || "";
+      const renewalValue = renewalValues[field.key] || "";
+      return {
+        ...field,
+        previousValue,
+        renewalValue,
+        control: contractReviewCompareField(field, previousValue, renewalValue)
+      };
+    });
+    const foundCount = rows.filter((row) => row.previousValue || row.renewalValue).length;
+    const readableCount = enriched.filter((file) => file.text).length;
+
+    contractReviewResult = {
+      previous,
+      renewal,
+      supporting,
+      rows,
+      statuses: enriched.map((file) => `${file.name}: ${file.readStatus}`),
+      createdAt: new Date().toISOString()
+    };
+    contractReviewCopyMessage = foundCount
+      ? `Порівняння сформовано: знайдено ${foundCount} з ${contractReviewFields.length} параметрів.`
+      : readableCount
+        ? "Документи прочитано, але параметри не знайдені автоматично. Перевір формат договору."
+        : "Не вдалося прочитати текст договорів. Для автоматичного аналізу завантаж DOCX.";
+  } finally {
+    contractReviewBusy = false;
+  }
   renderContractReview();
 }
 
@@ -3028,7 +3379,7 @@ function renderContractReviewFile(file, index) {
     <li class="contract-review-file">
       <span>
         <strong>${escapeHtml(file.name)}</strong>
-        <small>${escapeHtml(role || "Документ")} · ${escapeHtml(contractReviewFormatSize(file.size))}</small>
+        <small>${escapeHtml(role || "Документ")} · ${escapeHtml(contractReviewFormatSize(file.size))}${file.readStatus ? ` · ${escapeHtml(file.readStatus)}` : ""}</small>
       </span>
       <button type="button" data-remove-contract-review-file="${escapeHtml(file.id)}" aria-label="Прибрати файл ${escapeHtml(file.name)}">×</button>
     </li>
@@ -3089,7 +3440,7 @@ function renderContractReviewTable() {
 }
 
 function renderContractReview() {
-  const canCompare = contractReviewFiles.length >= 2;
+  const canCompare = contractReviewFiles.length >= 2 && !contractReviewBusy;
   screen.innerHTML = `
     <section class="contract-review-workspace">
       <header class="contract-review-head">
@@ -3122,7 +3473,7 @@ function renderContractReview() {
         ` : `
           <p class="contract-review-empty">Додай пакет документів: основний договір, додатки, додаткові угоди, графік платежів або перелік майна.</p>
         `}
-        <button class="primary-action primary-action-wide" type="button" data-run-contract-review ${canCompare ? "" : "disabled"}>Порівняти</button>
+        <button class="primary-action primary-action-wide" type="button" data-run-contract-review ${canCompare ? "" : "disabled"}>${contractReviewBusy ? "Порівнюю..." : "Порівняти"}</button>
         <p class="contract-review-note">Алгоритм не підставляє значення за припущенням: якщо дані не витягнуті з документа, клітинки залишаються порожніми.</p>
         ${contractReviewCopyMessage ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>` : ""}
       </section>
@@ -6087,7 +6438,7 @@ document.addEventListener("click", async (event) => {
   }
 
   if (runContractReviewButton) {
-    buildContractReviewResult();
+    await buildContractReviewResult();
     return;
   }
 
