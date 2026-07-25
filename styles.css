@@ -2792,6 +2792,16 @@ body[data-route="home"] .module-arrow {
   background: rgba(248, 251, 247, 0.82);
 }
 
+.contract-review-file-ready {
+  border-color: rgba(46, 139, 104, 0.22);
+  background: rgba(248, 251, 247, 0.92);
+}
+
+.contract-review-file-blocked {
+  border-color: rgba(233, 180, 76, 0.28);
+  background: rgba(255, 250, 238, 0.8);
+}
+
 .contract-review-file strong,
 .contract-review-file small {
   display: block;
@@ -2838,6 +2848,18 @@ body[data-route="home"] .module-arrow {
 .contract-review-status {
   color: var(--green);
   font-weight: 900;
+}
+
+.contract-review-readiness {
+  margin: 0;
+  color: var(--green);
+  font-size: 11.5px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.contract-review-readiness-warning {
+  color: #9a6a16;
 }
 
 .contract-review-diagnostic-list {

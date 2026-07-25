@@ -2225,6 +2225,36 @@ function isContractReviewFile(file) {
   return contractReviewSupportedExtensions.includes(contractReviewFileExtension(file.name));
 }
 
+function contractReviewCanAutoReadFile(fileRecord) {
+  const extension = contractReviewFileExtension(fileRecord?.name);
+  if (extension === ".docx" || extension === ".txt") {
+    return true;
+  }
+  if (extension === ".pdf") {
+    return window.location.protocol !== "file:";
+  }
+  return false;
+}
+
+function contractReviewInitialStatus(fileRecord) {
+  const extension = contractReviewFileExtension(fileRecord?.name);
+  if (extension === ".docx") {
+    return "готовий до аналізу";
+  }
+  if (extension === ".pdf") {
+    return window.location.protocol === "file:"
+      ? "PDF у локальному режимі не читається. Для аналізу збережи як DOCX або відкрий HTTPS-версію"
+      : "готовий до аналізу, якщо PDF має текстовий шар";
+  }
+  if (extension === ".doc") {
+    return "DOC потрібно зберегти у Word як DOCX";
+  }
+  if (extension === ".xls" || extension === ".xlsx") {
+    return "Excel можна додати як супровідний файл, але договір треба завантажити у DOCX";
+  }
+  return "формат не читається автоматично";
+}
+
 function contractReviewFormatSize(bytes) {
   const size = Number(bytes || 0);
   if (size >= 1024 * 1024) {
@@ -2638,7 +2668,8 @@ function addContractReviewFiles(files) {
       type: file.type || contractReviewFileExtension(file.name).replace(".", "").toUpperCase(),
       lastModified: file.lastModified || Date.now(),
       file,
-      score: contractReviewScore(file)
+      score: contractReviewScore(file),
+      readStatus: contractReviewInitialStatus(file)
     }))
     .filter((file) => !existingIds.has(file.id));
 
@@ -2699,8 +2730,31 @@ async function buildContractReviewResult() {
     }));
 
     contractReviewFiles = enriched;
-    const previous = enriched[0];
-    const renewal = enriched[enriched.length - 1];
+    const readableFiles = enriched.filter((file) => file.text);
+    if (readableFiles.length < 2) {
+      const previousCandidate = readableFiles[0] || enriched[0];
+      const renewalCandidate = enriched.find((file) => file.id !== previousCandidate?.id) || enriched[enriched.length - 1] || previousCandidate;
+      contractReviewResult = {
+        previous: previousCandidate,
+        renewal: renewalCandidate,
+        supporting: enriched.filter((file) => file.id !== previousCandidate?.id && file.id !== renewalCandidate?.id),
+        rows: [],
+        foundCount: 0,
+        readableCount: readableFiles.length,
+        blocked: true,
+        statuses: enriched.map((file) => `${file.name}: ${file.readStatus}`),
+        createdAt: new Date().toISOString()
+      };
+      contractReviewCopyMessage = readableFiles.length
+        ? "Порівняння не запущено: прочитано лише один договір. Додай другий DOCX."
+        : "Порівняння не запущено: Anodos не зміг прочитати текст договорів. Для автоматичного аналізу потрібні два DOCX.";
+      contractReviewBusy = false;
+      renderContractReview();
+      return;
+    }
+
+    const previous = readableFiles[0];
+    const renewal = readableFiles[readableFiles.length - 1];
     const supporting = enriched.filter((file) => file.id !== previous.id && file.id !== renewal.id);
     const previousValues = contractReviewExtractValues(previous.text);
     const renewalValues = contractReviewExtractValues(renewal.text);
@@ -3445,6 +3499,7 @@ function render() {
 }
 
 function renderContractReviewFile(file, index) {
+  const canRead = contractReviewCanAutoReadFile(file);
   const role = contractReviewFiles.length < 2
     ? ""
     : index === 0
@@ -3453,7 +3508,7 @@ function renderContractReviewFile(file, index) {
         ? "Оновлення"
         : "Супровідний";
   return `
-    <li class="contract-review-file">
+    <li class="contract-review-file ${canRead ? "contract-review-file-ready" : "contract-review-file-blocked"}">
       <span>
         <strong>${escapeHtml(file.name)}</strong>
         <small>${escapeHtml(role || "Документ")} · ${escapeHtml(contractReviewFormatSize(file.size))}${file.readStatus ? ` · ${escapeHtml(file.readStatus)}` : ""}</small>
@@ -3469,15 +3524,19 @@ function renderContractReviewTable() {
   }
 
   if (!contractReviewResult.foundCount) {
+    const title = contractReviewResult.blocked ? "Порівняння не запущено" : "Дані не витягнулися";
+    const explanation = contractReviewResult.blocked
+      ? "Anodos не формує порожню таблицю, якщо прочитано менше двох договорів. Додай два договори у DOCX або відкрий HTTPS-версію для PDF з текстовим шаром."
+      : "Anodos не буде показувати порожню таблицю як результат. Перевір формат файлів і завантаж заповнені договори у форматі DOCX або PDF з текстовим шаром.";
     return `
       <section class="contract-review-result contract-review-diagnostic">
         <header class="contract-review-result-head">
           <div>
             <p class="eyebrow">Діагностика</p>
-            <h2>Дані не витягнулися</h2>
+            <h2>${escapeHtml(title)}</h2>
           </div>
         </header>
-        <p class="contract-review-note">Anodos не буде показувати порожню таблицю як результат. Перевір формат файлів і завантаж заповнені договори у форматі DOCX або PDF з текстовим шаром.</p>
+        <p class="contract-review-note">${escapeHtml(explanation)}</p>
         <ul class="contract-review-diagnostic-list">
           ${contractReviewResult.statuses.map((status) => `<li>${escapeHtml(status)}</li>`).join("")}
         </ul>
@@ -3535,7 +3594,21 @@ function renderContractReviewTable() {
 }
 
 function renderContractReview() {
-  const canCompare = contractReviewFiles.length >= 2 && !contractReviewBusy;
+  const readyFilesCount = contractReviewFiles.filter(contractReviewCanAutoReadFile).length;
+  const canCompare = readyFilesCount >= 2 && !contractReviewBusy;
+  const compareButtonText = contractReviewBusy
+    ? "Порівнюю..."
+    : contractReviewFiles.length < 2
+      ? "Додай два договори"
+      : readyFilesCount < 2
+        ? "Потрібен DOCX"
+        : "Порівняти";
+  const readinessClass = readyFilesCount >= 2 ? "contract-review-readiness" : "contract-review-readiness contract-review-readiness-warning";
+  const readinessText = contractReviewFiles.length
+    ? readyFilesCount >= 2
+      ? `Готові до аналізу: ${readyFilesCount} з ${contractReviewFiles.length}.`
+      : `Готові до аналізу: ${readyFilesCount} з ${contractReviewFiles.length}. Для порівняння потрібні щонайменше два DOCX.`
+    : "";
   screen.innerHTML = `
     <section class="contract-review-workspace">
       <header class="contract-review-head">
@@ -3565,10 +3638,11 @@ function renderContractReview() {
           <ol class="contract-review-files">
             ${contractReviewFiles.map(renderContractReviewFile).join("")}
           </ol>
+          <p class="${readinessClass}">${escapeHtml(readinessText)}</p>
         ` : `
           <p class="contract-review-empty">Додай пакет документів: основний договір, додатки, додаткові угоди, графік платежів або перелік майна.</p>
         `}
-        <button class="primary-action primary-action-wide" type="button" data-run-contract-review ${canCompare ? "" : "disabled"}>${contractReviewBusy ? "Порівнюю..." : "Порівняти"}</button>
+        <button class="primary-action primary-action-wide" type="button" data-run-contract-review ${canCompare ? "" : "disabled"}>${compareButtonText}</button>
         <p class="contract-review-note">Алгоритм не підставляє значення за припущенням: якщо дані не витягнуті з документа, клітинки залишаються порожніми.</p>
         ${contractReviewCopyMessage ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>` : ""}
       </section>

@@ -1,15 +1,15 @@
-const CACHE_NAME = "platform-shell-v174";
+const CACHE_NAME = "platform-shell-v175";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=118",
+  "./styles.css?v=119",
   "./law-data.js?v=3",
   "./munich-re-clauses.js?v=1",
   "./sync-config.js?v=1",
   "./assets/vendor/jszip.min.js?v=1",
   "./assets/vendor/pdf.min.mjs?v=1",
   "./assets/vendor/pdf.worker.min.mjs?v=1",
-  "./app.js?v=130",
+  "./app.js?v=131",
   "./manifest.webmanifest?v=4",
   "./assets/icon.svg?v=4",
   "./assets/britmark-logo.png"
