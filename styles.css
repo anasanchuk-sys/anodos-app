@@ -261,12 +261,13 @@ p {
   display: grid;
   place-items: center;
   justify-content: center;
+  justify-self: center;
+  width: 132px;
   min-height: 42px;
   padding: 0;
   color: inherit;
   background: transparent;
   text-align: center;
-  justify-self: stretch;
 }
 
 .brand-name {
@@ -299,12 +300,11 @@ p {
 .partner-lockup {
   display: grid;
   place-items: center;
-  justify-self: end;
+  justify-self: center;
   width: 132px;
   min-height: 42px;
   padding: 0;
   background: transparent;
-  transform: translateX(6px);
 }
 
 .partner-lockup img {
@@ -4168,6 +4168,12 @@ body[data-route="glossary"] .screen {
     font-size: 24px;
   }
 
+  .brand-lockup,
+  .partner-lockup {
+    width: 116px;
+    min-height: 38px;
+  }
+
   .topbar {
     grid-template-columns: minmax(116px, 1fr) 42px minmax(104px, 1fr);
     gap: 8px;
@@ -4268,11 +4274,6 @@ body[data-route="glossary"] .screen {
 
   .task-feedback-columns {
     grid-template-columns: 1fr;
-  }
-
-  .partner-lockup {
-    width: 116px;
-    min-height: 38px;
   }
 
   .partner-lockup img {
