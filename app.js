@@ -2227,7 +2227,7 @@ function isContractReviewFile(file) {
 
 function contractReviewCanAutoReadFile(fileRecord) {
   const extension = contractReviewFileExtension(fileRecord?.name);
-  if (extension === ".docx" || extension === ".txt") {
+  if (extension === ".doc" || extension === ".docx" || extension === ".txt") {
     return true;
   }
   if (extension === ".pdf") {
@@ -2247,7 +2247,7 @@ function contractReviewInitialStatus(fileRecord) {
       : "готовий до аналізу, якщо PDF має текстовий шар";
   }
   if (extension === ".doc") {
-    return "DOC потрібно зберегти у Word як DOCX";
+    return "готовий до аналізу як старий Word DOC";
   }
   if (extension === ".xls" || extension === ".xlsx") {
     return "Excel можна додати як супровідний файл, але договір треба завантажити у DOCX";
@@ -2352,6 +2352,172 @@ async function contractReviewReadPdf(fileRecord) {
   return contractReviewNormalizeText(pageTexts.join("\n\n"));
 }
 
+function contractReviewReadUInt16LE(bytes, offset) {
+  return bytes[offset] | (bytes[offset + 1] << 8);
+}
+
+function contractReviewReadInt32LE(bytes, offset) {
+  return (bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)) | 0;
+}
+
+function contractReviewReadUInt32LE(bytes, offset) {
+  return contractReviewReadInt32LE(bytes, offset) >>> 0;
+}
+
+function contractReviewOleSectorOffset(sectorId, sectorSize) {
+  return 512 + sectorId * sectorSize;
+}
+
+function contractReviewReadOleSectorChain(bytes, fat, startSector, sectorSize, sizeLimit = Infinity) {
+  const sectors = [];
+  const seen = new Set();
+  let sectorId = startSector;
+  let total = 0;
+
+  while (sectorId >= 0 && sectorId !== -2 && !seen.has(sectorId) && total < sizeLimit) {
+    seen.add(sectorId);
+    const offset = contractReviewOleSectorOffset(sectorId, sectorSize);
+    if (offset < 0 || offset >= bytes.length) {
+      break;
+    }
+    const take = Math.min(sectorSize, sizeLimit - total, bytes.length - offset);
+    sectors.push(bytes.slice(offset, offset + take));
+    total += take;
+    sectorId = fat[sectorId];
+  }
+
+  const result = new Uint8Array(sectors.reduce((sum, sector) => sum + sector.length, 0));
+  let position = 0;
+  sectors.forEach((sector) => {
+    result.set(sector, position);
+    position += sector.length;
+  });
+  return result;
+}
+
+function contractReviewReadOleStream(bytes, streamName) {
+  const signature = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1];
+  if (!signature.every((value, index) => bytes[index] === value)) {
+    return null;
+  }
+
+  const sectorSize = 1 << contractReviewReadUInt16LE(bytes, 30);
+  const fatSectorCount = contractReviewReadUInt32LE(bytes, 44);
+  const directoryStart = contractReviewReadInt32LE(bytes, 48);
+  const difatStart = contractReviewReadInt32LE(bytes, 68);
+  const difatSectorCount = contractReviewReadUInt32LE(bytes, 72);
+  const fatSectorIds = [];
+
+  for (let offset = 76; offset < 512; offset += 4) {
+    const sectorId = contractReviewReadInt32LE(bytes, offset);
+    if (sectorId >= 0) {
+      fatSectorIds.push(sectorId);
+    }
+  }
+
+  let difatSector = difatStart;
+  for (let difatIndex = 0; difatIndex < difatSectorCount && difatSector >= 0; difatIndex += 1) {
+    const offset = contractReviewOleSectorOffset(difatSector, sectorSize);
+    const sectorIdsPerDifat = sectorSize / 4 - 1;
+    for (let index = 0; index < sectorIdsPerDifat; index += 1) {
+      const sectorId = contractReviewReadInt32LE(bytes, offset + index * 4);
+      if (sectorId >= 0) {
+        fatSectorIds.push(sectorId);
+      }
+    }
+    difatSector = contractReviewReadInt32LE(bytes, offset + sectorIdsPerDifat * 4);
+  }
+
+  const fat = [];
+  fatSectorIds.slice(0, fatSectorCount).forEach((sectorId) => {
+    const offset = contractReviewOleSectorOffset(sectorId, sectorSize);
+    for (let position = 0; position < sectorSize; position += 4) {
+      fat.push(contractReviewReadInt32LE(bytes, offset + position));
+    }
+  });
+
+  const directoryBytes = contractReviewReadOleSectorChain(bytes, fat, directoryStart, sectorSize);
+  for (let offset = 0; offset + 128 <= directoryBytes.length; offset += 128) {
+    const nameLength = contractReviewReadUInt16LE(directoryBytes, offset + 64);
+    if (nameLength < 2) {
+      continue;
+    }
+
+    let name = "";
+    for (let position = 0; position < nameLength - 2; position += 2) {
+      const charCode = contractReviewReadUInt16LE(directoryBytes, offset + position);
+      if (charCode) {
+        name += String.fromCharCode(charCode);
+      }
+    }
+
+    if (name !== streamName) {
+      continue;
+    }
+
+    const startSector = contractReviewReadInt32LE(directoryBytes, offset + 116);
+    const size = contractReviewReadUInt32LE(directoryBytes, offset + 120);
+    return contractReviewReadOleSectorChain(bytes, fat, startSector, sectorSize, size);
+  }
+
+  return null;
+}
+
+function contractReviewUtf16Score(text) {
+  const cyrillicMatches = text.match(/[А-Яа-яІіЇїЄєҐґ]/g) || [];
+  return cyrillicMatches.length * 3 + text.length;
+}
+
+function contractReviewExtractUtf16Text(bytes, startOffset = 0) {
+  const chunks = [];
+  let chunk = "";
+
+  for (let index = startOffset; index + 1 < bytes.length; index += 2) {
+    const charCode = contractReviewReadUInt16LE(bytes, index);
+    const isReadable =
+      charCode === 9 ||
+      charCode === 10 ||
+      charCode === 13 ||
+      charCode === 32 ||
+      charCode === 0x00a0 ||
+      (charCode >= 0x0021 && charCode <= 0x007e) ||
+      (charCode >= 0x0400 && charCode <= 0x052f) ||
+      (charCode >= 0x2010 && charCode <= 0x203a) ||
+      charCode === 0x2116;
+
+    if (isReadable && charCode !== 0) {
+      chunk += String.fromCharCode(charCode);
+      continue;
+    }
+
+    if (chunk.length >= 5) {
+      chunks.push(chunk);
+    }
+    chunk = "";
+  }
+
+  if (chunk.length >= 5) {
+    chunks.push(chunk);
+  }
+
+  return chunks.join("\n");
+}
+
+async function contractReviewReadDoc(fileRecord) {
+  const bytes = new Uint8Array(await fileRecord.file.arrayBuffer());
+  const wordDocument = contractReviewReadOleStream(bytes, "WordDocument");
+  if (!wordDocument) {
+    return "";
+  }
+
+  const variants = [
+    contractReviewExtractUtf16Text(wordDocument, 0),
+    contractReviewExtractUtf16Text(wordDocument, 1)
+  ].map(contractReviewNormalizeText);
+  const bestText = variants.sort((a, b) => contractReviewUtf16Score(b) - contractReviewUtf16Score(a))[0] || "";
+  return bestText;
+}
+
 async function contractReviewReadText(fileRecord) {
   const extension = contractReviewFileExtension(fileRecord.name);
   if (extension === ".docx") {
@@ -2374,9 +2540,10 @@ async function contractReviewReadText(fileRecord) {
   }
 
   if (extension === ".doc") {
+    const text = await contractReviewReadDoc(fileRecord);
     return {
-      text: "",
-      status: "DOC не читається в браузері. Збережи файл у Word як DOCX"
+      text,
+      status: text ? "DOC прочитано" : "DOC не вдалося прочитати. Збережи файл у Word як DOCX"
     };
   }
 
