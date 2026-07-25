@@ -2840,6 +2840,25 @@ body[data-route="home"] .module-arrow {
   font-weight: 900;
 }
 
+.contract-review-diagnostic-list {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contract-review-diagnostic-list li {
+  padding: 9px 10px;
+  border: 1px solid rgba(19, 41, 97, 0.08);
+  border-radius: 8px;
+  color: var(--navy);
+  background: rgba(248, 251, 247, 0.72);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .contract-review-rules div {
   display: flex;
   flex-wrap: wrap;

@@ -1962,6 +1962,7 @@ let contractReviewFiles = [];
 let contractReviewResult = null;
 let contractReviewCopyMessage = "";
 let contractReviewBusy = false;
+let contractReviewPdfModulePromise = null;
 let contractZoom = 1;
 let contractPinchStartDistance = 0;
 let contractPinchStartZoom = 1;
@@ -2265,6 +2266,19 @@ function contractReviewXmlToText(xml) {
     .trim());
 }
 
+function contractReviewNormalizeText(text) {
+  return String(text || "")
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function contractReviewAssetUrl(path) {
+  return new URL(path, window.location.href).href;
+}
+
 async function contractReviewReadDocx(fileRecord) {
   if (!window.JSZip) {
     throw new Error("JSZip не завантажився.");
@@ -2275,7 +2289,37 @@ async function contractReviewReadDocx(fileRecord) {
     /^word\/(document|header\d+|footer\d+|footnotes|endnotes|comments)\.xml$/i.test(name)
   );
   const xmlParts = await Promise.all(xmlNames.map((name) => zip.files[name].async("string")));
-  return xmlParts.map(contractReviewXmlToText).filter(Boolean).join("\n\n");
+  return contractReviewNormalizeText(xmlParts.map(contractReviewXmlToText).filter(Boolean).join("\n\n"));
+}
+
+async function contractReviewPdfModule() {
+  if (!contractReviewPdfModulePromise) {
+    contractReviewPdfModulePromise = import(contractReviewAssetUrl("./assets/vendor/pdf.min.mjs")).then((module) => {
+      module.GlobalWorkerOptions.workerSrc = contractReviewAssetUrl("./assets/vendor/pdf.worker.min.mjs");
+      return module;
+    });
+  }
+  return contractReviewPdfModulePromise;
+}
+
+async function contractReviewReadPdf(fileRecord) {
+  if (window.location.protocol === "file:") {
+    return "";
+  }
+
+  const pdfjs = await contractReviewPdfModule();
+  const data = new Uint8Array(await fileRecord.file.arrayBuffer());
+  const pdf = await pdfjs.getDocument({ data, disableWorker: true }).promise;
+  const pageTexts = [];
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+    const page = await pdf.getPage(pageNumber);
+    const content = await page.getTextContent();
+    const text = content.items.map((item) => item.str || "").join(" ");
+    if (text.trim()) {
+      pageTexts.push(text.trim());
+    }
+  }
+  return contractReviewNormalizeText(pageTexts.join("\n\n"));
 }
 
 async function contractReviewReadText(fileRecord) {
@@ -2287,9 +2331,28 @@ async function contractReviewReadText(fileRecord) {
     };
   }
 
+  if (extension === ".pdf") {
+    const text = await contractReviewReadPdf(fileRecord);
+    return {
+      text,
+      status: text
+        ? "PDF прочитано"
+        : window.location.protocol === "file:"
+          ? "PDF у локальному file-режимі не читається. Для аналізу збережи як DOCX або відкрий HTTPS-версію"
+          : "PDF не містить текстового шару"
+    };
+  }
+
+  if (extension === ".doc") {
+    return {
+      text: "",
+      status: "DOC не читається в браузері. Збережи файл у Word як DOCX"
+    };
+  }
+
   if (extension === ".txt") {
     return {
-      text: await fileRecord.file.text(),
+      text: contractReviewNormalizeText(await fileRecord.file.text()),
       status: "TXT прочитано"
     };
   }
@@ -2303,6 +2366,7 @@ async function contractReviewReadText(fileRecord) {
 function contractReviewCleanValue(value, maxLength = 220) {
   const cleaned = String(value || "")
     .replace(/\u00a0/g, " ")
+    .replace(/\bFORMTEXT\b/gi, " ")
     .replace(/\s+/g, " ")
     .replace(/^[\s:;,\-–—|]+/, "")
     .replace(/[\s;,\-–—|]+$/, "")
@@ -2311,6 +2375,14 @@ function contractReviewCleanValue(value, maxLength = 220) {
     return cleaned;
   }
   return `${cleaned.slice(0, maxLength).replace(/\s+\S*$/, "")}...`;
+}
+
+function contractReviewIsPlaceholderValue(value) {
+  const normalized = contractReviewNormalizeComparable(value)
+    .replace(/[«»"']/g, "")
+    .trim();
+  return !normalized
+    || /formtext|mergeformat|піб\s*\/\s*найменування|найменування:|номер$|адреса$|підрозділу$|місцезнаходження$|від імені якого діє$/.test(normalized);
 }
 
 function contractReviewTextLines(text) {
@@ -2335,7 +2407,7 @@ function contractReviewFindLineValue(lines, labels, options = {}) {
 
     const labelIndex = lowerLine.indexOf(matchedLabel.toLowerCase());
     const tail = contractReviewCleanValue(line.slice(labelIndex + matchedLabel.length), maxLength);
-    if (tail.length >= minLength && !skipValue.test(tail)) {
+    if (tail.length >= minLength && !skipValue.test(tail) && !contractReviewIsPlaceholderValue(tail)) {
       return tail;
     }
 
@@ -2346,7 +2418,7 @@ function contractReviewFindLineValue(lines, labels, options = {}) {
       }
       const nextLower = nextLine.toLowerCase();
       const looksLikeAnotherLabel = /страховик|страхувальник|вигодонабувач|франшиза|тариф|платіж|премія|адреса|догов/.test(nextLower);
-      if (!looksLikeAnotherLabel && nextLine.length >= minLength) {
+      if (!looksLikeAnotherLabel && nextLine.length >= minLength && !contractReviewIsPlaceholderValue(nextLine)) {
         return contractReviewCleanValue(nextLine, maxLength);
       }
     }
@@ -2423,7 +2495,10 @@ function contractReviewFindNearPattern(text, labels, pattern, maxWindow = 360) {
     const fragment = normalized.slice(index, index + maxWindow);
     const match = fragment.match(pattern);
     if (match) {
-      return contractReviewCleanValue(match[0], 80);
+      const value = contractReviewCleanValue(match[0], 80);
+      if (!contractReviewIsPlaceholderValue(value)) {
+        return value;
+      }
     }
   }
   return "";
@@ -2647,6 +2722,8 @@ async function buildContractReviewResult() {
       renewal,
       supporting,
       rows,
+      foundCount,
+      readableCount,
       statuses: enriched.map((file) => `${file.name}: ${file.readStatus}`),
       createdAt: new Date().toISOString()
     };
@@ -3389,6 +3466,24 @@ function renderContractReviewFile(file, index) {
 function renderContractReviewTable() {
   if (!contractReviewResult) {
     return "";
+  }
+
+  if (!contractReviewResult.foundCount) {
+    return `
+      <section class="contract-review-result contract-review-diagnostic">
+        <header class="contract-review-result-head">
+          <div>
+            <p class="eyebrow">Діагностика</p>
+            <h2>Дані не витягнулися</h2>
+          </div>
+        </header>
+        <p class="contract-review-note">Anodos не буде показувати порожню таблицю як результат. Перевір формат файлів і завантаж заповнені договори у форматі DOCX або PDF з текстовим шаром.</p>
+        <ul class="contract-review-diagnostic-list">
+          ${contractReviewResult.statuses.map((status) => `<li>${escapeHtml(status)}</li>`).join("")}
+        </ul>
+        <p class="contract-review-note">Якщо файл має формат DOC, відкрий його у Word і вибери «Зберегти як» → DOCX. Якщо PDF є сканом, його треба спочатку розпізнати OCR.</p>
+      </section>
+    `;
   }
 
   return `
