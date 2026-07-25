@@ -3106,7 +3106,7 @@ function renderContractReview() {
         <label for="contractReviewInput">
           <span>Перетягни договори сюди</span>
           <strong>або вибери файли</strong>
-          <small>DOC, DOCX, PDF, XLS, XLSX. Повне AI-читання договорів потребує локального сервера Anodos.</small>
+          <small>DOC, DOCX, PDF, Excel.</small>
         </label>
       </section>
 
@@ -3125,16 +3125,6 @@ function renderContractReview() {
         <button class="primary-action primary-action-wide" type="button" data-run-contract-review ${canCompare ? "" : "disabled"}>Порівняти</button>
         <p class="contract-review-note">Алгоритм не підставляє значення за припущенням: якщо дані не витягнуті з документа, клітинки залишаються порожніми.</p>
         ${contractReviewCopyMessage ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>` : ""}
-      </section>
-
-      <section class="contract-review-rules">
-        <p class="eyebrow">Контроль якості</p>
-        <div>
-          <span>15 фіксованих параметрів</span>
-          <span>без припущень</span>
-          <span>додатки мають пріоритет</span>
-          <span>копіювання в Excel / Word / пошту</span>
-        </div>
       </section>
 
       ${renderContractReviewTable()}
