@@ -7,7 +7,7 @@
     <title>Άνοδος</title>
     <link rel="manifest" href="./manifest.webmanifest?v=4" />
     <link rel="icon" href="./assets/icon.svg?v=4" type="image/svg+xml" />
-    <link rel="stylesheet" href="./styles.css?v=121" />
+    <link rel="stylesheet" href="./styles.css?v=122" />
   </head>
   <body>
     <div class="splash" id="splash" aria-hidden="true">
@@ -32,12 +32,29 @@
     <main class="app-shell" id="app" aria-label="Άνοδος" aria-hidden="true">
       <header class="topbar">
         <div class="brand-menu-shell">
-          <button class="brand-lockup" type="button" data-brand-menu aria-haspopup="menu" aria-expanded="false" aria-label="Меню Anodos">
+          <button class="brand-lockup" type="button" data-brand-menu aria-haspopup="menu" aria-expanded="false" aria-label="Обрати простір Anodos">
             <span class="brand-name">Άνοδος</span>
+            <span class="brand-space">
+              <span data-current-space-label>Навчання</span>
+              <span class="brand-space-chevron" aria-hidden="true">⌄</span>
+            </span>
           </button>
-          <div class="brand-menu" data-brand-menu-panel role="menu" hidden>
-            <button type="button" role="menuitem" data-brand-menu-route="home">Продукти</button>
-            <button type="button" role="menuitem" data-brand-menu-route="contract-review">Порівняння договорів</button>
+          <div class="brand-menu" data-brand-menu-panel role="menu" aria-label="Простори Anodos" hidden>
+            <p class="brand-menu-title">Оберіть простір</p>
+            <button type="button" role="menuitemradio" aria-checked="true" data-brand-menu-space="learning">
+              <span>
+                <strong>Навчання</strong>
+                <small>Відео, конспекти, задачі та тести</small>
+              </span>
+              <span class="brand-menu-check" aria-hidden="true"></span>
+            </button>
+            <button type="button" role="menuitemradio" aria-checked="false" data-brand-menu-space="products">
+              <span>
+                <strong>Продукти</strong>
+                <small>Робочі матеріали, закон і договори</small>
+              </span>
+              <span class="brand-menu-check" aria-hidden="true"></span>
+            </button>
           </div>
         </div>
 
@@ -61,9 +78,7 @@
       <section id="screen" class="screen" aria-live="polite"></section>
 
       <nav class="bottom-nav" aria-label="Навігація">
-        <button type="button" data-route="home" class="nav-item nav-item-active">Продукти</button>
-        <button type="button" data-route="law" class="nav-item">ЗУпС</button>
-        <button type="button" data-route="glossary" class="nav-item">Словник</button>
+        <button type="button" data-route="home" class="nav-item nav-item-active">Навчання</button>
         <button type="button" data-route="progress" class="nav-item">Прогрес</button>
       </nav>
     </main>
@@ -72,6 +87,6 @@
     <script src="./munich-re-clauses.js?v=1"></script>
     <script src="./sync-config.js?v=1"></script>
     <script src="./assets/vendor/jszip.min.js?v=1"></script>
-    <script src="./app.js?v=138"></script>
+    <script src="./app.js?v=139"></script>
   </body>
 </html>

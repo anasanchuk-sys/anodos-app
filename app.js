@@ -33,7 +33,7 @@ function isHomeRoute() {
 }
 
 function isScenarioSearchActive() {
-  return isHomeRoute() && scenarioSearchTerm.trim().length > 0;
+  return activeSpace === "products" && isHomeRoute() && scenarioSearchTerm.trim().length > 0;
 }
 
 function lockStaticUiElements() {
@@ -1903,6 +1903,25 @@ const currentUserKey = "anodos-current-user-v1";
 const progressByUserKey = "anodos-progress-by-user-v1";
 const centralParticipantsKey = "anodos-central-participants-v1";
 const accuracyReportsKey = "anodos-accuracy-reports-v1";
+const activeSpaceKey = "anodos-active-space-v1";
+const spaceDefinitions = {
+  learning: {
+    label: "Навчання",
+    navigation: [
+      { route: "home", label: "Навчання" },
+      { route: "progress", label: "Прогрес" }
+    ]
+  },
+  products: {
+    label: "Продукти",
+    navigation: [
+      { route: "home", label: "Продукти" },
+      { route: "law", label: "ЗУпС" },
+      { route: "glossary", label: "Словник" },
+      { route: "contract-review", label: "Договори" }
+    ]
+  }
+};
 const contractAccessPassword = "02022004";
 const contractReviewSupportedExtensions = [".doc", ".docx", ".pdf", ".xls", ".xlsx"];
 const contractReviewFields = [
@@ -1962,6 +1981,7 @@ let activeMunichClauseId = "munich-001";
 let munichSearchTimer = null;
 let activeContractTemplateId = "arx-named-perils";
 let brandMenuOpen = false;
+let activeSpace = normalizeActiveSpace(localStorage.getItem(activeSpaceKey));
 let contractReviewFiles = [];
 let contractReviewResult = null;
 let contractReviewCopyMessage = "";
@@ -2007,6 +2027,56 @@ function writeJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function normalizeActiveSpace(value) {
+  return value === "products" ? "products" : "learning";
+}
+
+function activeNavigationRoute() {
+  if (activeSpace === "learning") {
+    return route === "progress" ? "progress" : "home";
+  }
+
+  if (route === "law" || route === "glossary" || route === "contract-review") {
+    return route;
+  }
+
+  return "home";
+}
+
+function renderSpaceShell() {
+  const definition = spaceDefinitions[activeSpace];
+  const currentNavRoute = activeNavigationRoute();
+  const brandButton = document.querySelector("[data-brand-menu]");
+  const currentSpaceLabel = document.querySelector("[data-current-space-label]");
+  const nav = document.querySelector(".bottom-nav");
+
+  body.dataset.space = activeSpace;
+
+  if (brandButton) {
+    brandButton.setAttribute("aria-label", `Поточний простір: ${definition.label}. Обрати інший простір Anodos`);
+  }
+  if (currentSpaceLabel) {
+    currentSpaceLabel.textContent = definition.label;
+  }
+
+  document.querySelectorAll("[data-brand-menu-space]").forEach((button) => {
+    const isActive = button.dataset.brandMenuSpace === activeSpace;
+    button.setAttribute("aria-checked", String(isActive));
+    button.classList.toggle("brand-menu-option-active", isActive);
+  });
+
+  if (nav) {
+    nav.setAttribute("aria-label", `Навігація простору «${definition.label}»`);
+    nav.innerHTML = definition.navigation.map((item) => `
+      <button
+        type="button"
+        data-route="${escapeHtml(item.route)}"
+        class="${item.route === currentNavRoute ? "nav-item nav-item-active" : "nav-item"}"
+      >${escapeHtml(item.label)}</button>
+    `).join("");
+  }
+}
+
 function setBrandMenu(open) {
   brandMenuOpen = Boolean(open);
   const button = document.querySelector("[data-brand-menu]");
@@ -2017,6 +2087,32 @@ function setBrandMenu(open) {
   if (panel) {
     panel.hidden = !brandMenuOpen;
   }
+  if (brandMenuOpen) {
+    window.requestAnimationFrame(() => {
+      document.querySelector("[data-brand-menu-space][aria-checked='true']")?.focus();
+    });
+  }
+}
+
+function setActiveSpace(nextSpace) {
+  activeSpace = normalizeActiveSpace(nextSpace);
+  localStorage.setItem(activeSpaceKey, activeSpace);
+  window.clearTimeout(routeTransitionTimer);
+  window.clearTimeout(routeTransitionInTimer);
+  activeModuleSectionId = "";
+  activeStateCompensationView = "";
+  contractAccessGranted = false;
+  pendingContractTemplateId = "";
+  contractPasswordError = "";
+  pendingRoute = "";
+  pendingLessonId = "";
+  route = "home";
+  body.classList.remove("route-is-changing");
+  screen.classList.remove("screen-transition-out", "screen-transition-in");
+  setBrandMenu(false);
+  setCompassOpen(false);
+  render();
+  window.scrollTo(0, 0);
 }
 
 function setCompassOpen(open, focusSearch = false) {
@@ -4124,6 +4220,7 @@ function draftFor(id) {
 
 function render() {
   const user = currentUser();
+  renderSpaceShell();
   if (!isAuthorizedUser(user)) {
     body.dataset.route = "registration";
     if (currentUserId) {
@@ -4140,11 +4237,8 @@ function render() {
 
   body.classList.remove("registration-mode");
   body.dataset.route = route;
-  body.classList.toggle("scenario-search-active", route === "home" && scenarioSearchTerm.trim().length > 0);
+  body.classList.toggle("scenario-search-active", activeSpace === "products" && route === "home" && scenarioSearchTerm.trim().length > 0);
   renderCompass();
-  document.querySelectorAll(".nav-item").forEach((button) => {
-    button.classList.toggle("nav-item-active", button.dataset.route === route);
-  });
 
   if (route === "module") {
     renderModule(getLesson());
@@ -4412,6 +4506,24 @@ function renderRegistration() {
 }
 
 function renderHome() {
+  if (activeSpace === "learning") {
+    screen.innerHTML = `
+      <section class="space-intro-card primary-tab-card" aria-labelledby="learningSpaceTitle">
+        <div>
+          <p class="eyebrow">Навчання</p>
+          <h1 id="learningSpaceTitle">Навчальні модулі</h1>
+          <p>Відео, короткі конспекти, практичні задачі та тести зібрані в одному просторі.</p>
+        </div>
+        <span class="space-intro-meta">${lessons.length} тем</span>
+      </section>
+
+      <section class="module-grid primary-tab-list" aria-label="Навчальні модулі">
+        ${lessons.map(renderModuleCard).join("")}
+      </section>
+    `;
+    return;
+  }
+
   const hasScenarioQuery = scenarioSearchTerm.trim().length > 0;
   screen.innerHTML = `
     <section class="scenario-search-panel primary-tab-card primary-tab-action" aria-label="Сценарний пошук">
@@ -4432,7 +4544,7 @@ function renderHome() {
       <div id="scenarioSearchResults"></div>
     </section>
 
-    <section class="module-grid primary-tab-list" aria-label="Навчальні продукти">
+    <section class="module-grid primary-tab-list" aria-label="Страхові продукти">
       ${lessons.map(renderModuleCard).join("")}
     </section>
   `;
@@ -4676,12 +4788,10 @@ function scenarioSearchEntries() {
       item.title,
       item.shortTitle,
       item.focus,
-      item.outcome,
       item.sourceStatus,
-      ...(item.briefing || []),
       ...(item.checklist || []),
-      ...(item.lessons || []).flatMap((lesson) => [lesson.title, lesson.text]),
       ...(item.articles || []).flatMap((article) => [article.title, article.topic, article.why]),
+      ...(item.contractTemplates || []).map((template) => template.label),
       ...(item.regulatoryBase || []).flatMap((source) => [source.title, source.type, source.why]),
       stateCompensationSearchText(item.stateCompensationProgram)
     ].join(" ");
@@ -5061,13 +5171,28 @@ function profileWord(count) {
 }
 
 function renderModuleMeta(item) {
+  if (activeSpace === "products") {
+    const count = [
+      item.articles?.length,
+      item.checklist?.length,
+      item.regulatoryBase?.length,
+      item.stateCompensationProgram,
+      item.contractTemplates?.length,
+      item.id === "construction" && munichClauses().length
+    ].filter(Boolean).length;
+    const word = count === 1 ? "розділ" : count >= 2 && count <= 4 ? "розділи" : "розділів";
+    return `${count} ${word}`;
+  }
+
   return `${moduleProgress(item)}%`;
 }
 
 function renderModuleCard(item) {
-  const label = `${item.shortTitle}: ${item.focus}`;
+  const label = activeSpace === "learning"
+    ? `${item.shortTitle}: відкрити навчальний модуль`
+    : `${item.shortTitle}: відкрити робочі матеріали`;
   return `
-    <article class="module-card module-card-${item.id}">
+    <article class="module-card module-card-${item.id} module-card-${activeSpace}">
       <button class="module-card-button" type="button" data-open-module="${item.id}" aria-label="${escapeHtml(label)}">
         <span class="module-icon module-icon-${item.id}" aria-hidden="true">${renderModuleIcon(item.id)}</span>
         <span class="module-copy">
@@ -5101,12 +5226,15 @@ function renderModuleContextHead({ item, eyebrow, title, copy, backAttributes, c
 function renderModule(item) {
   const draft = draftFor(item.id);
   const briefing = draft.briefing ? draft.briefing.split("\n").filter(Boolean) : item.briefing;
+  const isLearningSpace = activeSpace === "learning";
   screen.innerHTML = `
     ${renderModuleContextHead({
       item,
-      eyebrow: item.focus,
+      eyebrow: `${spaceDefinitions[activeSpace].label} · ${item.focus}`,
       title: draft.title || item.title,
-      copy: draft.outcome || item.outcome,
+      copy: isLearningSpace
+        ? draft.outcome || item.outcome
+        : "Статті, робочий чекліст та спеціалізовані інструменти для щоденної роботи з продуктом.",
       backAttributes: 'data-route="home"'
     })}
 
@@ -5117,40 +5245,63 @@ function renderModule(item) {
 function moduleSectionDefinitions(item, briefing) {
   const sections = [];
 
-  if (item.articles?.length) {
-    sections.push({
-      id: "articles",
-      title: "Статті",
-      meta: `${item.articles.length} матеріалів BritMark`,
-      content: renderArticleCards(item)
-    });
-  }
+  if (activeSpace === "products") {
+    if (item.articles?.length) {
+      sections.push({
+        id: "articles",
+        title: "Статті та кейси",
+        meta: `${item.articles.length} матеріалів BritMark`,
+        content: renderArticleCards(item)
+      });
+    }
 
-  if (item.regulatoryBase?.length) {
-    sections.push({
-      id: "regulatory-base",
-      title: "Нормативна База",
-      meta: `${item.regulatoryBase.length} джерел`,
-      content: renderRegulatoryBaseSearchShell(item)
-    });
-  }
+    if (item.checklist?.length) {
+      sections.push({
+        id: "checklist",
+        title: "Робочий чекліст",
+        meta: `${item.checklist.length} пунктів`,
+        content: renderChecklistCards(item)
+      });
+    }
 
-  if (item.stateCompensationProgram) {
-    sections.push({
-      id: "state-compensation",
-      title: "Державна програма компенсації",
-      meta: item.stateCompensationProgram.meta,
-      content: renderStateCompensationProgram(item)
-    });
-  }
+    if (item.regulatoryBase?.length) {
+      sections.push({
+        id: "regulatory-base",
+        title: "Нормативна База",
+        meta: `${item.regulatoryBase.length} джерел`,
+        content: renderRegulatoryBaseSearchShell(item)
+      });
+    }
 
-  if (item.contractTemplates?.length) {
-    sections.push({
-      id: "contracts",
-      title: "Шаблони договорів",
-      meta: `${item.contractTemplates.length} шаблони`,
-      content: renderContractTemplateCards(item)
-    });
+    if (item.stateCompensationProgram) {
+      sections.push({
+        id: "state-compensation",
+        title: "Державна програма компенсації",
+        meta: item.stateCompensationProgram.meta,
+        content: renderStateCompensationProgram(item)
+      });
+    }
+
+    if (item.contractTemplates?.length) {
+      sections.push({
+        id: "contracts",
+        title: "Шаблони договорів",
+        meta: `${item.contractTemplates.length} шаблони`,
+        content: renderContractTemplateCards(item)
+      });
+    }
+
+    const clauses = munichClauses();
+    if (item.id === "construction" && clauses.length) {
+      sections.push({
+        id: "munich",
+        title: "Застереження Munich Re",
+        meta: `${clauses.length} застереження · пошук`,
+        directAction: "munich"
+      });
+    }
+
+    return sections;
   }
 
   sections.push({
@@ -5166,6 +5317,15 @@ function moduleSectionDefinitions(item, briefing) {
       title: "Короткий конспект",
       meta: `${briefing.length} тези`,
       content: renderBriefingCards(briefing)
+    });
+  }
+
+  if (item.lessons?.length) {
+    sections.push({
+      id: "lessons",
+      title: "Теми модуля",
+      meta: `${item.lessons.length} теми`,
+      content: renderLessonCards(item)
     });
   }
 
@@ -5187,16 +5347,6 @@ function moduleSectionDefinitions(item, briefing) {
     });
   }
 
-  const clauses = munichClauses();
-  if (item.id === "construction" && clauses.length) {
-    sections.push({
-      id: "munich",
-      title: "Застереження Munich Re",
-      meta: `${clauses.length} застереження · пошук`,
-      directAction: "munich"
-    });
-  }
-
   sections.push({
     id: "test",
     title: "Тест",
@@ -5211,7 +5361,7 @@ function renderModuleSectionMenu(item, briefing) {
   const sections = moduleSectionDefinitions(item, briefing);
 
   return `
-    <section class="module-section-menu" aria-label="Розділи модуля">
+    <section class="module-section-menu" aria-label="${activeSpace === "learning" ? "Навчальні матеріали" : "Робочі матеріали"}">
       ${sections.map((section) => `
         <button
           class="article-panel-link module-section-row"
@@ -5286,6 +5436,30 @@ function renderArticleCards(item) {
         <p>${escapeHtml(article.why)}</p>
       </div>
       <a href="${escapeHtml(article.url)}" target="_blank" rel="noopener noreferrer">Читати</a>
+    </article>
+  `).join("");
+}
+
+function renderChecklistCards(item) {
+  return item.checklist.map((point, index) => `
+    <article class="article-card article-card-text work-checklist-card">
+      <span class="work-checklist-index">${String(index + 1).padStart(2, "0")}</span>
+      <div>
+        <span class="article-topic">Перевірити</span>
+        <h3>${escapeHtml(point)}</h3>
+      </div>
+    </article>
+  `).join("");
+}
+
+function renderLessonCards(item) {
+  return item.lessons.map((lesson, index) => `
+    <article class="article-card article-card-text">
+      <div>
+        <span class="article-topic">Тема ${String(index + 1).padStart(2, "0")}</span>
+        <h3>${escapeHtml(lesson.title)}</h3>
+        <p>${escapeHtml(lesson.text)}</p>
+      </div>
     </article>
   `).join("");
 }
@@ -7257,7 +7431,7 @@ function renderProgress() {
 document.addEventListener("click", async (event) => {
   const routeButton = event.target.closest("button[data-route], a[data-route]");
   const brandMenuButton = event.target.closest("[data-brand-menu]");
-  const brandMenuRouteButton = event.target.closest("[data-brand-menu-route]");
+  const brandMenuSpaceButton = event.target.closest("[data-brand-menu-space]");
   const compassButton = event.target.closest("[data-open-compass]");
   const closeCompassButton = event.target.closest("[data-close-compass]");
   const useUserButton = event.target.closest("[data-use-user]");
@@ -7322,10 +7496,8 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
-  if (brandMenuRouteButton) {
-    setBrandMenu(false);
-    setCompassOpen(false);
-    setRoute(brandMenuRouteButton.dataset.brandMenuRoute || "home");
+  if (brandMenuSpaceButton) {
+    setActiveSpace(brandMenuSpaceButton.dataset.brandMenuSpace);
     return;
   }
 
@@ -8123,6 +8295,11 @@ document.addEventListener("submit", async (event) => {
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && compassOpen) {
     setCompassOpen(false);
+    return;
+  }
+  if (event.key === "Escape" && brandMenuOpen) {
+    setBrandMenu(false);
+    document.querySelector("[data-brand-menu]")?.focus();
   }
 });
 
