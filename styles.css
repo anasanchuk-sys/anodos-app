@@ -343,6 +343,163 @@ p {
   font-weight: 700;
 }
 
+.compass-orb {
+  position: relative;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.compass-orb span {
+  font-size: 20px;
+  font-weight: 720;
+  line-height: 1;
+}
+
+.compass-orb::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 11px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--amber);
+}
+
+.compass-open .compass-orb,
+.compass-orb:focus-visible {
+  border-color: rgba(46, 139, 104, 0.46);
+  box-shadow: 0 16px 34px rgba(19, 41, 97, 0.12);
+}
+
+.compass-orb:active {
+  transform: scale(0.98);
+}
+
+.compass-panel {
+  position: fixed;
+  left: 50%;
+  top: calc(72px + env(safe-area-inset-top));
+  z-index: 18;
+  width: min(476px, calc(100vw - 28px));
+  transform: translateX(-50%);
+  pointer-events: none;
+  touch-action: pan-y;
+}
+
+.compass-panel[hidden] {
+  display: none;
+}
+
+.compass-card {
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid rgba(19, 41, 97, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 22px 52px rgba(19, 41, 97, 0.16);
+  backdrop-filter: blur(18px);
+  pointer-events: auto;
+  touch-action: pan-y;
+}
+
+.compass-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  gap: 10px;
+  align-items: start;
+}
+
+.compass-head h2 {
+  max-width: none;
+  margin: 2px 0 0;
+  font-size: 20px;
+  line-height: 1.08;
+}
+
+.compass-close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(19, 41, 97, 0.08);
+  border-radius: 50%;
+  color: rgba(19, 41, 97, 0.68);
+  background: rgba(248, 251, 247, 0.74);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.compass-search-label {
+  display: grid;
+  gap: 6px;
+}
+
+.compass-search-label span {
+  color: var(--green);
+  font-size: 10.5px;
+  font-weight: 780;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.compass-search-label input {
+  width: 100%;
+  height: 42px;
+  padding: 0 13px;
+  border: 1px solid rgba(19, 41, 97, 0.1);
+  border-radius: 12px;
+  color: var(--navy);
+  background: rgba(248, 251, 247, 0.72);
+  font: inherit;
+  font-size: 14px;
+  outline: 0;
+}
+
+.compass-search-label input:focus {
+  border-color: rgba(46, 139, 104, 0.42);
+  box-shadow: 0 0 0 3px rgba(46, 139, 104, 0.08);
+}
+
+.compass-hint {
+  margin: -1px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+.compass-results .scenario-result-meta {
+  margin-top: 2px;
+}
+
+.compass-results .scenario-result-list {
+  max-height: min(52vh, 420px);
+  overflow-y: auto;
+  padding-right: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.compass-results .scenario-result-card {
+  min-height: auto;
+  padding: 12px;
+  border-radius: 13px;
+}
+
+.compass-results .scenario-result-card h3 {
+  font-size: 15px;
+}
+
+.compass-results .scenario-result-card p {
+  font-size: 12.5px;
+}
+
+.compass-empty {
+  padding: 10px 0 0;
+}
+
 .partner-lockup {
   display: grid;
   place-items: center;
@@ -1624,6 +1781,30 @@ body[data-route="home"] .scenario-result-card p {
   font-size: 10px;
 }
 
+body[data-route="home"] .compass-panel .scenario-result-list,
+.compass-panel .scenario-result-list {
+  max-height: min(44vh, 340px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+body[data-route="home"] .compass-panel .scenario-result-card,
+.compass-panel .scenario-result-card {
+  min-height: auto;
+  padding: 12px;
+}
+
+body[data-route="home"] .compass-panel .scenario-result-card h3,
+.compass-panel .scenario-result-card h3 {
+  font-size: 15px;
+}
+
+body[data-route="home"] .compass-panel .scenario-result-card p,
+.compass-panel .scenario-result-card p {
+  font-size: 12.5px;
+}
+
 body[data-route="home"].scenario-search-active .scenario-results-panel {
   display: grid;
   grid-template-rows: auto;
@@ -1668,6 +1849,11 @@ body[data-route="home"].scenario-search-active .scenario-result-list {
   overflow: visible;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
+}
+
+body[data-route="home"].scenario-search-active .compass-panel .scenario-result-list {
+  max-height: min(44vh, 340px);
+  overflow-y: auto;
 }
 
 body[data-route="home"].scenario-search-active .module-grid {

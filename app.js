@@ -3,6 +3,7 @@ const app = document.getElementById("app");
 const splash = document.getElementById("splash");
 const screen = document.getElementById("screen");
 const progressValue = document.getElementById("progressValue");
+const compassPanel = document.getElementById("compassPanel");
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const revealDelay = prefersReducedMotion ? 120 : 2850;
@@ -1948,6 +1949,9 @@ let regulatoryBaseSearchTimer = null;
 let activeRegulatoryBaseSourceId = "";
 let scenarioSearchTerm = "";
 let scenarioSearchTimer = null;
+let compassOpen = false;
+let compassSearchTerm = "";
+let compassSearchTimer = null;
 let glossarySearchTerm = "";
 let glossaryResultsExpanded = false;
 let activeGlossaryTermId = "glossary-abandonment";
@@ -2013,6 +2017,95 @@ function setBrandMenu(open) {
   if (panel) {
     panel.hidden = !brandMenuOpen;
   }
+}
+
+function setCompassOpen(open, focusSearch = false) {
+  compassOpen = Boolean(open);
+  if (compassOpen && !compassSearchTerm && scenarioSearchTerm) {
+    compassSearchTerm = scenarioSearchTerm;
+  }
+  renderCompass();
+  if (compassOpen && focusSearch) {
+    window.requestAnimationFrame(() => {
+      const input = document.getElementById("compassSearch");
+      input?.focus();
+      input?.setSelectionRange(input.value.length, input.value.length);
+    });
+  }
+}
+
+function renderCompass() {
+  const button = document.querySelector("[data-open-compass]");
+  if (button) {
+    button.setAttribute("aria-expanded", compassOpen ? "true" : "false");
+  }
+  body.classList.toggle("compass-open", compassOpen);
+  if (!compassPanel) {
+    return;
+  }
+  compassPanel.hidden = !compassOpen;
+  if (!compassOpen) {
+    compassPanel.innerHTML = "";
+    return;
+  }
+
+  const hasQuery = compassSearchTerm.trim().length > 0;
+  compassPanel.innerHTML = `
+    <section class="compass-card" role="dialog" aria-modal="false" aria-labelledby="compassTitle">
+      <header class="compass-head">
+        <div>
+          <p class="eyebrow">Компас Anodos</p>
+          <h2 id="compassTitle">Де шукати відповідь?</h2>
+        </div>
+        <button class="compass-close" type="button" data-close-compass aria-label="Закрити компас">×</button>
+      </header>
+      <label class="compass-search-label" for="compassSearch">
+        <span>Ситуація Клієнта</span>
+        <input
+          id="compassSearch"
+          type="search"
+          autocomplete="off"
+          placeholder="Опишіть ситуацію Клієнта"
+          value="${escapeHtml(compassSearchTerm)}"
+        />
+      </label>
+      ${hasQuery ? "" : `<p class="compass-hint">Опишіть ситуацію простими словами, а Anodos підкаже, де шукати відповідь.</p>`}
+      <div id="compassSearchResults" class="compass-results" aria-live="polite"></div>
+    </section>
+  `;
+  renderCompassResults();
+}
+
+function renderCompassResults() {
+  const node = document.getElementById("compassSearchResults");
+  if (!node) {
+    return;
+  }
+
+  const { profile, results } = scenarioSearchResults(compassSearchTerm);
+  if (!profile.terms.length) {
+    node.innerHTML = "";
+    return;
+  }
+
+  if (!results.length) {
+    node.innerHTML = `
+      <div class="scenario-empty compass-empty">
+        <p>Нічого точного не знайшов. Спробуйте коротше: франшиза, бізнес-центр, компенсація премії, Munich Re.</p>
+      </div>
+    `;
+    return;
+  }
+
+  node.innerHTML = `
+    <div class="scenario-result-meta">
+      <span>${results.length} результатів</span>
+      ${profile.labels.length ? `<small>${profile.labels.map(escapeHtml).join(" · ")}</small>` : ""}
+    </div>
+    <div class="scenario-result-list">
+      ${results.map(renderScenarioResultCard).join("")}
+    </div>
+  `;
 }
 
 function normalizeEmail(value) {
@@ -4037,7 +4130,8 @@ function render() {
       clearCurrentUser();
     }
     body.classList.add("registration-mode");
-    progressValue.textContent = "0%";
+    progressValue.textContent = "?";
+    setCompassOpen(false);
     document.querySelectorAll(".nav-item").forEach((button) => {
       button.classList.remove("nav-item-active");
     });
@@ -4048,7 +4142,8 @@ function render() {
   body.classList.remove("registration-mode");
   body.dataset.route = route;
   body.classList.toggle("scenario-search-active", route === "home" && scenarioSearchTerm.trim().length > 0);
-  progressValue.textContent = `${totalProgress()}%`;
+  progressValue.textContent = "?";
+  renderCompass();
   document.querySelectorAll(".nav-item").forEach((button) => {
     button.classList.toggle("nav-item-active", button.dataset.route === route);
   });
@@ -4429,9 +4524,9 @@ const scenarioFrontlineRegions = [
 
 const scenarioWarTextPattern = /(воєн|війна|війни|ракета|бпла|дрон|обстріл|окупац|бойов)/u;
 
-function scenarioQueryProfile() {
-  const normalizedQuery = normalizeSemanticText(scenarioSearchTerm);
-  const terms = new Set(splitSearchTerms(scenarioSearchTerm).filter((term) => !scenarioGenericTerms.has(term)));
+function scenarioQueryProfile(query = scenarioSearchTerm) {
+  const normalizedQuery = normalizeSemanticText(query);
+  const terms = new Set(splitSearchTerms(query).filter((term) => !scenarioGenericTerms.has(term)));
   const labels = new Set();
   const domains = new Set();
   const frontlineRegions = scenarioFrontlineRegions
@@ -4714,8 +4809,8 @@ function scenarioSearchEntries() {
   return entries;
 }
 
-function scenarioSearchResults() {
-  const profile = scenarioQueryProfile();
+function scenarioSearchResults(query = scenarioSearchTerm) {
+  const profile = scenarioQueryProfile(query);
   if (!profile.terms.length) {
     return { profile, results: [] };
   }
@@ -4804,7 +4899,7 @@ function renderScenarioSearchResults() {
   `;
 }
 
-function openScenarioResult(target) {
+function openScenarioResult(target, query = scenarioSearchTerm) {
   const action = target.dataset.scenarioAction;
 
   if (action === "module") {
@@ -4821,14 +4916,14 @@ function openScenarioResult(target) {
 
   if (action === "law") {
     activeLawEntryId = target.dataset.scenarioEntry || activeLawEntryId;
-    lawSearchTerm = scenarioSearchTerm;
+    lawSearchTerm = query;
     setRoute("law");
     return;
   }
 
   if (action === "glossary") {
     activeGlossaryTermId = target.dataset.scenarioTerm || activeGlossaryTermId;
-    glossarySearchTerm = scenarioSearchTerm;
+    glossarySearchTerm = query;
     glossaryResultsExpanded = false;
     setRoute("glossary");
     return;
@@ -4836,7 +4931,7 @@ function openScenarioResult(target) {
 
   if (action === "munich") {
     activeMunichClauseId = target.dataset.scenarioClause || activeMunichClauseId;
-    munichSearchTerm = scenarioSearchTerm;
+    munichSearchTerm = query;
     munichResultsExpanded = false;
     setRoute("munich", "construction");
   }
@@ -7165,6 +7260,8 @@ document.addEventListener("click", async (event) => {
   const routeButton = event.target.closest("button[data-route], a[data-route]");
   const brandMenuButton = event.target.closest("[data-brand-menu]");
   const brandMenuRouteButton = event.target.closest("[data-brand-menu-route]");
+  const compassButton = event.target.closest("[data-open-compass]");
+  const closeCompassButton = event.target.closest("[data-close-compass]");
   const useUserButton = event.target.closest("[data-use-user]");
   const deleteUserButton = event.target.closest("[data-delete-user]");
   const exportUsersButton = event.target.closest("[data-export-users]");
@@ -7207,20 +7304,39 @@ document.addEventListener("click", async (event) => {
   const runContractReviewButton = event.target.closest("[data-run-contract-review]");
   const copyContractReviewButton = event.target.closest("[data-copy-contract-review]");
 
+  if (compassButton) {
+    event.preventDefault();
+    setBrandMenu(false);
+    setCompassOpen(!compassOpen, true);
+    return;
+  }
+
+  if (closeCompassButton) {
+    event.preventDefault();
+    setCompassOpen(false);
+    return;
+  }
+
   if (brandMenuButton) {
     event.preventDefault();
+    setCompassOpen(false);
     setBrandMenu(!brandMenuOpen);
     return;
   }
 
   if (brandMenuRouteButton) {
     setBrandMenu(false);
+    setCompassOpen(false);
     setRoute(brandMenuRouteButton.dataset.brandMenuRoute || "home");
     return;
   }
 
   if (brandMenuOpen && !event.target.closest(".brand-menu-shell")) {
     setBrandMenu(false);
+  }
+
+  if (compassOpen && !event.target.closest(".compass-panel") && !event.target.closest("[data-open-compass]")) {
+    setCompassOpen(false);
   }
 
   if (removeContractReviewFileButton) {
@@ -7313,7 +7429,9 @@ document.addEventListener("click", async (event) => {
 
   if (scenarioAction) {
     event.preventDefault();
-    openScenarioResult(scenarioAction);
+    const sourceQuery = scenarioAction.closest(".compass-panel") ? compassSearchTerm : scenarioSearchTerm;
+    setCompassOpen(false);
+    openScenarioResult(scenarioAction, sourceQuery);
     return;
   }
 
@@ -7460,6 +7578,7 @@ document.addEventListener("click", async (event) => {
   if (routeButton) {
     profileEditMode = false;
     loginError = "";
+    setCompassOpen(false);
     setRoute(routeButton.dataset.route);
     return;
   }
@@ -7681,6 +7800,13 @@ document.addEventListener("input", (event) => {
     body.classList.toggle("scenario-search-active", scenarioSearchTerm.trim().length > 0);
     window.clearTimeout(scenarioSearchTimer);
     scenarioSearchTimer = window.setTimeout(renderScenarioSearchResults, 120);
+    return;
+  }
+
+  if (event.target.id === "compassSearch") {
+    compassSearchTerm = event.target.value;
+    window.clearTimeout(compassSearchTimer);
+    compassSearchTimer = window.setTimeout(renderCompassResults, 120);
     return;
   }
 
@@ -7979,7 +8105,7 @@ document.addEventListener("submit", async (event) => {
       updatedAt: new Date().toISOString()
     };
     saveCurrentProgress();
-    progressValue.textContent = `${totalProgress()}%`;
+    progressValue.textContent = "?";
     renderQuiz(item);
     return;
   }
@@ -7994,6 +8120,12 @@ document.addEventListener("submit", async (event) => {
     };
     writeJson(editorKey, editorDrafts);
     renderEditor(getLesson());
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && compassOpen) {
+    setCompassOpen(false);
   }
 });
 
