@@ -4130,7 +4130,6 @@ function render() {
       clearCurrentUser();
     }
     body.classList.add("registration-mode");
-    progressValue.textContent = "?";
     setCompassOpen(false);
     document.querySelectorAll(".nav-item").forEach((button) => {
       button.classList.remove("nav-item-active");
@@ -4142,7 +4141,6 @@ function render() {
   body.classList.remove("registration-mode");
   body.dataset.route = route;
   body.classList.toggle("scenario-search-active", route === "home" && scenarioSearchTerm.trim().length > 0);
-  progressValue.textContent = "?";
   renderCompass();
   document.querySelectorAll(".nav-item").forEach((button) => {
     button.classList.toggle("nav-item-active", button.dataset.route === route);
@@ -8105,7 +8103,6 @@ document.addEventListener("submit", async (event) => {
       updatedAt: new Date().toISOString()
     };
     saveCurrentProgress();
-    progressValue.textContent = "?";
     renderQuiz(item);
     return;
   }

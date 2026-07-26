@@ -351,21 +351,41 @@ p {
     transform 140ms ease;
 }
 
-.compass-orb span {
-  font-size: 20px;
-  font-weight: 720;
-  line-height: 1;
+.compass-orb-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
 }
 
-.compass-orb::after {
-  content: "";
-  position: absolute;
-  right: 10px;
-  top: 11px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--amber);
+.compass-orb-mark svg {
+  display: block;
+  width: 34px;
+  height: 34px;
+  overflow: visible;
+}
+
+.compass-path,
+.compass-arrow {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 2.15;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.compass-path {
+  opacity: 0.96;
+}
+
+.compass-arrow {
+  stroke-width: 1.8;
+}
+
+.compass-dot {
+  fill: var(--amber);
+  stroke: rgba(255, 255, 255, 0.96);
+  stroke-width: 1.1;
 }
 
 .compass-open .compass-orb,
