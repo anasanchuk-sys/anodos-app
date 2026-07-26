@@ -1,4 +1,4 @@
-const CACHE_NAME = "platform-shell-v181";
+const CACHE_NAME = "platform-shell-v182";
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,7 +9,7 @@ const ASSETS = [
   "./assets/vendor/jszip.min.js?v=1",
   "./assets/vendor/pdf.min.mjs?v=1",
   "./assets/vendor/pdf.worker.min.mjs?v=1",
-  "./app.js?v=137",
+  "./app.js?v=138",
   "./manifest.webmanifest?v=4",
   "./assets/icon.svg?v=4",
   "./assets/britmark-logo.png"
@@ -83,13 +83,13 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (event.request.mode === "navigate") {
-    event.respondWith(fetch(event.request).catch(() => caches.match("./index.html")));
+    event.respondWith(fetch(new Request(event.request, { cache: "reload" })).catch(() => caches.match("./index.html")));
     return;
   }
 
   if (isFreshAsset) {
     event.respondWith(
-      fetch(event.request).then((response) => {
+      fetch(new Request(event.request, { cache: "reload" })).then((response) => {
         if (response?.ok) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
