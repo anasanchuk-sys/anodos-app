@@ -4253,7 +4253,6 @@ function renderContractReview() {
         <label for="contractReviewInput">
           <span>Перетягни договори сюди</span>
           <strong>або вибери файли</strong>
-          <small>DOC, DOCX, PDF, Excel.</small>
         </label>
       </section>
 
@@ -4271,7 +4270,7 @@ function renderContractReview() {
           <p class="contract-review-empty">Додай пакет документів: основний договір, додатки, додаткові угоди, графік платежів або перелік майна.</p>
         `}
         <button class="primary-action primary-action-wide" type="button" data-run-contract-review ${canCompare ? "" : "disabled"}>${compareButtonText}</button>
-        <p class="contract-review-note">Алгоритм не підставляє значення за припущенням: якщо дані не витягнуті з документа, клітинки залишаються порожніми.</p>
+        <p class="contract-review-note">Anodos не підставляє значення за припущенням: якщо дані не витягнуті з документа, клітинки залишаються порожніми.</p>
         ${contractReviewCopyMessage ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>` : ""}
       </section>
 
