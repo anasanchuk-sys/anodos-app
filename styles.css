@@ -407,6 +407,32 @@ p {
   background: rgba(46, 139, 104, 0.06) !important;
 }
 
+.brand-menu-divider {
+  height: 1px;
+  margin: 4px 8px 2px;
+  background: rgba(19, 41, 97, 0.09);
+}
+
+.brand-menu-tool-title {
+  margin-top: 2px;
+}
+
+.brand-menu-tool {
+  background: rgba(19, 41, 97, 0.035) !important;
+}
+
+.brand-menu-tool:hover,
+.brand-menu-tool:focus-visible {
+  background: rgba(46, 139, 104, 0.1) !important;
+}
+
+.brand-menu-arrow {
+  justify-self: center;
+  color: var(--green);
+  font-size: 16px;
+  font-weight: 720;
+}
+
 .progress-orb {
   display: grid;
   place-items: center;

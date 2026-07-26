@@ -2094,7 +2094,7 @@ function setBrandMenu(open) {
   }
 }
 
-function setActiveSpace(nextSpace) {
+function setActiveSpace(nextSpace, nextRoute = "home") {
   activeSpace = normalizeActiveSpace(nextSpace);
   localStorage.setItem(activeSpaceKey, activeSpace);
   window.clearTimeout(routeTransitionTimer);
@@ -2106,7 +2106,7 @@ function setActiveSpace(nextSpace) {
   contractPasswordError = "";
   pendingRoute = "";
   pendingLessonId = "";
-  route = "home";
+  route = nextRoute;
   body.classList.remove("route-is-changing");
   screen.classList.remove("screen-transition-out", "screen-transition-in");
   setBrandMenu(false);
@@ -7432,6 +7432,7 @@ document.addEventListener("click", async (event) => {
   const routeButton = event.target.closest("button[data-route], a[data-route]");
   const brandMenuButton = event.target.closest("[data-brand-menu]");
   const brandMenuSpaceButton = event.target.closest("[data-brand-menu-space]");
+  const brandMenuRouteButton = event.target.closest("[data-brand-menu-route]");
   const compassButton = event.target.closest("[data-open-compass]");
   const closeCompassButton = event.target.closest("[data-close-compass]");
   const useUserButton = event.target.closest("[data-use-user]");
@@ -7498,6 +7499,12 @@ document.addEventListener("click", async (event) => {
 
   if (brandMenuSpaceButton) {
     setActiveSpace(brandMenuSpaceButton.dataset.brandMenuSpace);
+    return;
+  }
+
+  if (brandMenuRouteButton) {
+    event.preventDefault();
+    setActiveSpace("products", brandMenuRouteButton.dataset.brandMenuRoute || "contract-review");
     return;
   }
 
