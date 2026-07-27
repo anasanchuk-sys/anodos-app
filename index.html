@@ -7,7 +7,7 @@
     <title>Άνοδος</title>
     <link rel="manifest" href="./manifest.webmanifest?v=6" />
     <link rel="icon" href="./assets/icon.svg?v=6" type="image/svg+xml" />
-    <link rel="stylesheet" href="./styles.css?v=125" />
+    <link rel="stylesheet" href="./styles.css?v=126" />
   </head>
   <body>
     <div class="splash" id="splash" aria-hidden="true">
@@ -55,9 +55,9 @@
               </span>
               <span class="brand-menu-check" aria-hidden="true"></span>
             </button>
-            <div class="brand-menu-divider" aria-hidden="true"></div>
-            <p class="brand-menu-title brand-menu-tool-title">Робочий інструмент</p>
-            <button class="brand-menu-tool" type="button" role="menuitem" data-brand-menu-route="contract-review">
+            <div class="brand-menu-divider" data-contract-review-local-only aria-hidden="true" hidden></div>
+            <p class="brand-menu-title brand-menu-tool-title" data-contract-review-local-only hidden>Робочий інструмент</p>
+            <button class="brand-menu-tool" type="button" role="menuitem" data-brand-menu-route="contract-review" data-contract-review-local-only hidden>
               <span>
                 <strong>Перевірка договорів</strong>
                 <small>Завантажити й порівняти версії</small>
@@ -96,6 +96,6 @@
     <script src="./munich-re-clauses.js?v=1"></script>
     <script src="./sync-config.js?v=1"></script>
     <script src="./assets/vendor/jszip.min.js?v=1"></script>
-    <script src="./app.js?v=142"></script>
+    <script src="./app.js?v=143"></script>
   </body>
 </html>

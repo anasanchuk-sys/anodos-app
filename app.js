@@ -1904,6 +1904,21 @@ const progressByUserKey = "anodos-progress-by-user-v1";
 const centralParticipantsKey = "anodos-central-participants-v1";
 const accuracyReportsKey = "anodos-accuracy-reports-v1";
 const activeSpaceKey = "anodos-active-space-v1";
+function contractReviewIsLocallyAvailable(locationLike = window.location) {
+  const protocol = String(locationLike?.protocol || "").toLowerCase();
+  const hostname = String(locationLike?.hostname || "").toLowerCase();
+  const localHosts = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
+  return protocol === "file:" || localHosts.has(hostname);
+}
+
+const contractReviewLocallyAvailable = contractReviewIsLocallyAvailable();
+
+function availableRoute(nextRoute) {
+  return nextRoute === "contract-review" && !contractReviewLocallyAvailable
+    ? "home"
+    : nextRoute;
+}
+
 const spaceDefinitions = {
   learning: {
     label: "Навчання",
@@ -2037,7 +2052,11 @@ function activeNavigationRoute() {
     return route === "progress" ? "progress" : "home";
   }
 
-  if (route === "law" || route === "glossary" || route === "contract-review") {
+  if (
+    route === "law"
+    || route === "glossary"
+    || (route === "contract-review" && contractReviewLocallyAvailable)
+  ) {
     return route;
   }
 
@@ -2066,9 +2085,15 @@ function renderSpaceShell() {
     button.classList.toggle("brand-menu-option-active", isActive);
   });
 
+  document.querySelectorAll("[data-contract-review-local-only]").forEach((element) => {
+    element.hidden = !contractReviewLocallyAvailable;
+  });
+
   if (nav) {
     nav.setAttribute("aria-label", `Навігація простору «${definition.label}»`);
-    nav.innerHTML = definition.navigation.map((item) => `
+    nav.innerHTML = definition.navigation
+      .filter((item) => item.route !== "contract-review" || contractReviewLocallyAvailable)
+      .map((item) => `
       <button
         type="button"
         data-route="${escapeHtml(item.route)}"
@@ -2107,7 +2132,7 @@ function setActiveSpace(nextSpace, nextRoute = "home") {
   contractPasswordError = "";
   pendingRoute = "";
   pendingLessonId = "";
-  route = nextRoute;
+  route = availableRoute(nextRoute);
   body.classList.remove("route-is-changing");
   screen.classList.remove("screen-transition-out", "screen-transition-in");
   setBrandMenu(false);
@@ -4493,6 +4518,7 @@ function stopPresentation() {
 }
 
 function applyRouteState(nextRoute, lessonId = activeLessonId) {
+  nextRoute = availableRoute(nextRoute);
   if (nextRoute !== "presentation") {
     stopPresentation();
   }
@@ -4513,6 +4539,7 @@ function applyRouteState(nextRoute, lessonId = activeLessonId) {
 }
 
 function setRoute(nextRoute, lessonId = activeLessonId) {
+  nextRoute = availableRoute(nextRoute);
   const normalizedLessonId = lessonId || activeLessonId;
   const isSamePendingRoute = pendingRoute === nextRoute && pendingLessonId === normalizedLessonId;
   const isSameCurrentRoute = !pendingRoute && route === nextRoute && activeLessonId === normalizedLessonId;
@@ -4663,6 +4690,7 @@ function draftFor(id) {
 }
 
 function render() {
+  route = availableRoute(route);
   const user = currentUser();
   renderSpaceShell();
   if (!isAuthorizedUser(user)) {
@@ -4853,6 +4881,12 @@ function renderContractReviewTable() {
 }
 
 function renderContractReview() {
+  if (!contractReviewLocallyAvailable) {
+    route = "home";
+    render();
+    return;
+  }
+
   const readyFilesCount = contractReviewFiles.filter(contractReviewCanAutoReadFile).length;
   const canCompare = readyFilesCount >= 2 && !contractReviewBusy;
   const compareButtonText = contractReviewBusy

@@ -347,6 +347,10 @@ p {
   display: none;
 }
 
+[data-contract-review-local-only][hidden] {
+  display: none !important;
+}
+
 .brand-menu-title {
   margin: 1px 8px 4px;
   color: var(--muted);
