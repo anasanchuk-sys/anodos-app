@@ -4,11 +4,11 @@
   "description": "Розуміти. Діяти. Рости.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#F8FBF7",
-  "theme_color": "#132961",
+  "background_color": "#F5F9FA",
+  "theme_color": "#F5F9FA",
   "icons": [
     {
-      "src": "./assets/icon.svg?v=4",
+      "src": "./assets/icon.svg?v=5",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
