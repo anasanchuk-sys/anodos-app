@@ -2230,12 +2230,24 @@ function renderCompassResults() {
   `;
 }
 
+const allowedEmployeeEmails = new Set([
+  "asaus@britmark.com",
+  "ahuskova@britmark.com",
+  "aturchyn@britmark.com",
+  "kshum@britmark.com",
+  "vlieonova@britmark.com",
+  "vlebedovskyi@britmark.com",
+  "vpantyukhov@britmark.com",
+  "onasanchuk@britmark.com"
+]);
+const emailAccessDeniedMessage = "Зазначеного email немає в базі Anodos. Введіть інший email або зверніться до підтримки Anodos.";
+
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
 
-function isBritmarkEmail(value) {
-  return /^[^\s@]+@britmark\.com$/i.test(String(value || "").trim());
+function isAllowedEmployeeEmail(value) {
+  return allowedEmployeeEmails.has(normalizeEmail(value));
 }
 
 function currentUser() {
@@ -2243,7 +2255,7 @@ function currentUser() {
 }
 
 function isAuthorizedUser(user) {
-  return Boolean(user && isBritmarkEmail(user.email));
+  return Boolean(user && isAllowedEmployeeEmail(user.email));
 }
 
 function authorizedUsers() {
@@ -4382,11 +4394,14 @@ function localParticipantRows() {
 function participantRegistryRows() {
   const byEmail = new Map();
 
-  centralParticipants.map(normalizeCentralParticipant).forEach((participant) => {
-    if (participant.email) {
-      byEmail.set(participant.email, participant);
-    }
-  });
+  centralParticipants
+    .map(normalizeCentralParticipant)
+    .filter((participant) => isAllowedEmployeeEmail(participant.email))
+    .forEach((participant) => {
+      if (participant.email) {
+        byEmail.set(participant.email, participant);
+      }
+    });
 
   localParticipantRows().forEach((participant) => {
     const previous = byEmail.get(participant.email);
@@ -4696,6 +4711,7 @@ function render() {
   if (!isAuthorizedUser(user)) {
     body.dataset.route = "registration";
     if (currentUserId) {
+      loginError = emailAccessDeniedMessage;
       clearCurrentUser();
     }
     body.classList.add("registration-mode");
@@ -4950,7 +4966,7 @@ function renderRegistration() {
     <section class="registration-panel">
       <p class="eyebrow">Вхід</p>
       <h1>Профіль співробітника</h1>
-      <p class="hero-copy">Вхід доступний лише з пошти, яка закінчується на @britmark.com. На телефоні зберігається локальна копія, а після підключення бази прогрес потрапляє в центральний реєстр.</p>
+      <p class="hero-copy">Вхід доступний лише співробітникам, чиї email внесені до бази Anodos. На телефоні зберігається локальна копія, а після підключення бази прогрес потрапляє в центральний реєстр.</p>
 
       <form id="registrationForm" class="registration-form">
         <label>
@@ -7818,7 +7834,7 @@ function renderAdminRegistry() {
       ` : `
         <div class="registry-empty">
           <strong>Поки немає записів.</strong>
-          <p>Коли учасники увійдуть із пошти @britmark.com і центральна база буде підключена, вони з'являться тут автоматично.</p>
+          <p>Коли співробітники з бази Anodos увійдуть і центральна база буде підключена, вони з'являться тут автоматично.</p>
         </div>
       `}
     </section>
@@ -8167,7 +8183,7 @@ document.addEventListener("click", async (event) => {
   if (useUserButton) {
     loginError = "";
     if (!setCurrentUser(useUserButton.dataset.useUser)) {
-      loginError = "Вхід доступний лише з робочої пошти @britmark.com.";
+      loginError = emailAccessDeniedMessage;
       render();
       window.scrollTo(0, 0);
       return;
@@ -8609,8 +8625,8 @@ document.addEventListener("submit", async (event) => {
     const fullName = String(formData.get("fullName") || "").trim();
     const email = normalizeEmail(formData.get("email"));
 
-    if (!isBritmarkEmail(email)) {
-      loginError = "Вхід доступний лише з робочої пошти @britmark.com.";
+    if (!isAllowedEmployeeEmail(email)) {
+      loginError = emailAccessDeniedMessage;
       render();
       window.scrollTo(0, 0);
       return;
@@ -8678,8 +8694,8 @@ document.addEventListener("submit", async (event) => {
 
     const formData = new FormData(event.target);
     const nextEmail = normalizeEmail(formData.get("email"));
-    if (!isBritmarkEmail(nextEmail)) {
-      loginError = "Профіль можна зберегти лише з робочою поштою @britmark.com.";
+    if (!isAllowedEmployeeEmail(nextEmail)) {
+      loginError = emailAccessDeniedMessage;
       profileEditMode = true;
       render();
       window.scrollTo(0, 0);
