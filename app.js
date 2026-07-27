@@ -1939,7 +1939,7 @@ const contractReviewFields = [
   { key: "deductible", label: "Франшиза", control: "Усі застосовні франшизи, включно зі спеціальними за ризиками." },
   { key: "sumInsured", label: "Загальна страхова сума", control: "Сума або ліміт саме відповідного продукту." },
   { key: "rate", label: "Страховий тариф", control: "Тариф відповідного продукту у форматі з комою та знаком %." },
-  { key: "limits", label: "Ліміти / субліміти", control: "Лише прямо встановлені договором ліміти з сумою, відсотком або періодом; не загальні згадки у визначеннях." },
+  { key: "limits", label: "Ліміти / склад страхової суми", control: "Розподіл страхової суми за покриттями, максимальні періоди та прямо встановлені субліміти; не загальні згадки у визначеннях." },
   { key: "premium", label: "Загальний страховий платіж", control: "Загальна премія за продуктом, не окремий внесок." }
 ];
 
@@ -3139,11 +3139,34 @@ function contractReviewExtractBeneficiary(lines) {
 }
 
 function contractReviewExtractInsuredAddress(lines) {
+  const withCadastralNumber = (address, addressIndex) => {
+    let cadastralNumber = "";
+    for (let offset = 0; offset <= 4; offset += 1) {
+      const line = lines[addressIndex + offset] || "";
+      const inline = line.match(/кадастровий номер\s*:?\s*([0-9]{8,}(?::[0-9]+)+)/i);
+      if (inline) {
+        cadastralNumber = inline[1];
+        break;
+      }
+      if (/кадастровий номер/i.test(line)) {
+        const nextLine = lines[addressIndex + offset + 1] || "";
+        const nextMatch = nextLine.match(/^([0-9]{8,}(?::[0-9]+)+)$/);
+        if (nextMatch) {
+          cadastralNumber = nextMatch[1];
+          break;
+        }
+      }
+    }
+    return cadastralNumber
+      ? `${address}; кадастровий номер ${cadastralNumber}`
+      : address;
+  };
+
   const propertyIndex = contractReviewFindLineIndex(lines, /майно вважається застрахованим тільки за адресою/i);
   if (propertyIndex >= 0) {
     const tail = contractReviewCleanValue(lines[propertyIndex].replace(/^.*майно вважається застрахованим тільки за адресою(?:\s*\([^)]*\))?:?/i, ""), 260);
     if (tail && !contractReviewIsPlaceholderValue(tail)) {
-      return tail;
+      return withCadastralNumber(tail, propertyIndex);
     }
     for (let offset = 1; offset <= 4; offset += 1) {
       const line = lines[propertyIndex + offset] || "";
@@ -3151,7 +3174,7 @@ function contractReviewExtractInsuredAddress(lines) {
         break;
       }
       if (/(м\.|місто|обл\.|область|вул\.|вулиц)/i.test(line)) {
-        return contractReviewCleanValue(line, 260);
+        return withCadastralNumber(contractReviewCleanValue(line, 260), propertyIndex + offset);
       }
     }
   }
@@ -3175,7 +3198,8 @@ function contractReviewExtractInsuredAddress(lines) {
           continue;
         }
         if (addressSignal.test(line) && !/юридична адреса|legal address/i.test(line)) {
-          return contractReviewCleanValue(line.replace(/\s*\/\s*[A-Z].*$/, ""), 300);
+          const address = contractReviewCleanValue(line.replace(/\s*\/\s*[A-Z].*$/, ""), 300);
+          return withCadastralNumber(address, index);
         }
       }
     }
@@ -3370,6 +3394,7 @@ function contractReviewExtractFinancialValues(lines) {
     : -1;
   let propertyRate = "";
   let propertyDeductible = "";
+  let propertySumInsured = "";
   if (propertyTableStart >= 0) {
     const end = propertyTableEnd > propertyTableStart ? propertyTableEnd : Math.min(lines.length, propertyTableStart + 100);
     for (let index = propertyTableStart; index < end; index += 1) {
@@ -3378,13 +3403,18 @@ function contractReviewExtractFinancialValues(lines) {
         continue;
       }
       propertyRate = parsedRate;
+      const moneyBeforeRate = [];
       for (let previous = index - 1; previous >= Math.max(propertyTableStart, index - 10); previous -= 1) {
         const parsedMoney = contractReviewMoneyFromLine(lines[previous]);
         if (parsedMoney) {
-          propertyDeductible = parsedMoney;
-          break;
+          moneyBeforeRate.push(parsedMoney);
+          if (moneyBeforeRate.length >= 2) {
+            break;
+          }
         }
       }
+      propertyDeductible = moneyBeforeRate[0] || "";
+      propertySumInsured = moneyBeforeRate[1] || "";
       break;
     }
   }
@@ -3405,6 +3435,35 @@ function contractReviewExtractFinancialValues(lines) {
     contractReviewDurationFromLine,
     18
   );
+  const businessInterruptionTable = propertyTableEnd > propertyTableStart ? propertyTableEnd : -1;
+  const businessInterruptionSumInsured = contractReviewFindNextParsedValue(
+    lines,
+    businessInterruptionTable,
+    contractReviewMoneyFromLine,
+    55
+  );
+  const maximumIndemnityIndex = contractReviewFindLineIndex(lines, /максимальний період відшкодування/i);
+  let maximumIndemnityPeriod = "";
+  if (maximumIndemnityIndex >= 0) {
+    for (let index = maximumIndemnityIndex + 1; index <= Math.min(lines.length - 1, maximumIndemnityIndex + 10); index += 1) {
+      const match = lines[index].match(/^(\d{1,3})(?:\s*місяц(?:ь|і|ів))?$/i);
+      if (!match) {
+        continue;
+      }
+      const months = Number(match[1]);
+      const lastTwoDigits = months % 100;
+      const lastDigit = months % 10;
+      const monthLabel = lastTwoDigits >= 11 && lastTwoDigits <= 14
+        ? "місяців"
+        : lastDigit === 1
+          ? "місяць"
+          : lastDigit >= 2 && lastDigit <= 4
+            ? "місяці"
+            : "місяців";
+      maximumIndemnityPeriod = `${months} ${monthLabel}`;
+      break;
+    }
+  }
 
   const rate = contractReviewJoinCoverageValues([
     { label: "Майно", value: propertyRate },
@@ -3414,8 +3473,13 @@ function contractReviewExtractFinancialValues(lines) {
     { label: "Майно", value: propertyDeductible },
     { label: "BI", value: businessInterruptionDeductible }
   ]);
+  const coverageLimits = [
+    propertySumInsured ? `Майно: ${propertySumInsured}` : "",
+    businessInterruptionSumInsured ? `BI: ${businessInterruptionSumInsured}` : "",
+    maximumIndemnityPeriod ? `максимальний період відшкодування: ${maximumIndemnityPeriod}` : ""
+  ].filter(Boolean).join("; ");
 
-  return { sumInsured, rate, premium, deductible };
+  return { sumInsured, rate, premium, deductible, coverageLimits };
 }
 
 function contractReviewExtractLimits(lines) {
@@ -3760,7 +3824,14 @@ function contractReviewExtractValuationBasis(text) {
 
 function contractReviewExtractValues(text) {
   const lines = contractReviewTextLines(text);
-  const dateRange = contractReviewExtractCoverageDatesFromLines(lines) || contractReviewExtractDateRange(text);
+  const extractedDateRange = contractReviewExtractCoverageDatesFromLines(lines) || contractReviewExtractDateRange(text);
+  const extractedStartTime = contractReviewDateToTime(extractedDateRange.startDate);
+  const extractedEndTime = contractReviewDateToTime(extractedDateRange.endDate);
+  const dateRangeIsValid =
+    !Number.isFinite(extractedStartTime)
+    || !Number.isFinite(extractedEndTime)
+    || extractedEndTime > extractedStartTime;
+  const dateRange = dateRangeIsValid ? extractedDateRange : { startDate: "", endDate: "" };
   const financialValues = contractReviewExtractFinancialValues(lines);
   const insurer = contractReviewExtractInsurer(lines)
     || contractReviewNormalizePartyName(contractReviewFindLineValue(
@@ -3812,7 +3883,7 @@ function contractReviewExtractValues(text) {
     deductible: financialValues.deductible,
     sumInsured: financialValues.sumInsured,
     rate: financialValues.rate,
-    limits: contractReviewExtractLimits(lines),
+    limits: [financialValues.coverageLimits, contractReviewExtractLimits(lines)].filter(Boolean).join("; "),
     premium: financialValues.premium
   };
 }
