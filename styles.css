@@ -1,4 +1,9 @@
 :root {
+  --brand-navy: #132961;
+  --brand-green: #2e8b68;
+  --brand-soft-green: #a8cfa3;
+  --brand-amber: #e9b44c;
+  --brand-pale: #f8fbf7;
   --navy: #416c91;
   --green: #337f6d;
   --soft-green: #c3ddd4;
@@ -84,7 +89,7 @@ p {
   display: grid;
   place-items: center;
   overflow: hidden;
-  background: var(--pale);
+  background: var(--brand-pale);
   transition:
     opacity 720ms ease,
     visibility 720ms ease;
@@ -113,8 +118,8 @@ p {
 }
 
 .mark-ring {
-  fill: rgba(255, 255, 255, 0.42);
-  stroke: var(--navy);
+  fill: var(--brand-pale);
+  stroke: var(--brand-navy);
   stroke-width: 4.9;
   stroke-dasharray: 308;
   stroke-dashoffset: 308;
@@ -123,7 +128,7 @@ p {
 
 .mark-path {
   fill: none;
-  stroke: var(--navy);
+  stroke: var(--brand-navy);
   stroke-width: 4.7;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -134,7 +139,7 @@ p {
 
 .mark-step {
   fill: none;
-  stroke: var(--green);
+  stroke: var(--brand-green);
   stroke-width: 4.1;
   stroke-linecap: round;
   opacity: 0;
@@ -155,7 +160,7 @@ p {
 }
 
 .mark-dot {
-  fill: var(--amber);
+  fill: var(--brand-amber);
   opacity: 0;
   transform: scale(0.72);
   transform-origin: 56px 23.3px;
@@ -179,8 +184,8 @@ p {
   margin-top: 5px;
   border-radius: 999px;
   background:
-    radial-gradient(circle at calc(100% - 2.5px) 50%, var(--amber) 0 2.5px, transparent 2.7px),
-    linear-gradient(rgba(51, 127, 109, 0.64) 0 0) 0 50% / calc(100% - 14px) 1px no-repeat;
+    radial-gradient(circle at calc(100% - 2.5px) 50%, var(--brand-amber) 0 2.5px, transparent 2.7px),
+    linear-gradient(var(--brand-soft-green) 0 0) 0 50% / calc(100% - 14px) 1px no-repeat;
   transform: scaleX(0);
   transform-origin: left center;
   animation: lineReveal 760ms ease 1560ms forwards;
@@ -189,7 +194,7 @@ p {
 .splash-name {
   width: 100%;
   margin: 0;
-  color: var(--navy);
+  color: var(--brand-navy);
   font-size: 48px;
   font-weight: 600;
   line-height: 1;
@@ -199,7 +204,7 @@ p {
 .splash-tagline {
   width: 100%;
   margin: 0;
-  color: var(--green);
+  color: var(--brand-green);
   font-size: 14px;
   font-weight: 500;
   line-height: 1.35;
@@ -283,7 +288,7 @@ p {
 
 .brand-name {
   display: block;
-  color: var(--navy);
+  color: var(--brand-navy);
   font-size: 25px;
   font-weight: 680;
   line-height: 1;
@@ -295,7 +300,7 @@ p {
   gap: 3px;
   align-items: center;
   justify-content: center;
-  color: var(--green);
+  color: var(--brand-green);
   font-size: 8.5px;
   font-weight: 820;
   letter-spacing: 0.08em;
