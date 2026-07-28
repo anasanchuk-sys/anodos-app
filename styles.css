@@ -3510,23 +3510,6 @@ body[data-route="home"] .module-arrow {
   background: rgba(227, 183, 101, 0.24);
 }
 
-.contract-review-evidence {
-  color: var(--muted);
-  font-size: 9.5px;
-}
-
-.contract-review-evidence summary {
-  cursor: pointer;
-  font-weight: 800;
-}
-
-.contract-review-evidence p {
-  margin: 5px 0 0;
-  padding: 6px;
-  border-left: 2px solid rgba(65, 108, 145, 0.16);
-  line-height: 1.4;
-}
-
 .contract-review-evidence-missing,
 .contract-review-missing {
   color: #8a5f15;

@@ -5671,7 +5671,6 @@ function renderContractReviewValue(value, meta = {}) {
   if (!value) {
     return `<span class="contract-review-missing">Не знайдено</span>`;
   }
-  const evidence = meta.evidence || {};
   const confidence = meta.confidence || "review";
   return `
     <div class="contract-review-value">
@@ -5679,14 +5678,6 @@ function renderContractReviewValue(value, meta = {}) {
       <span class="contract-review-confidence contract-review-confidence-${escapeHtml(confidence)}">${escapeHtml(contractReviewConfidenceLabel(confidence))}</span>
       ${meta.inheritedFromSupplement ? `<span class="contract-review-evidence-missing">Кандидат із додатка або додаткової угоди — підтвердити вручну</span>` : ""}
       ${meta.packageConflict ? `<span class="contract-review-evidence-missing">У пакеті є суперечливе значення</span>` : ""}
-      ${evidence.snippet ? `
-        <details class="contract-review-evidence">
-          <summary>Показати джерело${evidence.fileName ? ` · ${escapeHtml(evidence.fileName)}` : ""}${evidence.line ? ` · рядок ${evidence.line}` : ""}</summary>
-          <p>${escapeHtml(evidence.snippet)}</p>
-        </details>
-      ` : `
-        <span class="contract-review-evidence-missing">Прямий фрагмент не локалізовано</span>
-      `}
     </div>
   `;
 }
@@ -5848,7 +5839,7 @@ function renderContractReview() {
         <div>
           <p class="eyebrow">Anodos · desktop</p>
           <h1>Порівняння договорів</h1>
-          <p class="hero-copy">Завантаж два або більше пакетів документів, перевір їхні ролі та сформуй доказову таблицю. Кожне прийняте значення можна звірити з фрагментом джерела.</p>
+          <p class="hero-copy">Завантаж два або більше пакетів документів, перевір їхні ролі та сформуй порівняльну таблицю. Сумнівні або конфліктні дані система позначить окремо.</p>
         </div>
       </header>
 
@@ -5877,7 +5868,7 @@ function renderContractReview() {
         `}
         <button class="primary-action primary-action-wide" type="button" data-run-contract-review ${canCompare ? "" : "disabled"}>${compareButtonText}</button>
         <p class="contract-review-note">Попередній і новий договори визначаються лише за повними періодами дії з тексту документів. Назва файла, порядок завантаження та дата зміни не визначають хронологію.</p>
-        <p class="contract-review-note">Anodos підтверджує значення лише разом із джерельним фрагментом. Сумнівні або конфліктні дані передаються на ручну перевірку.</p>
+        <p class="contract-review-note">Anodos аналізує текст документів, а сумнівні або конфліктні дані передає на ручну перевірку.</p>
         ${contractReviewCopyMessage ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>` : ""}
       </section>
 
