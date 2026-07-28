@@ -3785,7 +3785,7 @@ function contractReviewExtractCoverageDatesFromLines(lines) {
       continue;
     }
     const fragment = lines.slice(scheduleIndex, scheduleIndex + 18).join(" ");
-    const dates = [...fragment.matchAll(/\d{1,2}[./]\d{1,2}[./]\d{2,4}/g)]
+    const dates = [...fragment.matchAll(/(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4})/g)]
       .map((match) => contractReviewFormatDate(match[0]))
       .filter(Boolean);
     if (dates.length >= 2) {
@@ -4031,14 +4031,27 @@ function contractReviewPackageAssignmentStatus(files) {
 }
 
 function contractReviewFormatDate(value) {
-  const match = String(value || "").match(/(\d{1,2})[./](\d{1,2})[./](\d{2,4})/);
+  const source = String(value || "").trim();
+  const isoMatch = source.match(/(?:^|\D)(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:\D|$)/);
+  const dayFirstMatch = source.match(/(?:^|\D)(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})(?:\D|$)/);
+  const match = isoMatch || dayFirstMatch;
   if (!match) {
     return "";
   }
-  const day = match[1].padStart(2, "0");
-  const month = match[2].padStart(2, "0");
-  const year = match[3].length === 2 ? `20${match[3]}` : match[3];
-  return `${day}.${month}.${year}`;
+  const year = Number(isoMatch ? match[1] : match[3].length === 2 ? `20${match[3]}` : match[3]);
+  const month = Number(match[2]);
+  const day = Number(isoMatch ? match[3] : match[1]);
+  const time = Date.UTC(year, month - 1, day);
+  const date = new Date(time);
+  if (
+    !Number.isFinite(time)
+    || date.getUTCFullYear() !== year
+    || date.getUTCMonth() !== month - 1
+    || date.getUTCDate() !== day
+  ) {
+    return "";
+  }
+  return `${String(day).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year}`;
 }
 
 function contractReviewDateToTime(value) {
@@ -4051,37 +4064,117 @@ function contractReviewDateToTime(value) {
   return Number.isFinite(time) ? time : Number.POSITIVE_INFINITY;
 }
 
-function contractReviewChronologyScore(values, fileRecord) {
+function contractReviewCoveragePeriod(values = {}) {
+  const startDate = contractReviewFormatDate(values.startDate);
+  const endDate = contractReviewFormatDate(values.endDate);
   const startTime = contractReviewDateToTime(values.startDate);
   const endTime = contractReviewDateToTime(values.endDate);
-  const fallback = Number(fileRecord?.score || fileRecord?.lastModified || 0);
   return {
+    startDate,
+    endDate,
     startTime,
     endTime,
-    fallback,
-    hasDates: Number.isFinite(startTime) || Number.isFinite(endTime)
+    valid:
+      Boolean(startDate)
+      && Boolean(endDate)
+      && Number.isFinite(startTime)
+      && Number.isFinite(endTime)
+      && endTime > startTime
   };
 }
 
-function contractReviewCompareChronology(left, right) {
-  const leftScore = left.chronology || {};
-  const rightScore = right.chronology || {};
-  if (leftScore.hasDates !== rightScore.hasDates) {
-    return leftScore.hasDates ? -1 : 1;
+function contractReviewDeterminePeriodOrder(leftRecord, rightRecord) {
+  const leftPeriod = contractReviewCoveragePeriod(leftRecord?.analysis?.values || leftRecord?.values || {});
+  const rightPeriod = contractReviewCoveragePeriod(rightRecord?.analysis?.values || rightRecord?.values || {});
+  if (!leftPeriod.valid || !rightPeriod.valid) {
+    return {
+      status: "review",
+      reason: "missing-or-invalid",
+      leftPeriod,
+      rightPeriod
+    };
   }
-  if (leftScore.startTime !== rightScore.startTime) {
-    return leftScore.startTime - rightScore.startTime;
+
+  const leftBeforeRight =
+    leftPeriod.startTime < rightPeriod.startTime
+    && leftPeriod.endTime < rightPeriod.endTime;
+  const rightBeforeLeft =
+    rightPeriod.startTime < leftPeriod.startTime
+    && rightPeriod.endTime < leftPeriod.endTime;
+  if (!leftBeforeRight && !rightBeforeLeft) {
+    return {
+      status: "review",
+      reason:
+        leftPeriod.startTime === rightPeriod.startTime
+        && leftPeriod.endTime === rightPeriod.endTime
+          ? "equal"
+          : "not-strictly-later",
+      leftPeriod,
+      rightPeriod
+    };
   }
-  if (leftScore.endTime !== rightScore.endTime) {
-    return leftScore.endTime - rightScore.endTime;
+
+  const previousRecord = leftBeforeRight ? leftRecord : rightRecord;
+  const renewalRecord = leftBeforeRight ? rightRecord : leftRecord;
+  const previousPeriod = leftBeforeRight ? leftPeriod : rightPeriod;
+  const renewalPeriod = leftBeforeRight ? rightPeriod : leftPeriod;
+  const day = 24 * 60 * 60 * 1000;
+  const relation = renewalPeriod.startTime <= previousPeriod.endTime
+    ? "overlap"
+    : renewalPeriod.startTime > previousPeriod.endTime + day
+      ? "gap"
+      : "continuous";
+  return {
+    status: "resolved",
+    previousRecord,
+    renewalRecord,
+    previousPeriod,
+    renewalPeriod,
+    relation
+  };
+}
+
+function contractReviewAlignPackageAssignments(files, periodOrder) {
+  if (periodOrder?.status !== "resolved") {
+    return false;
   }
-  return (leftScore.fallback || 0) - (rightScore.fallback || 0)
-    || left.file.name.localeCompare(right.file.name, "uk");
+  const previousAssignment = periodOrder.previousRecord?.file?.versionAssignment;
+  const renewalAssignment = periodOrder.renewalRecord?.file?.versionAssignment;
+  if (previousAssignment === "previous" && renewalAssignment === "renewal") {
+    return false;
+  }
+  if (previousAssignment !== "renewal" || renewalAssignment !== "previous") {
+    return false;
+  }
+  (files || []).forEach((file) => {
+    if (file.versionAssignment === "previous") {
+      file.versionAssignment = "renewal";
+    } else if (file.versionAssignment === "renewal") {
+      file.versionAssignment = "previous";
+    }
+  });
+  return true;
+}
+
+function contractReviewPeriodLabel(period) {
+  return period?.valid
+    ? `${period.startDate}–${period.endDate}`
+    : "період не підтверджено";
+}
+
+function contractReviewPeriodReviewMessage(periodOrder) {
+  if (periodOrder?.reason === "equal") {
+    return "Порівняння зупинено: основні договори мають однакові періоди дії, тому новий договір визначити неможливо.";
+  }
+  if (periodOrder?.reason === "not-strictly-later") {
+    return "Порівняння зупинено: період одного договору не є повністю пізнішим за період іншого. Перевір дати початку й закінчення в обох документах.";
+  }
+  return "Порівняння зупинено: Anodos не зміг підтвердити повні коректні періоди дії обох основних договорів.";
 }
 
 function contractReviewExtractDateRange(text) {
   const normalized = String(text || "").replace(/\s+/g, " ");
-  const datePattern = "(\\d{1,2}[./]\\d{1,2}[./]\\d{2,4})";
+  const datePattern = "((?:\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})|(?:\\d{1,2}[-/.]\\d{1,2}[-/.]\\d{2,4}))";
   const rangePattern = new RegExp(`(?:з|від)\\s*${datePattern}\\s*(?:до|по|-)\\s*${datePattern}`, "i");
   const range = normalized.match(rangePattern);
   if (range) {
@@ -4251,9 +4344,9 @@ function contractReviewExtractValues(text) {
   const extractedStartTime = contractReviewDateToTime(extractedDateRange.startDate);
   const extractedEndTime = contractReviewDateToTime(extractedDateRange.endDate);
   const dateRangeIsValid =
-    !Number.isFinite(extractedStartTime)
-    || !Number.isFinite(extractedEndTime)
-    || extractedEndTime > extractedStartTime;
+    Number.isFinite(extractedStartTime)
+    && Number.isFinite(extractedEndTime)
+    && extractedEndTime > extractedStartTime;
   const dateRange = dateRangeIsValid ? extractedDateRange : { startDate: "", endDate: "" };
   const financialValues = contractReviewExtractFinancialValues(lines);
   const insurer = contractReviewExtractInsurer(lines)
@@ -4658,14 +4751,13 @@ async function buildContractReviewResult() {
         values: analysis.values,
         role: file.documentRoleTouched
           ? file.documentRole
-          : contractReviewDocumentRole(file, file.text),
-        chronology: contractReviewChronologyScore(analysis.values, file)
+          : contractReviewDocumentRole(file, file.text)
       };
-    }).sort(contractReviewCompareChronology);
-    const previousPackageRecords = analyzedFiles.filter((record) => record.file.versionAssignment === "previous");
-    const renewalPackageRecords = analyzedFiles.filter((record) => record.file.versionAssignment === "renewal");
-    const previousMainRecords = previousPackageRecords.filter((record) => record.role === "main");
-    const renewalMainRecords = renewalPackageRecords.filter((record) => record.role === "main");
+    });
+    let previousPackageRecords = analyzedFiles.filter((record) => record.file.versionAssignment === "previous");
+    let renewalPackageRecords = analyzedFiles.filter((record) => record.file.versionAssignment === "renewal");
+    let previousMainRecords = previousPackageRecords.filter((record) => record.role === "main");
+    let renewalMainRecords = renewalPackageRecords.filter((record) => record.role === "main");
     if (previousMainRecords.length !== 1 || renewalMainRecords.length !== 1) {
       contractReviewResult = {
         previous: previousMainRecords[0]?.file || packageStatus.previousMain[0],
@@ -4683,8 +4775,46 @@ async function buildContractReviewResult() {
       renderContractReview();
       return;
     }
-    const previousRecord = previousMainRecords[0];
-    const renewalRecord = renewalMainRecords[0];
+
+    const periodOrder = contractReviewDeterminePeriodOrder(
+      previousMainRecords[0],
+      renewalMainRecords[0]
+    );
+    if (periodOrder.status !== "resolved") {
+      const periodMessage = contractReviewPeriodReviewMessage(periodOrder);
+      contractReviewResult = {
+        previous: previousMainRecords[0].file,
+        renewal: renewalMainRecords[0].file,
+        supporting: activeFiles.filter((file) =>
+          file.id !== previousMainRecords[0].file.id
+          && file.id !== renewalMainRecords[0].file.id
+        ),
+        rows: [],
+        foundCount: 0,
+        readableCount: readableFiles.length,
+        blocked: true,
+        diagnosticTitle: "Не вдалося визначити хронологію",
+        diagnosticExplanation: periodMessage,
+        statuses: [
+          `${previousMainRecords[0].file.name}: ${contractReviewPeriodLabel(periodOrder.leftPeriod)}`,
+          `${renewalMainRecords[0].file.name}: ${contractReviewPeriodLabel(periodOrder.rightPeriod)}`,
+          ...enriched.map((file) => `${file.name}: ${file.readStatus}`)
+        ],
+        createdAt: new Date().toISOString()
+      };
+      contractReviewCopyMessage = periodMessage;
+      contractReviewBusy = false;
+      renderContractReview();
+      return;
+    }
+
+    const packageOrderCorrected = contractReviewAlignPackageAssignments(enriched, periodOrder);
+    previousPackageRecords = analyzedFiles.filter((record) => record.file.versionAssignment === "previous");
+    renewalPackageRecords = analyzedFiles.filter((record) => record.file.versionAssignment === "renewal");
+    previousMainRecords = previousPackageRecords.filter((record) => record.role === "main");
+    renewalMainRecords = renewalPackageRecords.filter((record) => record.role === "main");
+    const previousRecord = periodOrder.previousRecord;
+    const renewalRecord = periodOrder.renewalRecord;
     const previous = previousRecord.file;
     const renewal = renewalRecord.file;
     const selectedFileIds = new Set([previous.id, renewal.id]);
@@ -4742,6 +4872,12 @@ async function buildContractReviewResult() {
       renewalRole: renewalRecord.role,
       supportingRecords,
       supportingAlerts,
+      periods: {
+        previous: periodOrder.previousPeriod,
+        renewal: periodOrder.renewalPeriod,
+        relation: periodOrder.relation
+      },
+      packageOrderCorrected,
       rows,
       foundCount,
       comparableCount,
@@ -4752,7 +4888,7 @@ async function buildContractReviewResult() {
       createdAt: new Date().toISOString()
     };
     contractReviewCopyMessage = foundCount
-      ? `Порівняння сформовано: ${verifiedCount} надійних, ${attentionCount} потребують ручної перевірки.`
+      ? `Порівняння сформовано: ${verifiedCount} надійних, ${attentionCount} потребують ручної перевірки.${packageOrderCorrected ? " Пакети автоматично впорядковано за періодом дії." : ""}`
       : readableCount
         ? "Документи прочитано, але параметри не знайдені автоматично. Перевір формат договору."
         : "Не вдалося прочитати текст договорів. Для автоматичного аналізу завантаж DOC, DOCX або текстовий PDF.";
@@ -5561,10 +5697,12 @@ function renderContractReviewTable() {
   }
 
   if (!contractReviewResult.foundCount) {
-    const title = contractReviewResult.blocked ? "Порівняння не запущено" : "Дані не витягнулися";
-    const explanation = contractReviewResult.blocked
-      ? "Anodos не формує порожню таблицю, якщо прочитано менше двох договорів. Додай два договори у DOC, DOCX або PDF з текстовим шаром."
-      : "Anodos не буде показувати порожню таблицю як результат. Перевір формат файлів і завантаж заповнені договори у форматі DOC, DOCX або PDF з текстовим шаром.";
+    const title = contractReviewResult.diagnosticTitle
+      || (contractReviewResult.blocked ? "Порівняння не запущено" : "Дані не витягнулися");
+    const explanation = contractReviewResult.diagnosticExplanation
+      || (contractReviewResult.blocked
+        ? "Anodos не формує порожню таблицю, якщо прочитано менше двох договорів. Додай два договори у DOC, DOCX або PDF з текстовим шаром."
+        : "Anodos не буде показувати порожню таблицю як результат. Перевір формат файлів і завантаж заповнені договори у форматі DOC, DOCX або PDF з текстовим шаром.");
     return `
       <section class="contract-review-result contract-review-diagnostic">
         <header class="contract-review-result-head">
@@ -5603,6 +5741,19 @@ function renderContractReviewTable() {
           <small>${escapeHtml(contractReviewDocumentRoleLabel(contractReviewResult.renewalRole))}</small>
         </article>
       </div>
+      ${contractReviewResult.periods ? `
+        <p class="contract-review-supporting">
+          Порядок визначено за періодом дії:
+          ${escapeHtml(contractReviewPeriodLabel(contractReviewResult.periods.previous))}
+          →
+          ${escapeHtml(contractReviewPeriodLabel(contractReviewResult.periods.renewal))}.
+        </p>
+        ${contractReviewResult.periods.relation === "overlap"
+          ? `<p class="contract-review-note">Періоди частково перетинаються. Договір оновлення визначено тому, що і його початок, і його закінчення пізніші.</p>`
+          : contractReviewResult.periods.relation === "gap"
+            ? `<p class="contract-review-note">Між періодами є розрив. Порядок договорів визначено, але безперервність страхового покриття потрібно перевірити.</p>`
+            : ""}
+      ` : ""}
       <div class="contract-review-quality-summary" aria-label="Якість автоматичної перевірки">
         <article>
           <strong>${contractReviewResult.verifiedCount}</strong>
@@ -5686,7 +5837,7 @@ function renderContractReview() {
   const readinessText = contractReviewFiles.length
     ? readyFilesCount >= 2
       ? packageAssignmentsValid
-        ? `Готові до аналізу: ${readyFilesCount} з ${activeFilesCount}. У кожному пакеті визначено основний договір.`
+        ? `Готові до аналізу: ${readyFilesCount} з ${activeFilesCount}. Порядок основних договорів буде визначено за періодами дії.`
         : `Готові до аналізу: ${readyFilesCount} з ${activeFilesCount}. У кожному пакеті має бути рівно один основний договір.`
       : `Готові до аналізу: ${readyFilesCount} з ${activeFilesCount}. Для порівняння потрібні щонайменше два читабельні основні договори.`
     : "";
@@ -5725,6 +5876,7 @@ function renderContractReview() {
           <p class="contract-review-empty">Додай пакет документів: основний договір, додатки, додаткові угоди, графік платежів або перелік майна. Після завантаження перевір призначення кожного файла.</p>
         `}
         <button class="primary-action primary-action-wide" type="button" data-run-contract-review ${canCompare ? "" : "disabled"}>${compareButtonText}</button>
+        <p class="contract-review-note">Попередній і новий договори визначаються лише за повними періодами дії з тексту документів. Назва файла, порядок завантаження та дата зміни не визначають хронологію.</p>
         <p class="contract-review-note">Anodos підтверджує значення лише разом із джерельним фрагментом. Сумнівні або конфліктні дані передаються на ручну перевірку.</p>
         ${contractReviewCopyMessage ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>` : ""}
       </section>
