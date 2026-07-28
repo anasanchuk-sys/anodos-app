@@ -139,6 +139,12 @@ function openMunichSearch() {
 }
 
 document.addEventListener("dragstart", (event) => {
+  if (
+    typeof event.target?.closest === "function"
+    && event.target.closest("[data-contract-review-dropzone]")
+  ) {
+    return;
+  }
   event.preventDefault();
 });
 
@@ -1914,17 +1920,24 @@ const progressByUserKey = "anodos-progress-by-user-v1";
 const centralParticipantsKey = "anodos-central-participants-v1";
 const accuracyReportsKey = "anodos-accuracy-reports-v1";
 const activeSpaceKey = "anodos-active-space-v1";
-function contractReviewIsLocallyAvailable(locationLike = window.location) {
-  const protocol = String(locationLike?.protocol || "").toLowerCase();
-  const hostname = String(locationLike?.hostname || "").toLowerCase();
-  const localHosts = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
-  return protocol === "file:" || localHosts.has(hostname);
+function contractReviewIsDesktopAvailable(navigatorLike = window.navigator) {
+  const mobileHint = navigatorLike?.userAgentData?.mobile;
+  if (typeof mobileHint === "boolean") {
+    return !mobileHint;
+  }
+
+  const userAgent = String(navigatorLike?.userAgent || "");
+  const mobileUserAgent = /Android|iPhone|iPad|iPod|IEMobile|Opera Mini|Mobile/i.test(userAgent);
+  const iPadDesktopUserAgent =
+    /Macintosh/i.test(userAgent)
+    && Number(navigatorLike?.maxTouchPoints || 0) > 1;
+  return !mobileUserAgent && !iPadDesktopUserAgent;
 }
 
-const contractReviewLocallyAvailable = contractReviewIsLocallyAvailable();
+const contractReviewDesktopAvailable = contractReviewIsDesktopAvailable();
 
 function availableRoute(nextRoute) {
-  return nextRoute === "contract-review" && !contractReviewLocallyAvailable
+  return nextRoute === "contract-review" && !contractReviewDesktopAvailable
     ? "home"
     : nextRoute;
 }
@@ -1967,6 +1980,37 @@ const contractReviewFields = [
   { key: "limits", label: "Ліміти / склад страхової суми", control: "Розподіл страхової суми за покриттями, максимальні періоди та прямо встановлені субліміти; не загальні згадки у визначеннях." },
   { key: "premium", label: "Загальний страховий платіж", control: "Загальна премія за продуктом, не окремий внесок." }
 ];
+const contractReviewFieldEvidencePatterns = {
+  insured: [/^страхувальник\b/i, /\binsured\b/i],
+  address: [/територія страхування/i, /місцезнаходження.*майна/i, /майно вважається застрахованим тільки за адресою/i, /за адресою\s*:/i],
+  insurer: [/^страховик\b/i, /\binsurer\b/i],
+  contractNumber: [/договір(?: страхування)?.{0,40}(?:№|N|No\.)/i, /№ договору/i, /номер договору/i],
+  intermediaryClause: [/договір укладений за посередництва/i, /страхов(?:ий|ого) посередник/i, /бритмарк|britmark/i],
+  product: [/страхового продукту/i, /договір.*страхування/i, /предмет(?:ом)? договору/i],
+  beneficiary: [/^вигодонабувач\b/i, /\bbeneficiary\b/i],
+  valuationBasis: [/базис оцінки/i, /відновлювальн.*варт/i, /дійсн.*варт/i, /балансов.*варт/i],
+  risks: [/страхові ризики/i, /перелік страхових (?:ризиків|випадків)/i, /страховими випадками/i, /all risks|named perils/i],
+  startDate: [/дата початку/i, /строк дії договору/i, /період .*страхування/i],
+  endDate: [/дата закінчення/i, /строк дії договору/i, /період .*страхування/i],
+  deductible: [/франшиза/i],
+  sumInsured: [/загальна страхова сума/i, /^страхова сума\b/i],
+  rate: [/страховий тариф/i],
+  limits: [/субліміт/i, /ліміт відповідальності/i, /максимальний період відшкодування/i],
+  premium: [/загальн(?:ий|а)\s+(?:страховий платіж|страхова премія)/i, /^страхов(?:ий платіж|а премія)\b/i]
+};
+const contractReviewHighRiskFields = new Set([
+  "insured",
+  "insurer",
+  "contractNumber",
+  "beneficiary",
+  "startDate",
+  "endDate",
+  "deductible",
+  "sumInsured",
+  "rate",
+  "limits",
+  "premium"
+]);
 
 let route = "home";
 let activeLessonId = "property";
@@ -2067,7 +2111,7 @@ function activeNavigationRoute() {
   if (
     route === "law"
     || route === "glossary"
-    || (route === "contract-review" && contractReviewLocallyAvailable)
+    || (route === "contract-review" && contractReviewDesktopAvailable)
   ) {
     return route;
   }
@@ -2097,14 +2141,14 @@ function renderSpaceShell() {
     button.classList.toggle("brand-menu-option-active", isActive);
   });
 
-  document.querySelectorAll("[data-contract-review-local-only]").forEach((element) => {
-    element.hidden = !contractReviewLocallyAvailable;
+  document.querySelectorAll("[data-contract-review-desktop-only]").forEach((element) => {
+    element.hidden = !contractReviewDesktopAvailable;
   });
 
   if (nav) {
     nav.setAttribute("aria-label", `Навігація простору «${definition.label}»`);
     nav.innerHTML = definition.navigation
-      .filter((item) => item.route !== "contract-review" || contractReviewLocallyAvailable)
+      .filter((item) => item.route !== "contract-review" || contractReviewDesktopAvailable)
       .map((item) => `
       <button
         type="button"
@@ -2482,7 +2526,7 @@ function contractReviewInitialStatus(fileRecord) {
   }
   if (extension === ".pdf") {
     return window.location.protocol === "file:"
-      ? "PDF у локальному режимі не читається. Для аналізу збережи як DOC/DOCX або відкрий HTTPS-версію"
+      ? "PDF додано, але режим file:// не може його прочитати. Відкрий Anodos через локальну адресу http://127.0.0.1 або збережи договір як DOCX"
       : "готовий до аналізу, якщо PDF має текстовий шар";
   }
   if (extension === ".doc") {
@@ -2523,6 +2567,10 @@ function contractReviewDecodeEntities(value) {
 
 function contractReviewXmlToText(xml) {
   return contractReviewDecodeEntities(String(xml || "")
+    .replace(/<w:del\b[\s\S]*?<\/w:del>/g, "")
+    .replace(/<w:moveFrom\b[\s\S]*?<\/w:moveFrom>/g, "")
+    .replace(/<w:r\b[^>]*>(?:(?!<\/w:r>)[\s\S])*?<w:vanish\/>(?:(?!<\/w:r>)[\s\S])*?<\/w:r>/g, "")
+    .replace(/<w:instrText\b[^>]*>[\s\S]*?<\/w:instrText>/g, "")
     .replace(/<w:tab\/>/g, "\t")
     .replace(/<w:br\/>/g, "\n")
     .replace(/<\/w:tc>/g, " | ")
@@ -2558,9 +2606,7 @@ async function contractReviewReadDocx(fileRecord) {
   }
 
   const zip = await window.JSZip.loadAsync(fileRecord.file);
-  const xmlNames = Object.keys(zip.files).filter((name) =>
-    /^word\/(document|header\d+|footer\d+|footnotes|endnotes|comments)\.xml$/i.test(name)
-  );
+  const xmlNames = Object.keys(zip.files).filter((name) => /^word\/document\.xml$/i.test(name));
   const xmlParts = await Promise.all(xmlNames.map((name) => zip.files[name].async("string")));
   return contractReviewNormalizeText(xmlParts.map(contractReviewXmlToText).filter(Boolean).join("\n\n"));
 }
@@ -2575,6 +2621,51 @@ async function contractReviewPdfModule() {
   return contractReviewPdfModulePromise;
 }
 
+function contractReviewPdfPageText(content) {
+  const items = (content?.items || [])
+    .map((item, index) => ({
+      text: String(item.str || "").trim(),
+      x: Number(item.transform?.[4]),
+      y: Number(item.transform?.[5]),
+      width: Number(item.width || 0),
+      index
+    }))
+    .filter((item) => item.text);
+  const positioned = items.filter((item) => Number.isFinite(item.x) && Number.isFinite(item.y));
+  if (positioned.length < Math.max(3, items.length * 0.7)) {
+    return items.map((item) => item.text).join(" ");
+  }
+
+  const rows = [];
+  positioned
+    .sort((left, right) => right.y - left.y || left.x - right.x || left.index - right.index)
+    .forEach((item) => {
+      let row = rows.find((candidate) => Math.abs(candidate.y - item.y) <= 2.2);
+      if (!row) {
+        row = { y: item.y, items: [] };
+        rows.push(row);
+      }
+      row.items.push(item);
+    });
+
+  return rows
+    .sort((left, right) => right.y - left.y)
+    .map((row) => {
+      const cells = row.items.sort((left, right) => left.x - right.x);
+      let line = "";
+      let previousEnd = null;
+      cells.forEach((cell) => {
+        const gap = previousEnd === null ? 0 : cell.x - previousEnd;
+        const separator = previousEnd === null ? "" : gap > 18 ? " | " : " ";
+        line += `${separator}${cell.text}`;
+        previousEnd = cell.x + Math.max(0, cell.width);
+      });
+      return line.trim();
+    })
+    .filter(Boolean)
+    .join("\n");
+}
+
 async function contractReviewReadPdf(fileRecord) {
   if (window.location.protocol === "file:") {
     return "";
@@ -2587,9 +2678,9 @@ async function contractReviewReadPdf(fileRecord) {
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
     const page = await pdf.getPage(pageNumber);
     const content = await page.getTextContent();
-    const text = content.items.map((item) => item.str || "").join(" ");
+    const text = contractReviewPdfPageText(content);
     if (text.trim()) {
-      pageTexts.push(text.trim());
+      pageTexts.push(`[Сторінка ${pageNumber}]\n${text.trim()}`);
     }
   }
   return contractReviewNormalizeText(pageTexts.join("\n\n"));
@@ -3110,13 +3201,22 @@ function contractReviewLineLooksLikePartyValue(line) {
   if (!normalized || contractReviewIsPlaceholderValue(line)) {
     return false;
   }
+  if (
+    normalized.length > 220
+    || /(?:може|має право|зобов'яз|звернут|оскарж|врегулюван|захист.*прав|відповідно до|у випадку|у разі|порядок|умов[аи] договору)/i.test(normalized)
+  ) {
+    return false;
+  }
   if (/^\d[\d\s]*$/.test(normalized) || /^ua\d/i.test(normalized)) {
+    return false;
+  }
+  if (/^(?:тов|тдв|ат|пат|прат|ск|дп|пп|кп|фоп|llc|jsc)$/i.test(normalized.replace(/[«»"'.,\s]/g, ""))) {
     return false;
   }
   if (/^(в особі|посада|п\.?і\.?б|діє|номер|дата|адреса|телефон|код єдрпоу|iban|р\/р|п\/р|рахунок|реквізити|bank details|резидент|ідентифікаційний|повна назва|найменування|full name|company name|legal address)/i.test(normalized)) {
     return false;
   }
-  return /товариство|акціонерне|страхова компанія|банк|universalna|універсальна|магелан|бритмарк|приватне|(?:^|\s)(?:прат|тов|тдв|пат|ат|ск)(?:\s|[«"])|\bllc\b|\bjsc\b/i.test(line);
+  return /товариство|акціонерне|страхова компанія|universalna|універсальна|магелан|бритмарк|приватне|^(?:прат|тов|тдв|пат|ат|ск|дп|пп|кп|фоп)(?:\s|[«"])|^(?:llc|jsc)\b|^(?:акціонерний|державний|комерційний)\s+банк\b|^(?:ат|пат|прат).{0,80}\bбанк\b/i.test(line);
 }
 
 function contractReviewExtractParty(lines, headingPattern, options = {}) {
@@ -3257,15 +3357,31 @@ function contractReviewExtractInsuredAddress(lines) {
   return "";
 }
 
+function contractReviewProductValueIsPlausible(value) {
+  const normalized = contractReviewNormalizeComparable(value)
+    .replace(/[«»"']/g, "")
+    .trim();
+  if (
+    !normalized
+    || normalized.length > 150
+    || /^(?:страховик|страхувальник|вигодонабувач|посередник|продукт|договір|номер|назва)$/i.test(normalized)
+    || /^(?:insurer|insured|beneficiary|intermediary|product|contract)$/i.test(normalized)
+    || /(?:загальн(?:і|их) умов|введен[іо] в дію|затверджен|наказом|розміщен[іо].*(?:сайт|сторінц)|надалі по тексту)/i.test(normalized)
+  ) {
+    return false;
+  }
+  return /страхуван|майн|відповідальн|вантаж|будівельно|монтажн|воєнн|іпотек|cargo|property|liability|all risks|named perils/i.test(normalized);
+}
+
 function contractReviewExtractProductName(lines) {
   const productIndex = contractReviewFindLineIndex(lines, /страхового продукту/i);
   if (productIndex >= 0) {
     const sameLine = contractReviewCleanValue(lines[productIndex].replace(/^.*страхового продукту/i, ""), 180);
-    if (sameLine && !/договір|відповідно|зусп/i.test(sameLine)) {
+    if (sameLine && !/договір|відповідно|зусп/i.test(sameLine) && contractReviewProductValueIsPlausible(sameLine)) {
       return contractReviewNormalizeProductText(sameLine);
     }
     const nextLine = lines[productIndex + 1] || "";
-    if (nextLine && !/договір|відповідно|зусп/i.test(nextLine)) {
+    if (nextLine && !/договір|відповідно|зусп/i.test(nextLine) && contractReviewProductValueIsPlausible(nextLine)) {
       return contractReviewNormalizeProductText(nextLine);
     }
   }
@@ -3432,8 +3548,22 @@ function contractReviewJoinCoverageValues(entries) {
 }
 
 function contractReviewExtractFinancialValues(lines) {
-  const sumLineIndex = contractReviewFindLineIndex(lines, /^загальна страхова сума(?:\s|$)/i);
-  const premiumLineIndex = contractReviewFindLineIndex(lines, /^загальн(?:ий|а)\s+(?:страховий платіж|страхова премія)/i);
+  const numberedClausePrefix = "^(?:\\d+(?:\\.\\d+)*\\.?\\s*)?";
+  const sumLineIndex = contractReviewFindLineIndex(
+    lines,
+    new RegExp(`${numberedClausePrefix}загальна страхова сума(?:\\s|$)`, "i")
+  );
+  const generalPremiumLineIndex = contractReviewFindLineIndex(
+    lines,
+    new RegExp(`${numberedClausePrefix}загальн(?:ий|а)\\s+(?:страховий платіж|страхова премія)(?:\\s|$)`, "i")
+  );
+  const premiumSectionLineIndex = contractReviewFindLineIndex(
+    lines,
+    /^(?:\d+\.\s*)?(?:страховий платіж|страхова премія)\s*$/i
+  );
+  const premiumLineIndex = generalPremiumLineIndex >= 0
+    ? generalPremiumLineIndex
+    : premiumSectionLineIndex;
   const sumInsured = contractReviewExtractMoneyAfterLine(lines, sumLineIndex, 4);
   const premium = contractReviewExtractMoneyAfterLine(lines, premiumLineIndex, 4);
 
@@ -3514,14 +3644,47 @@ function contractReviewExtractFinancialValues(lines) {
     }
   }
 
-  const rate = contractReviewJoinCoverageValues([
+  const coverageRate = contractReviewJoinCoverageValues([
     { label: "Майно", value: propertyRate },
     { label: "BI", value: businessInterruptionRate }
   ]);
-  const deductible = contractReviewJoinCoverageValues([
+  const coverageDeductible = contractReviewJoinCoverageValues([
     { label: "Майно", value: propertyDeductible },
     { label: "BI", value: businessInterruptionDeductible }
   ]);
+  const explicitRates = [];
+  const explicitDeductibles = [];
+  lines.forEach((line) => {
+    const rateMatch = line.match(
+      /страхов(?:ий|ого)\s+тариф[^%]{0,180}?(?:складає|становить|дорівнює|[-–—:])?\s*(\d{1,2}(?:[,.]\d{1,4})?)\s*%/i
+    );
+    if (rateMatch) {
+      const rateValue = contractReviewFormatPercent(contractReviewParseNumber(rateMatch[1]));
+      const riskMatch = line.match(/за\s+ризиком\s+[«"]?([^»"]{2,80})[»"]?/i);
+      explicitRates.push(riskMatch
+        ? `${contractReviewCleanValue(riskMatch[1], 80)}: ${rateValue}`
+        : rateValue);
+    }
+
+    if (!/франшиз/i.test(line)) {
+      return;
+    }
+    const deductibleMatch = line.match(
+      /(\d{1,3}(?:[ \u00a0]\d{3})+(?:[,.]\d{1,2})?|\d{4,}(?:[,.]\d{1,2})?)\s*(грн\.?|грив(?:ень|ні|ня)|uah)|(\d{1,2}(?:[,.]\d{1,4})?)\s*%/i
+    );
+    if (!deductibleMatch) {
+      return;
+    }
+    const deductibleValue = deductibleMatch[1]
+      ? contractReviewFormatMoney(contractReviewParseNumber(deductibleMatch[1]))
+      : contractReviewFormatPercent(contractReviewParseNumber(deductibleMatch[3]));
+    const riskMatch = line.match(/за\s+ризиком\s+[«"]?([^»"]{2,80})[»"]?/i);
+    explicitDeductibles.push(riskMatch
+      ? `${contractReviewCleanValue(riskMatch[1], 80)}: ${deductibleValue}`
+      : deductibleValue);
+  });
+  const rate = coverageRate || [...new Set(explicitRates)].slice(0, 4).join("; ");
+  const deductible = coverageDeductible || [...new Set(explicitDeductibles)].slice(0, 6).join("; ");
   const coverageLimits = [
     propertySumInsured ? `Майно: ${propertySumInsured}` : "",
     businessInterruptionSumInsured ? `BI: ${businessInterruptionSumInsured}` : "",
@@ -3533,7 +3696,7 @@ function contractReviewExtractFinancialValues(lines) {
 
 function contractReviewExtractLimits(lines) {
   const results = [];
-  const explicitLimitPattern = /(?:субліміт|ліміт відповідальності|ліміт відшкодування|ліміт страхової виплати)/i;
+  const explicitLimitPattern = /(?:субліміт|ліміт(?:и)? відповідальності|ліміт(?:и)? відшкодування|ліміт(?:и)? страхової виплати)/i;
   const inlineValuePattern = /(\d{1,3}(?:[ \u00a0]\d{3})+(?:[,.]\d{1,2})?\s*(?:грн\.?|uah|usd|eur)?|\d{1,2}(?:[,.]\d{1,4})?\s*%|\d{1,3}\s*(?:діб|дн(?:і|ів|я)|годин(?:и)?|місяц(?:ь|і|ів)))/i;
 
   lines.forEach((line, index) => {
@@ -3545,15 +3708,22 @@ function contractReviewExtractLimits(lines) {
       results.push(contractReviewCleanValue(line, 240));
       return;
     }
-    for (let offset = 1; offset <= 2; offset += 1) {
+    for (let offset = 1; offset <= 10; offset += 1) {
       const nextLine = lines[index + offset] || "";
+      if (/^\d+\.\s+[А-ЯA-ZІЇЄҐ]/.test(nextLine)) {
+        break;
+      }
+      const inlineNextMatch = nextLine.match(inlineValuePattern);
+      if (inlineNextMatch) {
+        results.push(contractReviewCleanValue(nextLine, 240));
+        continue;
+      }
       const parsedValue =
         contractReviewMoneyFromLine(nextLine)
         || contractReviewPercentFromLine(nextLine)
         || contractReviewDurationFromLine(nextLine);
       if (parsedValue) {
         results.push(`${contractReviewCleanValue(line, 180)}: ${parsedValue}`);
-        break;
       }
     }
   });
@@ -3571,9 +3741,9 @@ function contractReviewExtractMoneyAfterLine(lines, lineIndex, lookahead = 4) {
     if (direct) {
       return direct;
     }
-    const sameLineMatch = offset === 0
-      ? line.match(/(?:становить|складає|дорівнює|:)\s*(\d{1,3}(?:[ \u00a0]\d{3})+(?:[,.]\d{1,2})?|\d{4,}(?:[,.]\d{1,2})?)\s*(?:грн\.?|uah)?/i)
-      : null;
+    const sameLineMatch = line.match(
+      /(?:становить|складає|дорівнює|:)\s*(\d{1,3}(?:[ \u00a0]\d{3})+(?:[,.]\d{1,2})?|\d{4,}(?:[,.]\d{1,2})?)\s*(?:грн\.?|грив(?:ень|ні|ня)|uah)?/i
+    );
     if (sameLineMatch) {
       return contractReviewFormatMoney(contractReviewParseNumber(sameLineMatch[1]));
     }
@@ -3654,6 +3824,210 @@ function contractReviewNormalizeComparable(value) {
     .replace(/\s+/g, " ")
     .replace(/[.,;:]+$/g, "")
     .trim();
+}
+
+function contractReviewNormalizeAddressCandidate(value) {
+  let cleaned = contractReviewCleanValue(value, 420);
+  const addressMarkerMatches = [...cleaned.matchAll(/за адресою\s*:/gi)];
+  if (addressMarkerMatches.length) {
+    const lastMarker = addressMarkerMatches[addressMarkerMatches.length - 1];
+    cleaned = contractReviewCleanValue(cleaned.slice(lastMarker.index + lastMarker[0].length), 320);
+  }
+  cleaned = cleaned
+    .replace(/\s*(\d+(?:\.\d+){2,}\.)\s*/g, "; $1 ")
+    .replace(/^;\s*/, "")
+    .replace(/\s*;\s*/g, "; ")
+    .trim();
+  if (
+    cleaned.length > 340
+    || /(?:скарг|врегулюван|захист.*прав|не покрива|страховий захист).{80,}/i.test(cleaned)
+  ) {
+    return "";
+  }
+  return cleaned;
+}
+
+function contractReviewPartyValueIsPlausible(value) {
+  const normalized = contractReviewNormalizeComparable(value)
+    .replace(/[«»"']/g, "")
+    .trim();
+  if (
+    !normalized
+    || normalized.length > 220
+    || /^(?:тов|тдв|ат|пат|прат|ск|дп|пп|кп|фоп|llc|jsc)$/i.test(normalized.replace(/\s/g, ""))
+    || /(?:скарг|звернут|суд|захист.*прав|врегулюван|відповідно до|у випадку|у разі|зобов'яз)/i.test(normalized)
+  ) {
+    return false;
+  }
+  return contractReviewLineLooksLikePartyValue(value);
+}
+
+function contractReviewSanitizeExtractedValue(fieldKey, value) {
+  const maxLength = {
+    intermediaryClause: 620,
+    deductible: 700,
+    rate: 700,
+    limits: 1200
+  }[fieldKey] || 340;
+  const cleaned = contractReviewCleanValue(value, maxLength);
+  if (!cleaned) {
+    return "";
+  }
+  if (["insured", "insurer", "beneficiary"].includes(fieldKey)) {
+    return contractReviewPartyValueIsPlausible(cleaned) ? cleaned : "";
+  }
+  if (fieldKey === "product") {
+    return contractReviewProductValueIsPlausible(cleaned) ? cleaned : "";
+  }
+  if (fieldKey === "address") {
+    return contractReviewNormalizeAddressCandidate(cleaned);
+  }
+  if (fieldKey === "contractNumber") {
+    return /(?:№|N|No\.?)\s*[A-Za-zА-Яа-яІіЇїЄєҐґ0-9][A-Za-zА-Яа-яІіЇїЄєҐґ0-9/.\-]{2,}/i.test(cleaned)
+      ? cleaned
+      : "";
+  }
+  if (["startDate", "endDate"].includes(fieldKey)) {
+    return /^\d{2}\.\d{2}\.\d{4}$/.test(cleaned) ? cleaned : "";
+  }
+  return cleaned;
+}
+
+function contractReviewSanitizeExtractedValues(values) {
+  return Object.fromEntries(
+    Object.entries(values || {}).map(([fieldKey, value]) => [
+      fieldKey,
+      contractReviewSanitizeExtractedValue(fieldKey, value)
+    ])
+  );
+}
+
+function contractReviewEvidenceForField(lines, fieldKey, value) {
+  if (!value) {
+    return { line: 0, snippet: "", match: "missing" };
+  }
+
+  const patterns = contractReviewFieldEvidencePatterns[fieldKey] || [];
+  const labelIndexes = lines
+    .map((line, index) => patterns.some((pattern) => pattern.test(line)) ? index : -1)
+    .filter((index) => index >= 0);
+  const normalizedValue = contractReviewNormalizeComparable(value)
+    .replace(/[«»"']/g, "")
+    .replace(/\s+/g, " ");
+  const valueDigits = value.replace(/\D/g, "");
+  let exactIndex = -1;
+  if (valueDigits.length >= 6) {
+    exactIndex = lines.findIndex((line) => line.replace(/\D/g, "").includes(valueDigits));
+  }
+  if (exactIndex < 0 && normalizedValue.length >= 8) {
+    const anchor = normalizedValue.slice(0, Math.min(34, normalizedValue.length));
+    exactIndex = lines.findIndex((line) =>
+      contractReviewNormalizeComparable(line).replace(/[«»"']/g, "").includes(anchor)
+    );
+  }
+  if (exactIndex >= 0) {
+    const anchoredToLabel = labelIndexes.some((labelIndex) => Math.abs(labelIndex - exactIndex) <= 8);
+    return {
+      line: exactIndex + 1,
+      snippet: contractReviewCleanValue(lines.slice(exactIndex, exactIndex + 2).join(" "), 280),
+      match: anchoredToLabel ? "exact-label" : "exact"
+    };
+  }
+
+  const labelIndex = labelIndexes[0] ?? -1;
+  if (labelIndex >= 0) {
+    return {
+      line: labelIndex + 1,
+      snippet: contractReviewCleanValue(lines.slice(labelIndex, labelIndex + 3).join(" "), 280),
+      match: "label"
+    };
+  }
+  return { line: 0, snippet: "", match: "derived" };
+}
+
+function contractReviewConfidenceForField(fieldKey, value, evidence) {
+  if (!value) {
+    return "missing";
+  }
+  if (evidence.match === "exact-label") {
+    return "high";
+  }
+  if (evidence.match === "exact" && !contractReviewHighRiskFields.has(fieldKey)) {
+    return "high";
+  }
+  if (evidence.match === "label" && !contractReviewHighRiskFields.has(fieldKey)) {
+    return "medium";
+  }
+  if (["product", "risks", "valuationBasis"].includes(fieldKey) && evidence.match !== "missing") {
+    return "medium";
+  }
+  return "review";
+}
+
+function contractReviewAnalyzeValues(text) {
+  const lines = contractReviewTextLines(text);
+  const values = contractReviewExtractValues(text);
+  const fields = Object.fromEntries(contractReviewFields.map((field) => {
+    const value = values[field.key] || "";
+    const evidence = contractReviewEvidenceForField(lines, field.key, value);
+    return [field.key, {
+      confidence: contractReviewConfidenceForField(field.key, value, evidence),
+      evidence
+    }];
+  }));
+  return { values, fields };
+}
+
+function contractReviewDocumentRole(fileRecord, text = "") {
+  const name = String(fileRecord?.name || "").toLowerCase();
+  const leadingText = contractReviewTextLines(text).slice(0, 45).join(" ").toLowerCase();
+  const sample = `${name} ${leadingText}`;
+  if (/додатков[аої]\s+угод|(?:^|[\s_(-])ду\s*№?\s*\d|addendum|amendment/.test(sample)) {
+    return "addendum";
+  }
+  if (/заява|application form/.test(name)) {
+    return "application";
+  }
+  if (/додаток|appendix|annex|schedule|перелік майна|графік платеж/.test(name)) {
+    return "appendix";
+  }
+  if (/\.(?:xls|xlsx)$/i.test(name)) {
+    return "spreadsheet";
+  }
+  return "main";
+}
+
+function contractReviewDocumentRoleLabel(role) {
+  return {
+    main: "Основний договір",
+    addendum: "Додаткова угода",
+    appendix: "Додаток",
+    application: "Заява",
+    spreadsheet: "Таблиця"
+  }[role] || "Супровідний документ";
+}
+
+function contractReviewPackageAssignmentStatus(files) {
+  const activeFiles = (files || []).filter((file) => file.versionAssignment !== "ignored");
+  const previousMain = activeFiles.filter((file) =>
+    file.versionAssignment === "previous"
+    && (file.documentRole || contractReviewDocumentRole(file, file.text || "")) === "main"
+  );
+  const renewalMain = activeFiles.filter((file) =>
+    file.versionAssignment === "renewal"
+    && (file.documentRole || contractReviewDocumentRole(file, file.text || "")) === "main"
+  );
+  return {
+    activeFiles,
+    previousMain,
+    renewalMain,
+    valid:
+      previousMain.length === 1
+      && renewalMain.length === 1
+      && previousMain[0].id !== renewalMain[0].id
+      && contractReviewCanAutoReadFile(previousMain[0])
+      && contractReviewCanAutoReadFile(renewalMain[0])
+  };
 }
 
 function contractReviewFormatDate(value) {
@@ -3818,7 +4192,7 @@ function contractReviewClassifyRisks(text) {
   const propertyEvidence = `${titleAndSubject} ${affirmativeCoverage}`;
   const risks = [];
   const hasProperty = /страхуван[а-яіїєґ]*\s+майна|property insurance|застрахован[а-яіїєґ]*\s+майн/.test(propertyEvidence);
-  const allRisks = /all risks|від усіх ризик|від всіх ризик|будь-як[а-яіїєґ]*\s+випадков[а-яіїєґ]*\s+(?:і|та)\s+непередбач[а-яіїєґ]*\s+зовнішн[а-яіїєґ]*\s+фізичн[а-яіїєґ]*\s+вплив/.test(affirmativeCoverage);
+  const allRisks = /all risks|від усіх ризик|від всіх ризик|будь-як[а-яіїєґ]*\s+випадков[а-яіїєґ]*\s+(?:і|та)\s+непередбач[а-яіїєґ]*\s+(?:зовнішн[а-яіїєґ]*\s+)?фізичн[а-яіїєґ]*\s+вплив/.test(affirmativeCoverage);
   const namedPerils = /named perils|назван[а-яіїєґ]*\s+ризик|пойменован[а-яіїєґ]*\s+ризик|перелічен[а-яіїєґ]*\s+ризик/.test(affirmativeCoverage)
     || (!allRisks && /(?:перелік страхових ризиків|страховими ризиками (?:є|визнаються)\s*:)/.test(affirmativeCoverage));
   if (hasProperty && allRisks) {
@@ -3855,7 +4229,7 @@ function contractReviewClassifyRisks(text) {
 function contractReviewExtractValuationBasis(text) {
   const lines = contractReviewTextLines(text);
   for (const line of lines) {
-    if (!/^(?:\d+(?:\.\d+)*\.?\s*)?(?:базис оцінки|страхування .*?(?:здійснюється|проводиться) на базі|страхова сума .*?(?:визначена|встановлена) .*?варт)/i.test(line)) {
+    if (!/^(?:\d+(?:\.\d+)*\.?\s*)?(?:базис оцінки|страхування .*?(?:здійснюється|проводиться) на базі|страхова сума .*?(?:визначена|встановлена) .*?варт|підставою для визначення страхової суми .*?варт)/i.test(line)) {
       continue;
     }
     if (/відновлювальн|replacement/i.test(line)) {
@@ -3917,7 +4291,7 @@ function contractReviewExtractValues(text) {
       { maxLength: 180, validate: contractReviewLineLooksLikePartyValue }
     ));
 
-  return {
+  return contractReviewSanitizeExtractedValues({
     insured,
     address,
     insurer,
@@ -3934,17 +4308,60 @@ function contractReviewExtractValues(text) {
     rate: financialValues.rate,
     limits: [financialValues.coverageLimits, contractReviewExtractLimits(lines)].filter(Boolean).join("; "),
     premium: financialValues.premium
-  };
+  });
 }
 
-function contractReviewCompareField(row, previousValue, renewalValue) {
+function contractReviewNormalizeFieldValue(fieldKey, value) {
+  let normalized = contractReviewNormalizeComparable(value)
+    .replace(/[“”„‟"']/g, "")
+    .replace(/[«»]/g, "")
+    .replace(/[–—−]/g, "-")
+    .replace(/\s*([/:%;,])\s*/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (["startDate", "endDate"].includes(fieldKey)) {
+    return contractReviewFormatDate(normalized);
+  }
+  if (fieldKey === "risks") {
+    return normalized
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .sort()
+      .join(",");
+  }
+  if (["sumInsured", "premium", "rate", "deductible", "limits"].includes(fieldKey)) {
+    normalized = normalized
+      .replace(/(\d)\s+(?=\d)/g, "$1")
+      .replace(/(\d),(\d)/g, "$1.$2")
+      .replace(/\bгрн\.?\b/g, "uah");
+  }
+  if (fieldKey === "contractNumber") {
+    normalized = normalized.replace(/^(?:№|n|no\.?)\s*/i, "").replace(/\s/g, "");
+  }
+  return normalized;
+}
+
+function contractReviewCompareField(row, previousValue, renewalValue, previousMeta = {}, renewalMeta = {}) {
+  if (previousMeta.packageConflict || renewalMeta.packageConflict) {
+    return "Конфлікт у пакеті";
+  }
   if (!previousValue && !renewalValue) {
     return "Не знайдено автоматично";
   }
   if (!previousValue || !renewalValue) {
-    return "Перевірити";
+    return "Потрібна ручна перевірка";
   }
-  if (contractReviewNormalizeComparable(previousValue) === contractReviewNormalizeComparable(renewalValue)) {
+  if (
+    ["review", "missing"].includes(previousMeta.confidence)
+    || ["review", "missing"].includes(renewalMeta.confidence)
+  ) {
+    return "Потрібна ручна перевірка";
+  }
+  if (
+    contractReviewNormalizeFieldValue(row.key, previousValue)
+    === contractReviewNormalizeFieldValue(row.key, renewalValue)
+  ) {
     return "Без змін";
   }
   return "Змінено";
@@ -3962,6 +4379,9 @@ function addContractReviewFiles(files) {
       lastModified: file.lastModified || Date.now(),
       file,
       score: contractReviewScore(file),
+      versionAssignment: "",
+      documentRole: contractReviewDocumentRole({ name: file.name }, ""),
+      documentRoleTouched: false,
       readStatus: contractReviewInitialStatus(file)
     }))
     .filter((file) => !existingIds.has(file.id));
@@ -3973,6 +4393,36 @@ function addContractReviewFiles(files) {
   }
 
   contractReviewFiles = [...contractReviewFiles, ...nextFiles].sort((a, b) => a.score - b.score || a.name.localeCompare(b.name, "uk"));
+  const hasPrevious = contractReviewFiles.some((file) => file.versionAssignment === "previous");
+  const hasRenewal = contractReviewFiles.some((file) => file.versionAssignment === "renewal");
+  if (!hasPrevious && contractReviewFiles.length) {
+    contractReviewFiles[0].versionAssignment = "previous";
+  }
+  if (!hasRenewal && contractReviewFiles.length >= 2) {
+    contractReviewFiles[contractReviewFiles.length - 1].versionAssignment = "renewal";
+  }
+  contractReviewFiles.forEach((file) => {
+    if (!file.versionAssignment) {
+      file.versionAssignment = "ignored";
+    }
+  });
+  contractReviewResult = null;
+  contractReviewCopyMessage = "";
+  renderContractReview();
+}
+
+function updateContractReviewFileAssignment(fileId, assignmentType, value) {
+  const fileRecord = contractReviewFiles.find((file) => file.id === fileId);
+  if (!fileRecord) {
+    return;
+  }
+  if (assignmentType === "version") {
+    fileRecord.versionAssignment = value;
+  }
+  if (assignmentType === "role") {
+    fileRecord.documentRole = value;
+    fileRecord.documentRoleTouched = true;
+  }
   contractReviewResult = null;
   contractReviewCopyMessage = "";
   renderContractReview();
@@ -3980,6 +4430,15 @@ function addContractReviewFiles(files) {
 
 function removeContractReviewFile(fileId) {
   contractReviewFiles = contractReviewFiles.filter((file) => file.id !== fileId);
+  if (!contractReviewFiles.some((file) => file.versionAssignment === "previous") && contractReviewFiles.length) {
+    contractReviewFiles[0].versionAssignment = "previous";
+  }
+  if (!contractReviewFiles.some((file) => file.versionAssignment === "renewal") && contractReviewFiles.length >= 2) {
+    const renewalCandidate = [...contractReviewFiles].reverse().find((file) => file.versionAssignment !== "previous");
+    if (renewalCandidate) {
+      renewalCandidate.versionAssignment = "renewal";
+    }
+  }
   contractReviewResult = null;
   contractReviewCopyMessage = "";
   renderContractReview();
@@ -3992,9 +4451,120 @@ function resetContractReviewFiles() {
   renderContractReview();
 }
 
+function contractReviewSupportingAlerts(supportingRecords, previousValues, renewalValues) {
+  const alerts = [];
+  supportingRecords.forEach((record) => {
+    const packageValues = record.file.versionAssignment === "previous"
+      ? previousValues
+      : renewalValues;
+    const packageLabel = record.file.versionAssignment === "previous"
+      ? "Попередній пакет"
+      : "Пакет оновлення";
+    contractReviewFields.forEach((field) => {
+      const value = record.analysis.values[field.key] || "";
+      if (!value) {
+        return;
+      }
+      const normalized = contractReviewNormalizeFieldValue(field.key, value);
+      const matchesPackage = normalized === contractReviewNormalizeFieldValue(field.key, packageValues[field.key]);
+      if (!matchesPackage) {
+        alerts.push({
+          fileName: record.file.name,
+          role: record.role,
+          packageLabel,
+          fieldKey: field.key,
+          fieldLabel: field.label,
+          value,
+          evidence: record.analysis.fields[field.key]?.evidence || null
+        });
+      }
+    });
+  });
+  return alerts.slice(0, 24);
+}
+
+function contractReviewResolvePackageAnalysis(mainRecord, packageRecords) {
+  const supplementalRecords = packageRecords.filter((record) => record.file.id !== mainRecord.file.id);
+  const values = {};
+  const fields = {};
+
+  contractReviewFields.forEach((field) => {
+    const mainValue = mainRecord.analysis.values[field.key] || "";
+    const mainMeta = mainRecord.analysis.fields[field.key] || {
+      confidence: "missing",
+      evidence: { line: 0, snippet: "", match: "missing" }
+    };
+    const supplementalCandidates = supplementalRecords
+      .map((record) => ({
+        record,
+        value: record.analysis.values[field.key] || "",
+        meta: record.analysis.fields[field.key] || {}
+      }))
+      .filter((candidate) => candidate.value);
+    const distinctCandidates = new Map();
+    supplementalCandidates.forEach((candidate) => {
+      const normalized = contractReviewNormalizeFieldValue(field.key, candidate.value);
+      if (normalized && !distinctCandidates.has(normalized)) {
+        distinctCandidates.set(normalized, candidate);
+      }
+    });
+
+    if (mainValue) {
+      const mainNormalized = contractReviewNormalizeFieldValue(field.key, mainValue);
+      const conflictingCandidates = [...distinctCandidates.entries()]
+        .filter(([normalized]) => normalized !== mainNormalized)
+        .map(([, candidate]) => candidate);
+      values[field.key] = mainValue;
+      fields[field.key] = {
+        ...mainMeta,
+        confidence: conflictingCandidates.length ? "review" : mainMeta.confidence,
+        packageConflict: conflictingCandidates.length > 0,
+        evidence: {
+          ...(mainMeta.evidence || {}),
+          fileName: mainRecord.file.name
+        }
+      };
+      return;
+    }
+
+    const eligibleCandidates = [...distinctCandidates.values()].filter((candidate) =>
+      ["addendum", "appendix"].includes(candidate.record.role)
+    );
+    if (eligibleCandidates.length === 1) {
+      const candidate = eligibleCandidates[0];
+      values[field.key] = candidate.value;
+      fields[field.key] = {
+        ...(candidate.meta || {}),
+        confidence: "review",
+        inheritedFromSupplement: true,
+        evidence: {
+          ...(candidate.meta?.evidence || {}),
+          fileName: candidate.record.file.name
+        }
+      };
+      return;
+    }
+
+    values[field.key] = "";
+    fields[field.key] = {
+      confidence: distinctCandidates.size > 1 ? "review" : "missing",
+      packageConflict: distinctCandidates.size > 1,
+      evidence: { line: 0, snippet: "", match: distinctCandidates.size > 1 ? "conflict" : "missing" }
+    };
+  });
+
+  return { values, fields };
+}
+
 async function buildContractReviewResult() {
   if (contractReviewFiles.length < 2) {
     contractReviewCopyMessage = "Додай щонайменше два договори.";
+    renderContractReview();
+    return;
+  }
+  const packageStatus = contractReviewPackageAssignmentStatus(contractReviewFiles);
+  if (!packageStatus.valid) {
+    contractReviewCopyMessage = "У кожному пакеті має бути рівно один читабельний основний договір. Додатки й додаткові угоди признач до відповідного пакета окремо.";
     renderContractReview();
     return;
   }
@@ -4023,14 +4593,15 @@ async function buildContractReviewResult() {
     }));
 
     contractReviewFiles = enriched;
-    const readableFiles = enriched.filter((file) => file.text);
+    const activeFiles = enriched.filter((file) => file.versionAssignment !== "ignored");
+    const readableFiles = activeFiles.filter((file) => file.text);
     if (readableFiles.length < 2) {
       const previousCandidate = readableFiles[0] || enriched[0];
       const renewalCandidate = enriched.find((file) => file.id !== previousCandidate?.id) || enriched[enriched.length - 1] || previousCandidate;
       contractReviewResult = {
         previous: previousCandidate,
         renewal: renewalCandidate,
-        supporting: enriched.filter((file) => file.id !== previousCandidate?.id && file.id !== renewalCandidate?.id),
+        supporting: activeFiles.filter((file) => file.id !== previousCandidate?.id && file.id !== renewalCandidate?.id),
         rows: [],
         foundCount: 0,
         readableCount: readableFiles.length,
@@ -4045,54 +4616,143 @@ async function buildContractReviewResult() {
       renderContractReview();
       return;
     }
+    const readablePreviousMain = readableFiles.find((file) =>
+      file.versionAssignment === "previous"
+      && (
+        file.documentRoleTouched
+          ? file.documentRole
+          : contractReviewDocumentRole(file, file.text)
+      ) === "main"
+    );
+    const readableRenewalMain = readableFiles.find((file) =>
+      file.versionAssignment === "renewal"
+      && (
+        file.documentRoleTouched
+          ? file.documentRole
+          : contractReviewDocumentRole(file, file.text)
+      ) === "main"
+    );
+    if (!readablePreviousMain || !readableRenewalMain) {
+      contractReviewResult = {
+        previous: packageStatus.previousMain[0] || enriched[0],
+        renewal: packageStatus.renewalMain[0] || enriched[enriched.length - 1],
+        supporting: activeFiles.filter((file) => (file.documentRole || "main") !== "main"),
+        rows: [],
+        foundCount: 0,
+        readableCount: readableFiles.length,
+        blocked: true,
+        statuses: enriched.map((file) => `${file.name}: ${file.readStatus}`),
+        createdAt: new Date().toISOString()
+      };
+      contractReviewCopyMessage = "Один із призначених основних договорів не вдалося прочитати. Обери читабельні DOC, DOCX або текстові PDF.";
+      contractReviewBusy = false;
+      renderContractReview();
+      return;
+    }
 
     const analyzedFiles = readableFiles.map((file) => {
-      const values = contractReviewExtractValues(file.text);
+      const analysis = contractReviewAnalyzeValues(file.text);
       return {
         file,
-        values,
-        chronology: contractReviewChronologyScore(values, file)
+        analysis,
+        values: analysis.values,
+        role: file.documentRoleTouched
+          ? file.documentRole
+          : contractReviewDocumentRole(file, file.text),
+        chronology: contractReviewChronologyScore(analysis.values, file)
       };
     }).sort(contractReviewCompareChronology);
-    const previousRecord = analyzedFiles[0];
-    const renewalRecord = analyzedFiles[analyzedFiles.length - 1];
+    const previousPackageRecords = analyzedFiles.filter((record) => record.file.versionAssignment === "previous");
+    const renewalPackageRecords = analyzedFiles.filter((record) => record.file.versionAssignment === "renewal");
+    const previousMainRecords = previousPackageRecords.filter((record) => record.role === "main");
+    const renewalMainRecords = renewalPackageRecords.filter((record) => record.role === "main");
+    if (previousMainRecords.length !== 1 || renewalMainRecords.length !== 1) {
+      contractReviewResult = {
+        previous: previousMainRecords[0]?.file || packageStatus.previousMain[0],
+        renewal: renewalMainRecords[0]?.file || packageStatus.renewalMain[0],
+        supporting: activeFiles.filter((file) => (file.documentRole || "main") !== "main"),
+        rows: [],
+        foundCount: 0,
+        readableCount: readableFiles.length,
+        blocked: true,
+        statuses: enriched.map((file) => `${file.name}: ${file.readStatus}`),
+        createdAt: new Date().toISOString()
+      };
+      contractReviewCopyMessage = "Після читання документів роль пакета виявилася неоднозначною. Перевір тип кожного файла й залиш рівно один основний договір у кожному пакеті.";
+      contractReviewBusy = false;
+      renderContractReview();
+      return;
+    }
+    const previousRecord = previousMainRecords[0];
+    const renewalRecord = renewalMainRecords[0];
     const previous = previousRecord.file;
     const renewal = renewalRecord.file;
     const selectedFileIds = new Set([previous.id, renewal.id]);
-    const supporting = enriched.filter((file) => !selectedFileIds.has(file.id));
+    const supporting = activeFiles.filter((file) => !selectedFileIds.has(file.id));
+    const supportingRecords = analyzedFiles.filter((record) => !selectedFileIds.has(record.file.id));
     const orderedFiles = [
       previous,
       ...enriched.filter((file) => !selectedFileIds.has(file.id)),
       renewal
     ];
     contractReviewFiles = orderedFiles;
-    const previousValues = previousRecord.values;
-    const renewalValues = renewalRecord.values;
+    const previousPackageAnalysis = contractReviewResolvePackageAnalysis(previousRecord, previousPackageRecords);
+    const renewalPackageAnalysis = contractReviewResolvePackageAnalysis(renewalRecord, renewalPackageRecords);
+    const previousValues = previousPackageAnalysis.values;
+    const renewalValues = renewalPackageAnalysis.values;
     const rows = contractReviewFields.map((field) => {
       const previousValue = previousValues[field.key] || "";
       const renewalValue = renewalValues[field.key] || "";
+      const previousMeta = previousPackageAnalysis.fields[field.key] || {};
+      const renewalMeta = renewalPackageAnalysis.fields[field.key] || {};
       return {
         ...field,
         previousValue,
         renewalValue,
-        control: contractReviewCompareField(field, previousValue, renewalValue)
+        previousMeta,
+        renewalMeta,
+        control: contractReviewCompareField(field, previousValue, renewalValue, previousMeta, renewalMeta)
       };
     });
     const foundCount = rows.filter((row) => row.previousValue || row.renewalValue).length;
+    const comparableCount = rows.filter((row) => row.previousValue && row.renewalValue).length;
+    const verifiedCount = rows.filter((row) =>
+      row.previousValue
+      && row.renewalValue
+      && !["review", "missing"].includes(row.previousMeta.confidence)
+      && !["review", "missing"].includes(row.renewalMeta.confidence)
+    ).length;
+    const attentionCount = rows.filter((row) =>
+      row.control === "Потрібна ручна перевірка"
+      || row.control === "Конфлікт у пакеті"
+      || row.control === "Не знайдено автоматично"
+    ).length;
     const readableCount = enriched.filter((file) => file.text).length;
+    const supportingAlerts = contractReviewSupportingAlerts(
+      supportingRecords,
+      previousRecord.values,
+      renewalRecord.values
+    );
 
     contractReviewResult = {
       previous,
       renewal,
       supporting,
+      previousRole: previousRecord.role,
+      renewalRole: renewalRecord.role,
+      supportingRecords,
+      supportingAlerts,
       rows,
       foundCount,
+      comparableCount,
+      verifiedCount,
+      attentionCount,
       readableCount,
       statuses: enriched.map((file) => `${file.name}: ${file.readStatus}`),
       createdAt: new Date().toISOString()
     };
     contractReviewCopyMessage = foundCount
-      ? `Порівняння сформовано: знайдено ${foundCount} з ${contractReviewFields.length} параметрів.`
+      ? `Порівняння сформовано: ${verifiedCount} надійних, ${attentionCount} потребують ручної перевірки.`
       : readableCount
         ? "Документи прочитано, але параметри не знайдені автоматично. Перевір формат договору."
         : "Не вдалося прочитати текст договорів. Для автоматичного аналізу завантаж DOC, DOCX або текстовий PDF.";
@@ -4115,11 +4775,24 @@ function contractReviewTableTsv() {
   ];
   const rows = contractReviewResult.rows.map((row) => [
     row.label,
-    row.previousValue,
-    row.renewalValue,
+    contractReviewExportValue(row.previousValue, row.previousMeta),
+    contractReviewExportValue(row.renewalValue, row.renewalMeta),
     row.control
   ]);
   return [header, ...rows].map((row) => row.map(escapeTsv).join("\t")).join("\n");
+}
+
+function contractReviewExportValue(value, meta = {}) {
+  if (!value) {
+    return "";
+  }
+  const evidence = meta.evidence || {};
+  const source = [
+    evidence.fileName || "",
+    evidence.line ? `рядок ${evidence.line}` : ""
+  ].filter(Boolean).join(", ");
+  const status = contractReviewConfidenceLabel(meta.confidence || "review");
+  return `${value}${source ? ` [${status}; джерело: ${source}]` : ` [${status}]`}`;
 }
 
 function contractReviewTableHtml() {
@@ -4130,8 +4803,8 @@ function contractReviewTableHtml() {
   const rows = contractReviewResult.rows.map((row) => `
     <tr>
       <th>${escapeHtml(row.label)}</th>
-      <td>${escapeHtml(row.previousValue)}</td>
-      <td>${escapeHtml(row.renewalValue)}</td>
+      <td>${escapeHtml(contractReviewExportValue(row.previousValue, row.previousMeta))}</td>
+      <td>${escapeHtml(contractReviewExportValue(row.renewalValue, row.renewalMeta))}</td>
       <td>${escapeHtml(row.control)}</td>
     </tr>
   `).join("");
@@ -4815,21 +5488,70 @@ function render() {
 
 function renderContractReviewFile(file, index) {
   const canRead = contractReviewCanAutoReadFile(file);
-  const role = contractReviewFiles.length < 2
-    ? ""
-    : index === 0
-      ? "Попередній"
-      : index === contractReviewFiles.length - 1
-        ? "Оновлення"
-        : "Супровідний";
+  const versionAssignment = file.versionAssignment
+    || (index === 0 ? "previous" : index === contractReviewFiles.length - 1 ? "renewal" : "ignored");
+  const documentRole = file.documentRole || contractReviewDocumentRole(file, file.text || "");
   return `
     <li class="contract-review-file ${canRead ? "contract-review-file-ready" : "contract-review-file-blocked"}">
       <span>
         <strong>${escapeHtml(file.name)}</strong>
-        <small>${escapeHtml(role || "Документ")} · ${escapeHtml(contractReviewFormatSize(file.size))}${file.readStatus ? ` · ${escapeHtml(file.readStatus)}` : ""}</small>
+        <small>${escapeHtml(contractReviewFormatSize(file.size))}${file.readStatus ? ` · ${escapeHtml(file.readStatus)}` : ""}</small>
+        <span class="contract-review-file-assignments">
+          <label>
+            <span>Пакет</span>
+            <select data-contract-review-version="${escapeHtml(file.id)}" aria-label="Версія документа ${escapeHtml(file.name)}">
+              <option value="previous" ${versionAssignment === "previous" ? "selected" : ""}>Попередній пакет</option>
+              <option value="renewal" ${versionAssignment === "renewal" ? "selected" : ""}>Пакет оновлення</option>
+              <option value="ignored" ${versionAssignment === "ignored" ? "selected" : ""}>Не аналізувати</option>
+            </select>
+          </label>
+          <label>
+            <span>Тип</span>
+            <select data-contract-review-role="${escapeHtml(file.id)}" aria-label="Тип документа ${escapeHtml(file.name)}">
+              <option value="main" ${documentRole === "main" ? "selected" : ""}>Основний договір</option>
+              <option value="addendum" ${documentRole === "addendum" ? "selected" : ""}>Додаткова угода</option>
+              <option value="appendix" ${documentRole === "appendix" ? "selected" : ""}>Додаток / графік</option>
+              <option value="application" ${documentRole === "application" ? "selected" : ""}>Заява</option>
+              <option value="spreadsheet" ${documentRole === "spreadsheet" ? "selected" : ""}>Таблиця</option>
+            </select>
+          </label>
+        </span>
       </span>
       <button type="button" data-remove-contract-review-file="${escapeHtml(file.id)}" aria-label="Прибрати файл ${escapeHtml(file.name)}">×</button>
     </li>
+  `;
+}
+
+function contractReviewConfidenceLabel(confidence) {
+  return {
+    high: "Підтверджено джерелом",
+    medium: "Визначено за контекстом",
+    review: "Потрібна перевірка",
+    missing: "Не знайдено"
+  }[confidence] || "Потрібна перевірка";
+}
+
+function renderContractReviewValue(value, meta = {}) {
+  if (!value) {
+    return `<span class="contract-review-missing">Не знайдено</span>`;
+  }
+  const evidence = meta.evidence || {};
+  const confidence = meta.confidence || "review";
+  return `
+    <div class="contract-review-value">
+      <strong>${escapeHtml(value)}</strong>
+      <span class="contract-review-confidence contract-review-confidence-${escapeHtml(confidence)}">${escapeHtml(contractReviewConfidenceLabel(confidence))}</span>
+      ${meta.inheritedFromSupplement ? `<span class="contract-review-evidence-missing">Кандидат із додатка або додаткової угоди — підтвердити вручну</span>` : ""}
+      ${meta.packageConflict ? `<span class="contract-review-evidence-missing">У пакеті є суперечливе значення</span>` : ""}
+      ${evidence.snippet ? `
+        <details class="contract-review-evidence">
+          <summary>Показати джерело${evidence.fileName ? ` · ${escapeHtml(evidence.fileName)}` : ""}${evidence.line ? ` · рядок ${evidence.line}` : ""}</summary>
+          <p>${escapeHtml(evidence.snippet)}</p>
+        </details>
+      ` : `
+        <span class="contract-review-evidence-missing">Прямий фрагмент не локалізовано</span>
+      `}
+    </div>
   `;
 }
 
@@ -4873,14 +5595,45 @@ function renderContractReviewTable() {
         <article>
           <span>Попередній договір</span>
           <strong>${escapeHtml(contractReviewResult.previous.name)}</strong>
+          <small>${escapeHtml(contractReviewDocumentRoleLabel(contractReviewResult.previousRole))}</small>
         </article>
         <article>
           <span>Договір оновлення</span>
           <strong>${escapeHtml(contractReviewResult.renewal.name)}</strong>
+          <small>${escapeHtml(contractReviewDocumentRoleLabel(contractReviewResult.renewalRole))}</small>
+        </article>
+      </div>
+      <div class="contract-review-quality-summary" aria-label="Якість автоматичної перевірки">
+        <article>
+          <strong>${contractReviewResult.verifiedCount}</strong>
+          <span>надійно зіставлено</span>
+        </article>
+        <article>
+          <strong>${contractReviewResult.comparableCount}</strong>
+          <span>заповнено з обох боків</span>
+        </article>
+        <article class="${contractReviewResult.attentionCount ? "contract-review-quality-warning" : ""}">
+          <strong>${contractReviewResult.attentionCount}</strong>
+          <span>потребують уваги</span>
         </article>
       </div>
       ${contractReviewResult.supporting.length ? `
-        <p class="contract-review-supporting">Супровідні файли: ${contractReviewResult.supporting.map((file) => escapeHtml(file.name)).join("; ")}</p>
+        <p class="contract-review-supporting">Проаналізовані супровідні файли: ${contractReviewResult.supporting.map((file) => escapeHtml(file.name)).join("; ")}</p>
+      ` : ""}
+      ${contractReviewResult.supportingAlerts?.length ? `
+        <section class="contract-review-package-alerts" aria-label="Розбіжності у супровідних документах">
+          <h3>Розбіжності в додатках і супровідних документах</h3>
+          <p>Ці значення відрізняються від основного договору відповідного пакета. Anodos не застосував їх мовчки — кожне потрібно підтвердити.</p>
+          <ul>
+            ${contractReviewResult.supportingAlerts.map((alert) => `
+              <li>
+                <strong>${escapeHtml(alert.packageLabel)} · ${escapeHtml(alert.fieldLabel)} · ${escapeHtml(alert.fileName)}</strong>
+                <span>${escapeHtml(alert.value)}</span>
+                ${alert.evidence?.snippet ? `<small>${escapeHtml(alert.evidence.snippet)}</small>` : ""}
+              </li>
+            `).join("")}
+          </ul>
+        </section>
       ` : ""}
       <div class="contract-review-table-wrap">
         <table class="contract-review-table">
@@ -4894,10 +5647,10 @@ function renderContractReviewTable() {
           </thead>
           <tbody>
             ${contractReviewResult.rows.map((row) => `
-              <tr>
+              <tr class="${row.control === "Потрібна ручна перевірка" || row.control === "Конфлікт у пакеті" || row.control === "Не знайдено автоматично" ? "contract-review-row-attention" : ""}">
                 <th>${escapeHtml(row.label)}</th>
-                <td>${escapeHtml(row.previousValue)}</td>
-                <td>${escapeHtml(row.renewalValue)}</td>
+                <td>${renderContractReviewValue(row.previousValue, row.previousMeta)}</td>
+                <td>${renderContractReviewValue(row.renewalValue, row.renewalMeta)}</td>
                 <td>${escapeHtml(row.control)}</td>
               </tr>
             `).join("")}
@@ -4909,26 +5662,33 @@ function renderContractReviewTable() {
 }
 
 function renderContractReview() {
-  if (!contractReviewLocallyAvailable) {
+  if (!contractReviewDesktopAvailable) {
     route = "home";
     render();
     return;
   }
 
-  const readyFilesCount = contractReviewFiles.filter(contractReviewCanAutoReadFile).length;
-  const canCompare = readyFilesCount >= 2 && !contractReviewBusy;
+  const packageStatus = contractReviewPackageAssignmentStatus(contractReviewFiles);
+  const activeFilesCount = packageStatus.activeFiles.length;
+  const readyFilesCount = packageStatus.activeFiles.filter(contractReviewCanAutoReadFile).length;
+  const packageAssignmentsValid = packageStatus.valid;
+  const canCompare = readyFilesCount >= 2 && packageAssignmentsValid && !contractReviewBusy;
   const compareButtonText = contractReviewBusy
     ? "Порівнюю..."
     : contractReviewFiles.length < 2
       ? "Додай два договори"
       : readyFilesCount < 2
         ? "Потрібні читабельні файли"
+        : !packageAssignmentsValid
+          ? "Перевір склад пакетів"
         : "Порівняти";
   const readinessClass = readyFilesCount >= 2 ? "contract-review-readiness" : "contract-review-readiness contract-review-readiness-warning";
   const readinessText = contractReviewFiles.length
     ? readyFilesCount >= 2
-      ? `Готові до аналізу: ${readyFilesCount} з ${contractReviewFiles.length}.`
-      : `Готові до аналізу: ${readyFilesCount} з ${contractReviewFiles.length}. Для порівняння потрібні щонайменше два читабельні договори.`
+      ? packageAssignmentsValid
+        ? `Готові до аналізу: ${readyFilesCount} з ${activeFilesCount}. У кожному пакеті визначено основний договір.`
+        : `Готові до аналізу: ${readyFilesCount} з ${activeFilesCount}. У кожному пакеті має бути рівно один основний договір.`
+      : `Готові до аналізу: ${readyFilesCount} з ${activeFilesCount}. Для порівняння потрібні щонайменше два читабельні основні договори.`
     : "";
   screen.innerHTML = `
     <section class="contract-review-workspace">
@@ -4937,15 +5697,17 @@ function renderContractReview() {
         <div>
           <p class="eyebrow">Anodos · desktop</p>
           <h1>Порівняння договорів</h1>
-          <p class="hero-copy">Завантаж два або більше договорів. Система визначить попередній і новий документ та сформує таблицю для копіювання.</p>
+          <p class="hero-copy">Завантаж два або більше пакетів документів, перевір їхні ролі та сформуй доказову таблицю. Кожне прийняте значення можна звірити з фрагментом джерела.</p>
         </div>
       </header>
 
-      <section class="contract-review-dropzone" data-contract-review-dropzone>
+      <section class="contract-review-dropzone" data-contract-review-dropzone aria-label="Додати договори">
         <input id="contractReviewInput" type="file" multiple accept=".doc,.docx,.pdf,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
         <label for="contractReviewInput">
           <span>Перетягни договори сюди</span>
-          <strong>або вибери файли</strong>
+          <strong>або</strong>
+          <b class="contract-review-browse-button">Вибрати договори</b>
+          <small>Якщо вбудований браузер не приймає перетягування з Finder, скористайся цією кнопкою.</small>
         </label>
       </section>
 
@@ -4960,10 +5722,10 @@ function renderContractReview() {
           </ol>
           <p class="${readinessClass}">${escapeHtml(readinessText)}</p>
         ` : `
-          <p class="contract-review-empty">Додай пакет документів: основний договір, додатки, додаткові угоди, графік платежів або перелік майна.</p>
+          <p class="contract-review-empty">Додай пакет документів: основний договір, додатки, додаткові угоди, графік платежів або перелік майна. Після завантаження перевір призначення кожного файла.</p>
         `}
         <button class="primary-action primary-action-wide" type="button" data-run-contract-review ${canCompare ? "" : "disabled"}>${compareButtonText}</button>
-        <p class="contract-review-note">Anodos не підставляє значення за припущенням: якщо дані не витягнуті з документа, клітинки залишаються порожніми.</p>
+        <p class="contract-review-note">Anodos підтверджує значення лише разом із джерельним фрагментом. Сумнівні або конфліктні дані передаються на ручну перевірку.</p>
         ${contractReviewCopyMessage ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>` : ""}
       </section>
 
@@ -8596,6 +9358,24 @@ document.addEventListener("change", (event) => {
     return;
   }
 
+  if (event.target.matches("[data-contract-review-version]")) {
+    updateContractReviewFileAssignment(
+      event.target.dataset.contractReviewVersion,
+      "version",
+      event.target.value
+    );
+    return;
+  }
+
+  if (event.target.matches("[data-contract-review-role]")) {
+    updateContractReviewFileAssignment(
+      event.target.dataset.contractReviewRole,
+      "role",
+      event.target.value
+    );
+    return;
+  }
+
   if (event.target.id === "lawArticleSelect") {
     activeLawEntryId = event.target.value;
     renderLawContent();
@@ -8643,32 +9423,79 @@ document.addEventListener("change", (event) => {
   }
 });
 
-document.addEventListener("dragover", (event) => {
-  const dropzone = event.target.closest("[data-contract-review-dropzone]");
-  if (!dropzone) {
-    return;
+function contractReviewDataTransferHasFiles(dataTransfer) {
+  const types = Array.from(dataTransfer?.types || []).map((type) => String(type).toLowerCase());
+  if (types.includes("files")) {
+    return true;
+  }
+  if (Array.from(dataTransfer?.files || []).some(Boolean)) {
+    return true;
+  }
+  return Array.from(dataTransfer?.items || []).some((item) => item?.kind === "file");
+}
+
+function contractReviewFilesFromDataTransfer(dataTransfer) {
+  const directFiles = Array.from(dataTransfer?.files || []).filter(Boolean);
+  if (directFiles.length) {
+    return directFiles;
+  }
+  return Array.from(dataTransfer?.items || [])
+    .filter((item) => item && (item.kind === "file" || typeof item.getAsFile === "function"))
+    .map((item) => typeof item.getAsFile === "function" ? item.getAsFile() : null)
+    .filter(Boolean);
+}
+
+function contractReviewSetDropzoneActive(active) {
+  document
+    .querySelector("[data-contract-review-dropzone]")
+    ?.classList.toggle("contract-review-dropzone-active", active);
+}
+
+function contractReviewPrepareFileDrag(event) {
+  if (route !== "contract-review" || !contractReviewDataTransferHasFiles(event.dataTransfer)) {
+    return false;
   }
   event.preventDefault();
-  dropzone.classList.add("contract-review-dropzone-active");
-});
+  if (event.dataTransfer) {
+    try {
+      event.dataTransfer.dropEffect = "copy";
+    } catch {
+      // Some embedded browsers expose dropEffect as read-only.
+    }
+  }
+  contractReviewSetDropzoneActive(true);
+  return true;
+}
+
+document.addEventListener("dragenter", (event) => {
+  contractReviewPrepareFileDrag(event);
+}, true);
+
+document.addEventListener("dragover", (event) => {
+  contractReviewPrepareFileDrag(event);
+}, true);
 
 document.addEventListener("dragleave", (event) => {
-  const dropzone = event.target.closest("[data-contract-review-dropzone]");
-  if (!dropzone || dropzone.contains(event.relatedTarget)) {
-    return;
+  if (route === "contract-review" && !event.relatedTarget) {
+    contractReviewSetDropzoneActive(false);
   }
-  dropzone.classList.remove("contract-review-dropzone-active");
-});
+}, true);
 
 document.addEventListener("drop", (event) => {
-  const dropzone = event.target.closest("[data-contract-review-dropzone]");
-  if (!dropzone) {
+  if (route !== "contract-review" || !contractReviewDataTransferHasFiles(event.dataTransfer)) {
     return;
   }
   event.preventDefault();
-  dropzone.classList.remove("contract-review-dropzone-active");
-  addContractReviewFiles(event.dataTransfer?.files);
-});
+  event.stopPropagation();
+  contractReviewSetDropzoneActive(false);
+  const files = contractReviewFilesFromDataTransfer(event.dataTransfer);
+  if (files.length) {
+    addContractReviewFiles(files);
+    return;
+  }
+  contractReviewCopyMessage = "Вбудований браузер не передав файли з Finder. Натисни «Вибрати договори» і додай їх через системне вікно.";
+  renderContractReview();
+}, true);
 
 document.addEventListener("submit", async (event) => {
   if (event.target.id === "adminRegistryForm") {
