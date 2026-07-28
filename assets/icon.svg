@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" fill="#F8FBF7"/>
-  <rect x="28" y="28" width="456" height="456" rx="96" fill="#F8FBF7" stroke="#132961" stroke-width="14"/>
-  <g transform="translate(124 88)">
-    <circle cx="132" cy="132" r="115.5" fill="#F8FBF7" stroke="#132961" stroke-width="12.65"/>
-    <path d="M66 181.5C90.75 140.25 110 107.25 132 66C154 107.25 173.25 140.25 198 181.5" stroke="#132961" stroke-width="11.1375" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M96.25 178.75H167.75" stroke="#2E8B68" stroke-width="9.7625" stroke-linecap="round"/>
-    <path d="M110 151.25H154" stroke="#2E8B68" stroke-width="9.7625" stroke-linecap="round"/>
-    <path d="M123.75 123.75H140.25" stroke="#2E8B68" stroke-width="9.7625" stroke-linecap="round"/>
-    <circle cx="132" cy="55" r="10.0375" fill="#E9B44C"/>
-    <circle cx="132" cy="55" r="19.8" fill="#E9B44C" opacity="0.14"/>
-  </g>
-  <text x="256" y="405" text-anchor="middle" fill="#132961" font-family="IBM Plex Sans, Arial, sans-serif" font-size="58" font-weight="700">Άνοδος</text>
+  <rect width="512" height="512" fill="#FFFFFF"/>
+  <path
+    d="M104 356C166 350 212 320 244 276C276 232 316 200 384 172"
+    stroke="#132961"
+    stroke-width="12"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <circle cx="402" cy="166" r="14" fill="#E9B44C"/>
 </svg>
