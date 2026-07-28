@@ -5,7 +5,6 @@ const screen = document.getElementById("screen");
 const progressValue = document.getElementById("progressValue");
 const compassPanel = document.getElementById("compassPanel");
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-const productTapMinimumDuration = 90;
 const productTapMaximumDuration = 800;
 const productTapMovementTolerance = 12;
 
@@ -43,7 +42,6 @@ function isIntentionalProductTap(gesture, endedAt = Date.now()) {
   const duration = endedAt - gesture.startedAt;
   return (
     !gesture.moved
-    && duration >= productTapMinimumDuration
     && duration <= productTapMaximumDuration
   );
 }
