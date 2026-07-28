@@ -106,6 +106,7 @@ p {
   gap: 20px;
   width: min(420px, calc(100vw - 48px));
   padding: 36px 28px;
+  transform: translateY(-40px);
   transition:
     opacity 420ms ease,
     transform 420ms ease;
@@ -160,7 +161,7 @@ p {
 }
 
 .splash-exit .splash-lockup {
-  transform: translateY(-8px) scale(0.985);
+  transform: translateY(-48px) scale(0.985);
 }
 
 .app-shell {
