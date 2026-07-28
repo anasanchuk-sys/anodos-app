@@ -2049,7 +2049,9 @@ body[data-route="contract-review"] .app-shell {
 }
 
 body[data-route="home"] .module-grid {
-  grid-template-rows: repeat(6, minmax(0, 1fr));
+  --home-module-row-height: clamp(48px, calc((100dvh - 278px) / 6), 78px);
+  grid-template-rows: repeat(6, var(--home-module-row-height));
+  align-content: start;
   gap: 6px;
   min-height: 0;
   overflow: hidden;
