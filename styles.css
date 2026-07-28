@@ -103,7 +103,6 @@ p {
   position: relative;
   display: grid;
   justify-items: center;
-  gap: 24px;
   width: min(420px, calc(100vw - 48px));
   padding: 36px 28px;
   transition:
@@ -112,105 +111,28 @@ p {
 }
 
 .splash-mark {
-  width: 122px;
-  height: 122px;
+  width: 184px;
+  height: 132px;
   overflow: visible;
-}
-
-.mark-ring {
-  fill: var(--brand-pale);
-  stroke: var(--brand-navy);
-  stroke-width: 4.9;
-  stroke-dasharray: 308;
-  stroke-dashoffset: 308;
-  animation: drawRing 980ms cubic-bezier(0.45, 0, 0.2, 1) 160ms forwards;
 }
 
 .mark-path {
   fill: none;
   stroke: var(--brand-navy);
-  stroke-width: 4.7;
+  stroke-width: 5;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 128;
-  stroke-dashoffset: 128;
-  animation: drawPath 950ms cubic-bezier(0.45, 0, 0.2, 1) 520ms forwards;
-}
-
-.mark-step {
-  fill: none;
-  stroke: var(--brand-green);
-  stroke-width: 4.1;
-  stroke-linecap: round;
-  opacity: 0;
-  transform-origin: center;
-  animation: stepIn 520ms ease forwards;
-}
-
-.mark-step-one {
-  animation-delay: 1030ms;
-}
-
-.mark-step-two {
-  animation-delay: 1160ms;
-}
-
-.mark-step-three {
-  animation-delay: 1290ms;
+  stroke-dasharray: 190;
+  stroke-dashoffset: 190;
+  animation: drawPath 1450ms cubic-bezier(0.45, 0, 0.2, 1) 240ms forwards;
 }
 
 .mark-dot {
   fill: var(--brand-amber);
   opacity: 0;
   transform: scale(0.72);
-  transform-origin: 56px 23.3px;
-  animation: dotIn 620ms ease 1450ms forwards;
-}
-
-.splash-copy {
-  display: grid;
-  justify-items: stretch;
-  gap: 8px;
-  width: 162px;
-  opacity: 0;
-  transform: translateY(8px);
-  animation: copyIn 760ms ease 1220ms forwards;
-}
-
-.splash-copy::after {
-  content: "";
-  width: 100%;
-  height: 5px;
-  margin-top: 5px;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at calc(100% - 2.5px) 50%, var(--brand-amber) 0 2.5px, transparent 2.7px),
-    linear-gradient(var(--brand-soft-green) 0 0) 0 50% / calc(100% - 14px) 1px no-repeat;
-  transform: scaleX(0);
-  transform-origin: left center;
-  animation: lineReveal 760ms ease 1560ms forwards;
-}
-
-.splash-name {
-  width: 100%;
-  margin: 0;
-  color: var(--brand-navy);
-  font-size: 48px;
-  font-weight: 600;
-  line-height: 1;
-  text-align: center;
-}
-
-.splash-tagline {
-  width: 100%;
-  margin: 0;
-  color: var(--brand-green);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.35;
-  text-align: justify;
-  text-align-last: justify;
-  white-space: nowrap;
+  transform-origin: 166px 17px;
+  animation: dotIn 620ms ease 1580ms forwards;
 }
 
 .splash-exit {
@@ -4835,27 +4757,9 @@ body[data-space="learning"] .bottom-nav {
   }
 }
 
-@keyframes drawRing {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
 @keyframes drawPath {
   to {
     stroke-dashoffset: 0;
-  }
-}
-
-@keyframes stepIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -4863,19 +4767,6 @@ body[data-space="learning"] .bottom-nav {
   to {
     opacity: 1;
     transform: scale(1);
-  }
-}
-
-@keyframes copyIn {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes lineReveal {
-  to {
-    transform: scaleX(1);
   }
 }
 
