@@ -5,6 +5,9 @@ const screen = document.getElementById("screen");
 const progressValue = document.getElementById("progressValue");
 const compassPanel = document.getElementById("compassPanel");
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const productTapMinimumDuration = 90;
+const productTapMaximumDuration = 800;
+const productTapMovementTolerance = 12;
 
 const revealDelay = prefersReducedMotion ? 120 : 2850;
 const exitDelay = prefersReducedMotion ? 220 : 3420;
@@ -34,6 +37,15 @@ function isHomeRoute() {
 
 function isScenarioSearchActive() {
   return activeSpace === "products" && isHomeRoute() && scenarioSearchTerm.trim().length > 0;
+}
+
+function isIntentionalProductTap(gesture, endedAt = Date.now()) {
+  const duration = endedAt - gesture.startedAt;
+  return (
+    !gesture.moved
+    && duration >= productTapMinimumDuration
+    && duration <= productTapMaximumDuration
+  );
 }
 
 function lockStaticUiElements() {
@@ -2030,6 +2042,8 @@ let routeTransitionTimer = null;
 let routeTransitionInTimer = null;
 let pendingRoute = "";
 let pendingLessonId = "";
+let productModuleTapGesture = null;
+let productModuleTapSuppressClickUntil = 0;
 
 function readJson(key, fallback) {
   try {
@@ -8255,6 +8269,10 @@ document.addEventListener("click", async (event) => {
   }
 
   if (moduleButton) {
+    if (Date.now() < productModuleTapSuppressClickUntil) {
+      event.preventDefault();
+      return;
+    }
     openModuleButton(moduleButton);
     return;
   }
@@ -8370,6 +8388,25 @@ document.addEventListener("pointerdown", (event) => {
   const moduleButton = event.target.closest("[data-open-module]");
   const moduleSectionButton = event.target.closest("[data-open-module-section]");
 
+  if (
+    moduleButton
+    && event.pointerType === "touch"
+    && activeSpace === "products"
+    && route === "home"
+  ) {
+    event.preventDefault();
+    productModuleTapGesture = {
+      pointerId: event.pointerId,
+      button: moduleButton,
+      startX: event.clientX,
+      startY: event.clientY,
+      startedAt: Date.now(),
+      moved: false
+    };
+    moduleButton.setPointerCapture?.(event.pointerId);
+    return;
+  }
+
   if (moduleSectionButton) {
     if (event.button && event.button !== 0) {
       return;
@@ -8389,7 +8426,36 @@ document.addEventListener("pointerdown", (event) => {
   openModuleButton(moduleButton);
 }, { passive: false });
 
+document.addEventListener("pointermove", (event) => {
+  if (!productModuleTapGesture || productModuleTapGesture.pointerId !== event.pointerId) {
+    return;
+  }
+
+  const movement = Math.hypot(
+    event.clientX - productModuleTapGesture.startX,
+    event.clientY - productModuleTapGesture.startY
+  );
+  if (movement > productTapMovementTolerance) {
+    productModuleTapGesture.moved = true;
+  }
+}, { passive: true });
+
 document.addEventListener("pointerup", (event) => {
+  if (productModuleTapGesture?.pointerId === event.pointerId) {
+    const gesture = productModuleTapGesture;
+    const isIntentionalTap = isIntentionalProductTap(gesture);
+
+    productModuleTapGesture = null;
+    productModuleTapSuppressClickUntil = Date.now() + 500;
+    gesture.button.releasePointerCapture?.(event.pointerId);
+    event.preventDefault();
+
+    if (isIntentionalTap) {
+      openModuleButton(gesture.button);
+    }
+    return;
+  }
+
   if (route !== "law" || lawSearchDragPointerId !== event.pointerId || !lawSearchDragStartY) {
     lawSearchDragStartY = 0;
     lawSearchDragPointerId = null;
@@ -8407,6 +8473,12 @@ document.addEventListener("pointerup", (event) => {
 }, { passive: false });
 
 document.addEventListener("pointercancel", (event) => {
+  if (productModuleTapGesture?.pointerId === event.pointerId) {
+    productModuleTapGesture.button.releasePointerCapture?.(event.pointerId);
+    productModuleTapGesture = null;
+    productModuleTapSuppressClickUntil = Date.now() + 500;
+  }
+
   if (lawSearchDragPointerId === event.pointerId) {
     lawSearchDragStartY = 0;
     lawSearchDragPointerId = null;
