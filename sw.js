@@ -1,8 +1,8 @@
-const CACHE_NAME = "platform-shell-v216";
+const CACHE_NAME = "platform-shell-v217";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=141",
+  "./styles.css?v=142",
   "./law-data.js?v=3",
   "./munich-re-clauses.js?v=1",
   "./sync-config.js?v=1",
@@ -15,7 +15,6 @@ const ASSETS = [
   "./assets/icon-192.png?v=7",
   "./assets/icon-512.png?v=7",
   "./assets/apple-touch-icon.png?v=7",
-  "./assets/britmark-logo.png"
 ];
 
 self.addEventListener("install", (event) => {

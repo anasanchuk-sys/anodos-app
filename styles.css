@@ -618,14 +618,25 @@ body[data-space="learning"] .compass-orb {
   min-height: 42px;
   padding: 0;
   background: transparent;
-  transform: translateX(var(--logo-spread));
+  text-decoration: none;
+  transform: translate(var(--logo-spread), -7px);
+  transition: opacity 160ms ease;
 }
 
-.partner-lockup img {
+.partner-lockup:hover,
+.partner-lockup:focus-visible {
+  opacity: 0.72;
+}
+
+.partner-name {
   display: block;
-  width: 100%;
-  max-width: 126px;
-  height: auto;
+  color: var(--brand-navy);
+  font-family: var(--font-display);
+  font-size: 27px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.018em;
+  text-align: center;
 }
 
 .screen {
@@ -5329,8 +5340,8 @@ body[data-space="learning"] .bottom-nav {
     grid-template-columns: 1fr;
   }
 
-  .partner-lockup img {
-    max-width: 112px;
+  .partner-name {
+    font-size: 25px;
   }
 
   .hero-band {
