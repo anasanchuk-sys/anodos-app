@@ -632,7 +632,7 @@ body[data-space="learning"] .compass-orb {
   display: block;
   color: var(--brand-navy);
   font-family: var(--font-display);
-  font-size: 27px;
+  font-size: 25px;
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.018em;
