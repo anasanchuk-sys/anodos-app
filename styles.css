@@ -16,6 +16,7 @@
   --surface-soft: rgba(255, 255, 255, 0.86);
   --shadow: 0 14px 38px rgba(65, 108, 145, 0.09);
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Arial Unicode MS", Arial, sans-serif;
+  --font-display: "Times New Roman", Georgia, serif;
 }
 
 * {
@@ -80,6 +81,24 @@ h2,
 h3,
 p {
   letter-spacing: 0;
+}
+
+h1,
+h2,
+h3,
+.module-title,
+.brand-menu button strong,
+.contract-template-panel summary span,
+.contract-review-dropzone strong,
+.glossary-term-select strong,
+.progress-module-row strong {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.012em;
+}
+
+.module-title {
+  font-size: 18px;
 }
 
 .splash {
@@ -336,7 +355,7 @@ p {
 
 .brand-menu button strong {
   font-size: 13px;
-  font-weight: 820;
+  font-weight: 400;
 }
 
 .brand-menu button small {
@@ -701,7 +720,7 @@ h1 {
   margin: 0 0 12px;
   color: var(--navy);
   font-size: 29px;
-  font-weight: 650;
+  font-weight: 400;
   line-height: 1.08;
 }
 
@@ -717,7 +736,7 @@ h2 {
   margin: 7px 0 0;
   color: var(--navy);
   font-size: 21px;
-  font-weight: 650;
+  font-weight: 400;
   line-height: 1.16;
 }
 
@@ -725,7 +744,7 @@ h3 {
   margin: 6px 0 0;
   color: var(--navy);
   font-size: 18px;
-  font-weight: 650;
+  font-weight: 400;
   line-height: 1.16;
 }
 
@@ -1497,8 +1516,8 @@ h3 {
 
 .module-title {
   color: var(--navy);
-  font-size: 15.75px;
-  font-weight: 650;
+  font-size: 18px;
+  font-weight: 400;
   line-height: 1.1;
 }
 
@@ -1760,7 +1779,7 @@ body[data-route="progress"] .screen {
 .progress-module-row strong {
   color: var(--green);
   font-size: 13px;
-  font-weight: 850;
+  font-weight: 400;
 }
 
 body[data-route="home"] {
@@ -2337,7 +2356,7 @@ body[data-route="home"] .module-arrow {
 
 .contract-template-panel summary span {
   font-size: 16px;
-  font-weight: 750;
+  font-weight: 400;
 }
 
 .contract-template-panel summary small {
