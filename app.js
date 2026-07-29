@@ -5,11 +5,12 @@ const screen = document.getElementById("screen");
 const progressValue = document.getElementById("progressValue");
 const compassPanel = document.getElementById("compassPanel");
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const usesDesktopLaunchSequence = window.matchMedia("(min-width: 760px)").matches;
 const productTapMaximumDuration = 800;
 const productTapMovementTolerance = 12;
 
-const revealDelay = prefersReducedMotion ? 120 : 2850;
-const exitDelay = prefersReducedMotion ? 220 : 3420;
+const revealDelay = prefersReducedMotion ? 120 : usesDesktopLaunchSequence ? 3600 : 2850;
+const exitDelay = prefersReducedMotion ? 220 : usesDesktopLaunchSequence ? 4400 : 3420;
 const notebookInsuranceTestUrl = "https://notebooklm.google.com/notebook/b9bd2dcc-74df-4284-9cfd-83b7d6aadc60/artifact/d3dc304c-4890-418f-8a88-f921e30c595f?utm_source=nlm_web_share&utm_medium=google_oo&utm_campaign=art_share_1&utm_content=&utm_smc=nlm_web_share_google_oo_art_share_1_";
 const insuranceLaw = window.insuranceLawData || window.insuranceLaw || { title: "Закон України про страхування", articleCount: 0, entries: [] };
 const munichReClauses = window.munichReClausesData || { title: "Застереження Munich Re", count: 0, clauses: [] };

@@ -140,6 +140,15 @@ p {
   animation: dotIn 620ms ease 1580ms forwards;
 }
 
+.mark-halo {
+  fill: none;
+  stroke: var(--brand-amber);
+  stroke-width: 1.4;
+  opacity: 0;
+  transform: scale(0.75);
+  transform-origin: 166px 17px;
+}
+
 .splash-name {
   margin: 0;
   color: var(--brand-navy);
@@ -5000,6 +5009,22 @@ body[data-space="learning"] .bottom-nav {
   }
 }
 
+@keyframes haloBreath {
+  0% {
+    opacity: 0;
+    transform: scale(0.75);
+  }
+
+  34% {
+    opacity: 0.3;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(2.8);
+  }
+}
+
 @keyframes splashNameIn {
   to {
     opacity: 1;
@@ -5008,6 +5033,40 @@ body[data-space="learning"] .bottom-nav {
 }
 
 @media (min-width: 760px) {
+  .splash-lockup {
+    gap: 26px;
+    width: min(520px, calc(100vw - 64px));
+  }
+
+  .splash-mark {
+    width: 240px;
+    height: 172px;
+  }
+
+  .splash-name {
+    font-size: 50px;
+    letter-spacing: 0.03em;
+  }
+
+  .mark-path {
+    animation-duration: 1850ms;
+    animation-delay: 320ms;
+  }
+
+  .splash-name {
+    animation-duration: 850ms;
+    animation-delay: 1450ms;
+  }
+
+  .mark-dot {
+    animation-duration: 700ms;
+    animation-delay: 2050ms;
+  }
+
+  .mark-halo {
+    animation: haloBreath 1250ms cubic-bezier(0.22, 1, 0.36, 1) 2350ms forwards;
+  }
+
   .app-shell {
     width: 760px;
     padding-top: 28px;
