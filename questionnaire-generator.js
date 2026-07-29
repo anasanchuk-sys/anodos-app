@@ -141,70 +141,52 @@
     }
   ];
 
-  const q = (text, response = "Заповніть відповідь", hint = "") => ({
+  const q = (text, response = "", hint = "", responseLines = 2) => ({
     text,
     response,
-    hint
+    hint,
+    responseLines
   });
 
-  function generalSection(subject) {
+  function generalSection() {
     return {
-      title: "1. Загальна інформація",
-      intro: "Відомості про заявника, об’єкт або діяльність, які потрібні для ідентифікації ризику.",
+      title: "Заявник і строк страхування",
       questions: [
-        q("Повна юридична назва заявника, код ЄДРПОУ або інший реєстраційний номер."),
-        q("Контактна особа: ПІБ, посада, телефон та електронна пошта."),
-        q(`Опишіть, що саме мається на увазі під «${subject}», його призначення та роль у діяльності компанії.`),
-        q("Адреса, територія або маршрут, на яких виникає ризик. Якщо місць декілька — наведіть перелік."),
-        q("Власник, користувач, орендар, замовник, підрядник та інші сторони, пов’язані з ризиком."),
-        q("Вигодонабувач або заставодержатель, якщо він є."),
-        q("Бажаний період страхування та дата, з якої має діяти покриття."),
-        q("Коротко опишіть очікуване страхове покриття та основні причини звернення.")
+        q("Повна юридична назва заявника та код ЄДРПОУ або інший реєстраційний номер.", "", "", 2),
+        q("Контактна особа: ПІБ, посада, телефон та електронна пошта.", "", "", 2),
+        q("Бажаний період страхування та дата, з якої має діяти покриття.", "", "", 2)
       ]
     };
   }
 
   function insuranceSection() {
     return {
-      title: "Страхові параметри",
-      intro: "Бажаний обсяг покриття та грошова оцінка ризику.",
+      title: "Бажане покриття",
       questions: [
-        q("Перелік майнових інтересів, об’єктів, робіт, послуг або видів відповідальності, які потрібно застрахувати."),
-        q("Страхова сума або бажаний ліміт відповідальності з розподілом за об’єктами, територіями чи видами ризику."),
-        q("Валюта страхових сум та базис оцінки: відновлювальна, дійсна, балансова, контрактна вартість або інший."),
-        q("Бажаний перелік ризиків, розширень та додаткових витрат."),
-        q("Прийнятний розмір франшизи або власного утримання."),
-        q("Чи потрібне покриття воєнних ризиків, тероризму, страйків або громадських заворушень?", "Так / Ні / Потрібна консультація"),
-        q("Чи діють спеціальні вимоги банку, інвестора, орендодавця, замовника або договору?")
+        q("Бажана страхова сума або ліміт відповідальності, валюта та спосіб визначення вартості.", "", "", 3),
+        q("Які ризики й додаткові витрати потрібно покрити? Зазначте бажану франшизу та спеціальні вимоги договору, банку або іншої сторони.", "", "", 3)
       ]
     };
   }
 
   function lossesSection() {
     return {
-      title: "Історія страхування та збитків",
-      intro: "Інформація за останні п’ять років, а для відповідальності — за можливості за десять років.",
+      title: "Збитки та попереднє страхування",
       questions: [
-        q("Наведіть усі збитки та інциденти: дата, причина, обставини, сума, виплата страховика і вжиті запобіжні заходи.", "Збитків не було / Наведіть перелік"),
-        q("Чи відомі події, помилки, дефекти, претензії або обставини, які можуть призвести до збитку?", "Так / Ні. Якщо так — опишіть"),
-        q("Чинні або попередні договори страхування: страховик, період, ліміти, франшизи та ключові умови."),
-        q("Чи відмовляв страховик у прийнятті ризику, поновленні договору або виплаті?", "Так / Ні. Якщо так — поясніть"),
-        q("Які зміни було впроваджено після останнього огляду, аудиту або збитку?")
+        q("Опишіть збитки та інциденти за останні п’ять років, відомі обставини, що можуть призвести до збитку, і чинне або попереднє страхування. Якщо нічого з цього не було — зазначте це.", "", "", 4)
       ]
     };
   }
 
   function documentsSection(extra = []) {
-    const base = [
-      q("Реєстр об’єктів, обладнання, робіт, вантажів або договорів із вартостями та основними характеристиками.", "Додано / Буде надано / Не застосовується"),
-      q("Фотографії, плани, схеми, маршрути або технічна документація, що дають змогу оцінити ризик.", "Додано / Буде надано / Не застосовується"),
-      q("Документи про право власності або користування, дозволи, ліцензії та сертифікати.", "Додано / Буде надано / Не застосовується"),
-      q("Звіти про огляди, технічне обслуговування, аудити, випробування та усунення зауважень.", "Додано / Буде надано / Не застосовується")
-    ];
+    const suggested = extra.length
+      ? extra.slice(0, 3).map((item) => item.text.replace(/[.?]\s*$/, "")).join("; ")
+      : "реєстр об’єктів або договорів із вартостями; фотографії, плани чи технічну документацію; дозволи, ліцензії або сертифікати";
     return {
-      title: "Документи до опитувальника",
-      intro: "Позначте, які матеріали додаються зараз або будуть надані окремо.",
-      questions: [...base, ...extra]
+      title: "Матеріали",
+      questions: [
+        q(`Додайте за наявності: ${suggested}. Зазначте, що додається зараз, буде надано пізніше або не застосовується.`, "", "", 2)
+      ]
     };
   }
 
@@ -481,52 +463,36 @@
     },
 
     cargo(subject) {
+      const grainHint = /зерн|пшениц|кукурудз|ячмен|ріпак|соняшник|соя/i.test(subject)
+        ? "Для зерна зазначте культуру, клас або якість, рік урожаю, вологість і допустимі показники домішок."
+        : "";
       return {
-        title: `Опитувальник щодо страхування вантажу: ${subject}`,
+        title: "Опитувальник для страхування вантажу",
         sections: [
           {
-            title: "Вантаж і страховий інтерес",
+            title: "Вантаж і вартість",
             questions: [
-              q("Найменування та детальний опис вантажу, код УКТ ЗЕД за наявності."),
-              q("Страхувальник виступає власником вантажу, продавцем, покупцем, перевізником чи експедитором?"),
-              q("Власник вантажу та вигодонабувач."),
-              q("Кількість місць, вага, об’єм і максимальна вартість однієї відправки."),
-              q("Загальна страхова вартість: інвойс, фрахт, мито, очікуваний прибуток та інші витрати."),
-              q("Новий чи вживаний вантаж; рік виготовлення та технічний стан."),
-              q("Крихкість, температурний режим, небезпечні властивості, строк придатності або особлива привабливість для крадіжки."),
-              q("Умови поставки Incoterms і момент переходу ризику.")
+              q("Точне найменування вантажу, кількість місць, загальна вага та об’єм.", "", grainHint, 4),
+              q("Стан і властивості вантажу, спосіб пакування або перевезення та відповідальна за пакування сторона.", "", "Зазначте, зокрема, чи вантаж новий або вживаний, насипний, крихкий, небезпечний, швидкопсувний, чи потребує температурного режиму; як перевозиться — насипом, у мішках, на палетах, у контейнері тощо.", 4),
+              q("Вартість за інвойсом або контрактом, валюта, максимальна вартість однієї відправки та бажана страхова сума. Які додаткові витрати слід включити?", "", "", 3),
+              q("Власник вантажу, вигодонабувач і страховий інтерес заявника. Умови Incoterms та момент переходу ризику.", "", "", 3)
             ]
           },
           {
-            title: "Маршрут і перевезення",
+            title: "Перевезення",
             questions: [
-              q("Пункт відправлення, пункт призначення, країни транзиту й альтернативні маршрути."),
-              q("Дата відправлення, очікувана тривалість і допустимі затримки."),
-              q("Вид транспорту на кожній ділянці: автомобільний, залізничний, морський, авіаційний або мультимодальний."),
-              q("Перевізники й експедитори, їх досвід, ліцензії та ліміти відповідальності."),
-              q("Тип транспортного засобу, контейнера або вагона; вік і технічний стан."),
-              q("Перевантаження, проміжне зберігання, митні термінали та максимальна тривалість зупинок."),
-              q("Річкові, морські порти, судно, рейс, класифікаційне товариство та рік побудови — якщо застосовується."),
-              q("Ділянки маршруту поблизу зон бойових дій, окупованих територій або територій підвищеного ризику.")
-            ]
-          },
-          {
-            title: "Пакування, завантаження та контроль",
-            questions: [
-              q("Спосіб пакування, матеріали, відповідність ваги й габаритів та захист від вологи."),
-              q("Хто виконує і контролює завантаження, кріплення, перевантаження та розвантаження."),
-              q("Чи є схема кріплення, сюрвей вантажу або інструкції виробника?", "Так / Ні / Не застосовується"),
-              q("Пломби, GPS-моніторинг, температурні датчики, охорона або супровід."),
-              q("Місця стоянки, вимоги до маршруту й порядок реагування на відхилення."),
-              q("Чи допускається перевезення на відкритому транспорті або верхній палубі?", "Так / Ні / Не застосовується"),
-              q("Процедура повідомлення про пошкодження, аварію, крадіжку або порушення температури.")
+              q("Пункт відправлення, пункт призначення, повний маршрут, країни транзиту, планова дата відправлення та орієнтовна тривалість.", "", "", 4),
+              q("Вид транспорту та основні дані транспортного засобу, контейнера, вагона або судна.", "", "", 3),
+              q("Перевізник або експедитор: назва, досвід із таким вантажем, ліцензії та страхування відповідальності.", "", "", 3),
+              q("Хто виконує завантаження, кріплення, перевантаження та розвантаження? Як контролюється безпечне розміщення вантажу?", "", "", 4),
+              q("Чи буде проміжне зберігання або тривалі зупинки? Зазначте місце, строк і засоби контролю та захисту: охорона, пломби, GPS, супровід, датчики температури або вологості.", "", "", 4)
             ]
           }
         ],
         documents: [
-          q("Інвойс, пакувальний лист і контракт поставки.", "Додано / Буде надано"),
-          q("Маршрут, дані перевізника та транспортного засобу.", "Додано / Буде надано"),
-          q("Фото вантажу й пакування до відправлення.", "Додано / Буде надано")
+          q("Контракт, інвойс, специфікація або пакувальний лист"),
+          q("Маршрут і дані перевізника та транспортного засобу"),
+          q("Фото вантажу, пакування або сертифікат якості")
         ]
       };
     },
@@ -970,6 +936,77 @@
       .filter((section) => section.questions.length);
   }
 
+  const questionnaireTitles = {
+    cargo: "Опитувальник для страхування вантажу",
+    construction: "Опитувальник для страхування будівельно-монтажних робіт",
+    productLiability: "Опитувальник для страхування відповідальності за продукцію",
+    professionalLiability: "Опитувальник для страхування професійної відповідальності",
+    cyber: "Опитувальник для страхування кіберризиків",
+    managementLiability: "Опитувальник для страхування відповідальності керівників",
+    solar: "Опитувальник для страхування об’єкта відновлюваної енергетики",
+    grain: "Опитувальник для страхування елеватора",
+    commercialProperty: "Опитувальник для страхування комерційної нерухомості",
+    warehouse: "Опитувальник для страхування складу",
+    manufacturing: "Опитувальник для страхування виробничого підприємства",
+    hospitality: "Опитувальник для страхування закладу гостинності",
+    motor: "Опитувальник для страхування транспортних засобів",
+    agriculture: "Опитувальник для страхування аграрних ризиків",
+    generalLiability: "Опитувальник для страхування цивільної відповідальності",
+    property: "Опитувальник для страхування майна",
+    generic: "Опитувальник для оцінки страхового ризику"
+  };
+
+  const minimalQuestionSelection = {
+    construction: [[0, 3, 4], [0, 1], [0, 4], [2, 4]],
+    productLiability: [[0, 2, 5], [1, 2, 4], [0, 3]],
+    professionalLiability: [[0, 1, 5], [0, 3], [0, 1, 3]],
+    cyber: [[0, 1, 3], [0, 1, 3, 6], [2, 3]],
+    managementLiability: [[0, 2, 4], [0, 1, 3, 5], [0, 3]],
+    solar: [[0, 1], [0, 2], [1, 3, 5], [0, 4]],
+    grain: [[0, 1], [0, 1, 4], [0, 2], [0, 4]],
+    commercialProperty: [[0, 4], [0], [0, 1], [0, 4], [0]],
+    warehouse: [[0, 4], [0, 1], [0], [0, 1], [0]],
+    manufacturing: [[0, 4], [0, 1], [0], [0, 1], [0]],
+    hospitality: [[0, 4], [0], [0, 1], [0, 4], [0]],
+    motor: [[0, 2, 5], [0, 3, 5], [0, 1]],
+    agriculture: [[0, 1, 4], [0, 1, 2, 6]],
+    generalLiability: [[0, 2, 5], [1, 4, 6], [0, 3, 5]],
+    property: [[0, 3, 4], [0], [0, 1, 6], [0, 4]],
+    generic: [[0, 2, 4, 5], [0, 2, 4, 5], [0, 4]]
+  };
+
+  function answerLinesFor(question) {
+    if (question.responseLines && question.responseLines > 2) {
+      return question.responseLines;
+    }
+    return /опис|перелік|маршрут|збит|інцидент|обставин|проєкт|проект|контракт|вартіст|пожеж|ризик|контрол/i.test(question.text)
+      ? 3
+      : 2;
+  }
+
+  function minimalSpecializedSections(profileId, sections) {
+    if (profileId === "cargo") {
+      return sections;
+    }
+    const selection = minimalQuestionSelection[profileId] || [];
+    return sections
+      .map((section, sectionIndex) => {
+        const indexes = selection[sectionIndex] || [0, 1];
+        return {
+          ...section,
+          intro: "",
+          questions: indexes
+            .map((index) => section.questions[index])
+            .filter(Boolean)
+            .map((question) => ({
+              ...question,
+              responseLines: answerLinesFor(question)
+            }))
+        };
+      })
+      .filter((section) => section.questions.length);
+  }
+
   function prepare(subjectValue) {
     const subject = normalizeSubject(subjectValue);
     if (subject.length < 2) {
@@ -980,8 +1017,8 @@
     const builder = profileBuilders[profile.id] || profileBuilders.generic;
     const specialized = builder(subject);
     const sections = uniqueQuestions([
-      generalSection(subject),
-      ...specialized.sections,
+      generalSection(),
+      ...minimalSpecializedSections(profile.id, specialized.sections),
       insuranceSection(),
       lossesSection(),
       documentsSection(specialized.documents)
@@ -991,7 +1028,7 @@
       subject,
       profileId: profile.id,
       profileLabel: profile.label,
-      title: specialized.title,
+      title: questionnaireTitles[profile.id] || questionnaireTitles.generic,
       preparedAt: new Date().toISOString(),
       sections,
       questionCount: sections.reduce((total, section) => total + section.questions.length, 0)
@@ -1138,7 +1175,7 @@
                       alignment: docx.AlignmentType.RIGHT,
                       children: [
                         new docx.TextRun({
-                          text: `Опитувальник · ${result.subject}`,
+                          text: "Опитувальник BritMark",
                           color: "647486",
                           size: 17,
                           font: "Calibri"
@@ -1314,45 +1351,13 @@
     });
   }
 
-  function questionTable(docx, section, startNumber) {
-    const none = noBorder(docx);
-    const rows = [
-      new docx.TableRow({
-        tableHeader: true,
-        cantSplit: true,
-        children: [
-          new docx.TableCell({
-            width: { size: 6100, type: docx.WidthType.DXA },
-            shading: { type: docx.ShadingType.CLEAR, fill: "E8F0F3", color: "auto" },
-            children: [
-              paragraphText(docx, "Питання", {
-                bold: true,
-                color: "132961",
-                size: 18,
-                spacing: { after: 0 }
-              })
-            ]
-          }),
-          new docx.TableCell({
-            width: { size: 3260, type: docx.WidthType.DXA },
-            shading: { type: docx.ShadingType.CLEAR, fill: "E8F0F3", color: "auto" },
-            children: [
-              paragraphText(docx, "Відповідь Клієнта", {
-                bold: true,
-                color: "132961",
-                size: 18,
-                spacing: { after: 0 }
-              })
-            ]
-          })
-        ]
-      })
-    ];
-
+  function questionCards(docx, section, startNumber) {
+    const cards = [];
     section.questions.forEach((question, index) => {
-      const questionChildren = [
+      const responseLines = Math.max(2, Math.min(5, Number(question.responseLines) || 2));
+      const children = [
         new docx.Paragraph({
-          spacing: { after: question.hint ? 55 : 0, line: 280 },
+          spacing: { after: question.hint ? 50 : 85, line: 280 },
           keepLines: true,
           children: [
             new docx.TextRun({
@@ -1364,6 +1369,7 @@
             }),
             new docx.TextRun({
               text: question.text,
+              bold: true,
               color: "243247",
               size: 19,
               font: "Calibri"
@@ -1371,65 +1377,71 @@
           ]
         })
       ];
+
       if (question.hint) {
-        questionChildren.push(
+        children.push(
           paragraphText(docx, question.hint, {
             italics: true,
             color: "647486",
             size: 16,
-            spacing: { after: 0, line: 260 }
+            spacing: { after: 80, line: 250 }
           })
         );
       }
 
-      rows.push(
-        new docx.TableRow({
-          cantSplit: true,
-          children: [
-            new docx.TableCell({
-              width: { size: 6100, type: docx.WidthType.DXA },
-              verticalAlign: docx.VerticalAlign.CENTER,
-              children: questionChildren
-            }),
-            new docx.TableCell({
-              width: { size: 3260, type: docx.WidthType.DXA },
-              verticalAlign: docx.VerticalAlign.CENTER,
-              shading: { type: docx.ShadingType.CLEAR, fill: "F8FBFA", color: "auto" },
+      for (let lineIndex = 0; lineIndex < responseLines; lineIndex += 1) {
+        children.push(
+          new docx.Paragraph({
+            spacing: { after: lineIndex === responseLines - 1 ? 20 : 65, line: 265 },
+            border: { bottom: border(docx, "B8C9CF", 3) },
+            children: [
+              new docx.TextRun({
+                text: " ",
+                color: "7B8A96",
+                size: 18,
+                font: "Calibri"
+              })
+            ]
+          })
+        );
+      }
+
+      cards.push(
+        new docx.Table({
+          width: { size: 9360, type: docx.WidthType.DXA },
+          indent: { size: 120, type: docx.WidthType.DXA },
+          columnWidths: [9360],
+          layout: docx.TableLayoutType.FIXED,
+          margins: { top: 125, bottom: 115, left: 160, right: 160 },
+          borders: {
+            top: border(docx, "D7E2E5", 4),
+            bottom: border(docx, "D7E2E5", 4),
+            left: border(docx, "337F6D", 10),
+            right: border(docx, "D7E2E5", 4),
+            insideHorizontal: noBorder(docx),
+            insideVertical: noBorder(docx)
+          },
+          rows: [
+            new docx.TableRow({
+              cantSplit: true,
               children: [
-                paragraphText(docx, question.response, {
-                  color: "7B8A96",
-                  italics: true,
-                  size: 17,
-                  spacing: { after: 80 }
-                }),
-                paragraphText(docx, " ", {
-                  color: "7B8A96",
-                  size: 17,
-                  spacing: { after: 120 }
+                new docx.TableCell({
+                  width: { size: 9360, type: docx.WidthType.DXA },
+                  verticalAlign: docx.VerticalAlign.TOP,
+                  shading: { type: docx.ShadingType.CLEAR, fill: "F8FBFA", color: "auto" },
+                  children
                 })
               ]
             })
           ]
+        }),
+        new docx.Paragraph({
+          spacing: { after: 55 },
+          children: []
         })
       );
     });
-
-    return new docx.Table({
-      width: { size: 9360, type: docx.WidthType.DXA },
-      indent: { size: 120, type: docx.WidthType.DXA },
-      columnWidths: [6100, 3260],
-      layout: docx.TableLayoutType.FIXED,
-      margins: { top: 115, bottom: 115, left: 140, right: 140 },
-      borders: {
-        top: border(docx, "C9D7DE", 5),
-        bottom: border(docx, "C9D7DE", 5),
-        left: none,
-        right: none,
-        insideHorizontal: border(docx, "DDE6EA", 4),
-        insideVertical: border(docx, "E5ECEF", 3)
-      },
-      rows
-    });
+    return cards;
   }
 
   function signatureBlock(docx) {
@@ -1488,41 +1500,18 @@
 
   function buildDocument(docx, result, logo) {
     const content = [
-      new docx.Paragraph({
-        spacing: { after: 180 },
-        children: [
-          new docx.ImageRun({
-            type: "png",
-            data: logo,
-            transformation: { width: 200, height: 30 },
-            altText: {
-              title: "BritMark",
-              description: "Логотип BritMark",
-              name: "BritMark"
-            }
-          })
-        ]
-      }),
-      paragraphText(docx, "СТРАХОВИЙ ОПИТУВАЛЬНИК", {
-        style: "QuestionnaireKicker",
-        spacing: { after: 80 }
-      }),
       paragraphText(docx, result.title, {
         style: "QuestionnaireTitle",
-        spacing: { after: 110 }
+        spacing: { after: 70 }
       }),
       paragraphText(
         docx,
-        "Для первинного аналізу ризику, підготовки запиту страховикам і формування умов страхування.",
+        "Заповніть застосовні поля. Якщо запитання не стосується ризику, зазначте «Не застосовується». Поля автоматично розширюються під час введення.",
         {
           style: "QuestionnaireSubtitle",
-          spacing: { after: 300 }
+          spacing: { after: 100 }
         }
-      ),
-      metadataTable(docx, result),
-      new docx.Paragraph({ spacing: { after: 120 }, children: [] }),
-      instructionCallout(docx),
-      new docx.Paragraph({ spacing: { after: 100 }, children: [] })
+      )
     ];
 
     let number = 1;
@@ -1532,31 +1521,22 @@
           heading: docx.HeadingLevel.HEADING_1,
           keepNext: true,
           spacing: {
-            before: sectionIndex === 0 ? 220 : 360,
-            after: 80,
-            line: 300
+            before: sectionIndex === 0 ? 100 : 210,
+            after: 65,
+            line: 270
           },
           children: [
             new docx.TextRun({
               text: section.title,
               color: "132961",
               bold: true,
-              size: 32,
+              size: 27,
               font: "Calibri"
             })
           ]
         })
       );
-      if (section.intro) {
-        content.push(
-          paragraphText(docx, section.intro, {
-            color: "647486",
-            size: 18,
-            spacing: { after: 100, line: 280 }
-          })
-        );
-      }
-      content.push(questionTable(docx, section, number));
+      content.push(...questionCards(docx, section, number));
       number += section.questions.length;
     });
 
@@ -1564,13 +1544,13 @@
       new docx.Paragraph({
         heading: docx.HeadingLevel.HEADING_1,
         keepNext: true,
-        spacing: { before: 420, after: 100 },
+        spacing: { before: 230, after: 80 },
         children: [
           new docx.TextRun({
             text: "Підтвердження",
             color: "132961",
             bold: true,
-            size: 32,
+            size: 27,
             font: "Calibri"
           })
         ]
@@ -1580,8 +1560,8 @@
         "Підписом підтверджую, що надана інформація є повною та достовірною на дату заповнення. У разі істотних змін зобов’язуюся повідомити про них до укладення договору страхування.",
         {
           color: "35495B",
-          size: 19,
-          spacing: { after: 200, line: 300 }
+          size: 18,
+          spacing: { after: 130, line: 280 }
         }
       ),
       signatureBlock(docx)
@@ -1594,6 +1574,7 @@
       subject: `Страховий опитувальник: ${result.subject}`,
       description: "Опитувальник для первинної оцінки страхового ризику.",
       keywords: "BritMark, страхування, опитувальник, Anodos",
+      evenAndOddHeaderAndFooters: true,
       features: { updateFields: true },
       styles: {
         default: {
@@ -1612,12 +1593,12 @@
           heading1: {
             run: {
               font: "Calibri",
-              size: 32,
+              size: 27,
               bold: true,
               color: "132961"
             },
             paragraph: {
-              spacing: { before: 360, after: 200, line: 300 },
+              spacing: { before: 210, after: 65, line: 270 },
               keepNext: true,
               keepLines: true,
               outlineLevel: 0
@@ -1676,7 +1657,7 @@
             },
             paragraph: {
               spacing: { before: 0, after: 80, line: 260 },
-              keepNext: true
+              keepNext: false
             }
           },
           {
@@ -1687,13 +1668,13 @@
             quickFormat: true,
             run: {
               font: "Calibri",
-              size: 52,
+              size: 44,
               bold: true,
               color: "132961"
             },
             paragraph: {
-              spacing: { before: 0, after: 110, line: 280 },
-              keepNext: true,
+              spacing: { before: 0, after: 70, line: 270 },
+              keepNext: false,
               keepLines: true,
               outlineLevel: 0
             }
@@ -1706,12 +1687,12 @@
             quickFormat: true,
             run: {
               font: "Calibri",
-              size: 24,
+              size: 19,
               color: "647486"
             },
             paragraph: {
-              spacing: { before: 0, after: 300, line: 290 },
-              keepNext: true
+              spacing: { before: 0, after: 100, line: 270 },
+              keepNext: false
             }
           }
         ]
@@ -1736,10 +1717,12 @@
             }
           },
           headers: {
-            default: buildHeader(docx, logo, result)
+            default: buildHeader(docx, logo, result),
+            even: buildHeader(docx, logo, result)
           },
           footers: {
-            default: buildFooter(docx)
+            default: buildFooter(docx),
+            even: buildFooter(docx)
           },
           children: content
         }
