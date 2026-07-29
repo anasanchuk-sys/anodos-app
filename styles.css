@@ -15,7 +15,7 @@
   --surface: #ffffff;
   --surface-soft: rgba(255, 255, 255, 0.86);
   --shadow: 0 14px 38px rgba(65, 108, 145, 0.09);
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Arial Unicode MS", Arial, sans-serif;
+  --font: "Times New Roman", Georgia, serif;
   --font-display: "Times New Roman", Georgia, serif;
 }
 
