@@ -6358,24 +6358,24 @@ function renderContractReview() {
         </label>
       </section>
 
-      <section class="contract-review-files-panel">
-        <div class="contract-review-panel-head">
-          <p>${contractReviewFiles.length ? `${contractReviewFiles.length} файли` : "Файли ще не додано"}</p>
-          ${contractReviewFiles.length ? `<button type="button" data-clear-contract-review-files>Очистити</button>` : ""}
-        </div>
-        ${contractReviewFiles.length ? `
+      ${contractReviewFiles.length ? `
+        <section class="contract-review-files-panel">
+          <div class="contract-review-panel-head">
+            <p>${contractReviewFiles.length} файли</p>
+            <button type="button" data-clear-contract-review-files>Очистити</button>
+          </div>
           <ol class="contract-review-files">
             ${contractReviewFiles.map(renderContractReviewFile).join("")}
           </ol>
           <p class="${readinessClass}">${escapeHtml(readinessText)}</p>
-        ` : `
-          <p class="contract-review-empty">Додай пакет документів: основний договір, додатки, додаткові угоди, графік платежів або перелік майна. Після завантаження перевір призначення кожного файла.</p>
-        `}
-        <button class="primary-action primary-action-wide" type="button" data-run-contract-review ${canCompare ? "" : "disabled"}>${compareButtonText}</button>
-        <p class="contract-review-note">Попередній і новий договори визначаються лише за повними періодами дії з тексту документів. Назва файла, порядок завантаження та дата зміни не визначають хронологію.</p>
-        <p class="contract-review-note">Anodos аналізує текст документів, а сумнівні або конфліктні дані передає на ручну перевірку.</p>
-        ${contractReviewCopyMessage ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>` : ""}
-      </section>
+          <button class="primary-action primary-action-wide" type="button" data-run-contract-review ${canCompare ? "" : "disabled"}>${compareButtonText}</button>
+          <p class="contract-review-note">Попередній і новий договори визначаються лише за повними періодами дії з тексту документів. Назва файла, порядок завантаження та дата зміни не визначають хронологію.</p>
+          <p class="contract-review-note">Anodos аналізує текст документів, а сумнівні або конфліктні дані передає на ручну перевірку.</p>
+          ${contractReviewCopyMessage ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>` : ""}
+        </section>
+      ` : contractReviewCopyMessage
+        ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>`
+        : ""}
 
       ${renderContractReviewTable()}
     </section>
