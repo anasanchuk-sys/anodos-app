@@ -1972,7 +1972,7 @@ const contractReviewFields = [
   { key: "product", label: "Продукт", control: "Назва виду страхування з титулу або предмета договору, без домислів за текстом виключень." },
   { key: "beneficiary", label: "Вигодонабувач", control: "Актуальний вигодонабувач з урахуванням додаткових угод і застави." },
   { key: "valuationBasis", label: "Базис оцінки", control: "ДВ або ВВ; для TPL/BI клітинка може лишатися порожньою." },
-  { key: "risks", label: "RISKS", control: "PD named perils або PD all risks; окремо business interruption, TPL, cargo та інші лише за прямим текстом покриття." },
+  { key: "risks", label: "RISKS", control: "PD (NP) для конкретного переліку названих ризиків; PD (AR) лише для all risks / будь-якого випадкового і непередбачуваного фізичного впливу; окремо BI, TPL, WAR та інші лише за прямим текстом покриття." },
   { key: "startDate", label: "Дата початку дії договору", control: "Дата фактичного початку покриття у форматі ДД.ММ.РРРР." },
   { key: "endDate", label: "Дата закінчення дії договору", control: "Дата закінчення страхового покриття, не дата платежу чи застави." },
   { key: "deductible", label: "Франшиза", control: "Усі застосовні франшизи, включно зі спеціальними за ризиками." },
@@ -1990,7 +1990,14 @@ const contractReviewFieldEvidencePatterns = {
   product: [/страхового продукту/i, /договір.*страхування/i, /предмет(?:ом)? договору/i],
   beneficiary: [/^вигодонабувач\b/i, /\bbeneficiary\b/i],
   valuationBasis: [/базис оцінки/i, /відновлювальн.*варт/i, /дійсн.*варт/i, /балансов.*варт/i],
-  risks: [/страхові ризики/i, /перелік страхових (?:ризиків|випадків)/i, /страховими випадками/i, /all risks|named perils/i],
+  risks: [
+    /страхові ризики/i,
+    /перелік страхових (?:ризиків|випадків)/i,
+    /внаслідок таких страхових ризиків/i,
+    /страховими випадками/i,
+    /all risks|named perils/i,
+    /будь-як[а-яіїєґ]*\s+випадков[а-яіїєґ]*\s+(?:і|та)\s+непередбач[а-яіїєґ]*\s+(?:зовнішн[а-яіїєґ]*\s+)?фізичн[а-яіїєґ]*\s+вплив/i
+  ],
   startDate: [/дата початку/i, /строк дії договору/i, /період .*страхування/i],
   endDate: [/дата закінчення/i, /строк дії договору/i, /період .*страхування/i],
   deductible: [/франшиза/i],
@@ -3105,10 +3112,10 @@ function contractReviewIsPlaceholderValue(value) {
     || /^(страховик|страхувальник|вигодонабувач|назва|повна назва|територія страхування|страхова сума|франшиза|страховий тариф|страховий платіж)$/.test(normalized);
 }
 
-function contractReviewTextLines(text) {
+function contractReviewTextLines(text, maxLength = 400) {
   return String(text || "")
     .split(/[\r\n]+/)
-    .map((line) => contractReviewCleanValue(line, 400))
+    .map((line) => contractReviewCleanValue(line, maxLength))
     .filter(Boolean);
 }
 
@@ -3673,13 +3680,18 @@ function contractReviewExtractExplicitRateEntries(lines) {
 }
 
 function contractReviewInlineDeductibleValue(line) {
-  const moneyMatch = String(line || "").match(
+  const source = String(line || "");
+  const markerIndex = source.search(/франшиз|deductible/i);
+  const focusedSource = markerIndex >= 0
+    ? source.slice(Math.max(0, markerIndex - 120), markerIndex + 280)
+    : source;
+  const moneyMatch = focusedSource.match(
     /(\d{1,3}(?:[ \u00a0\u202f]\d{3})+(?:[,.]\d{1,2})?|\d{4,}(?:[,.]\d{1,2})?)\s*(?:грн\.?|грив(?:ень|ні|ня)|uah)/i
   );
   if (moneyMatch) {
     return contractReviewFormatMoney(contractReviewParseNumber(moneyMatch[1]));
   }
-  const percentMatch = String(line || "").match(/(\d{1,3}(?:[,.]\d{1,8})?)\s*%/);
+  const percentMatch = focusedSource.match(/(\d{1,3}(?:[,.]\d{1,8})?)\s*%/);
   if (percentMatch) {
     return contractReviewFormatPercent(contractReviewParseNumber(percentMatch[1]));
   }
@@ -3772,6 +3784,58 @@ function contractReviewExtractDeductibleEntries(lines) {
 }
 
 function contractReviewExtractGenericFinancialTable(lines) {
+  const amountToken = "\\d{1,3}(?:[ \\u00a0\\u202f]\\d{3})+(?:[,.]\\d{2})";
+  for (let index = 0; index < lines.length; index += 1) {
+    const headerContext = lines.slice(Math.max(0, index - 5), index + 1).join(" ");
+    if (
+      !/страхова сума|sum insured/i.test(headerContext)
+      || !/страхов[а-яіїєґ]*\s+тариф|insurance rate/i.test(headerContext)
+      || !/страхов[а-яіїєґ]*\s+(?:премія|платіж)|insurance premium/i.test(headerContext)
+      || !/франшиз|deductible/i.test(headerContext)
+    ) {
+      continue;
+    }
+    const candidates = [];
+    for (let precision = 1; precision <= 8; precision += 1) {
+      const rowPattern = new RegExp(
+        `(${amountToken})\\s*\\|?\\s*(${amountToken})\\s*\\|?\\s*(\\d{1,2}[,.]\\d{${precision}})\\s*%?\\s*\\|?\\s*(${amountToken})\\s*\\|?\\s*(${amountToken})\\s*(?:всього|total)`,
+        "i"
+      );
+      const row = lines[index].match(rowPattern);
+      if (!row) {
+        continue;
+      }
+      const sumInsuredValue = contractReviewParseNumber(row[2]);
+      const rateValue = contractReviewParseNumber(row[3]);
+      const premiumValue = contractReviewParseNumber(row[4]);
+      const deductibleValue = contractReviewParseNumber(row[5]);
+      if (
+        !Number.isFinite(sumInsuredValue)
+        || !Number.isFinite(rateValue)
+        || !Number.isFinite(premiumValue)
+        || !Number.isFinite(deductibleValue)
+        || sumInsuredValue <= 0
+        || rateValue <= 0
+        || premiumValue <= 0
+      ) {
+        continue;
+      }
+      const expectedPremium = sumInsuredValue * rateValue / 100;
+      const relativeError = Math.abs(expectedPremium - premiumValue) / premiumValue;
+      candidates.push({ sumInsuredValue, rateValue, premiumValue, deductibleValue, relativeError });
+    }
+    candidates.sort((left, right) => left.relativeError - right.relativeError);
+    const bestCandidate = candidates[0];
+    if (bestCandidate && bestCandidate.relativeError <= 0.02) {
+      return {
+        sumInsured: contractReviewFormatMoney(bestCandidate.sumInsuredValue),
+        rate: contractReviewFormatPercent(bestCandidate.rateValue),
+        premium: contractReviewFormatMoney(bestCandidate.premiumValue),
+        deductible: contractReviewFormatMoney(bestCandidate.deductibleValue)
+      };
+    }
+  }
+
   for (let sumHeaderIndex = 0; sumHeaderIndex < lines.length; sumHeaderIndex += 1) {
     if (!/страхова сума[^|]{0,80}(?:грн|uah)/i.test(lines[sumHeaderIndex])) {
       continue;
@@ -4071,7 +4135,7 @@ function contractReviewDeriveRate(sumInsured, premium) {
 
 function contractReviewExtractCoverageDatesFromLines(lines) {
   const datesFromFragment = (fragment) =>
-    [...fragment.matchAll(/(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4})/g)]
+    [...fragment.matchAll(/(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{4})/g)]
       .map((match) => contractReviewFormatDate(match[0]))
       .filter(Boolean);
   const validRange = (startDate, endDate) => {
@@ -4082,16 +4146,37 @@ function contractReviewExtractCoverageDatesFromLines(lines) {
       && endTime > startTime
       && endTime - startTime <= 10 * 366 * 24 * 60 * 60 * 1000;
   };
+  const explicitRangeFromFragment = (fragment) => {
+    const datePattern = "(?:\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}|\\d{1,2}[-/.]\\d{1,2}[-/.]\\d{4})";
+    const timePattern = "(?:(?:о\\s*)?\\d{1,2}[:.]\\d{2}\\s*(?:год(?:\\.|ини?)?|г\\.)?\\s*)?";
+    const yearSuffix = "\\s*(?:р(?:\\.|оку)?)?";
+    const rangePattern = new RegExp(
+      `(?:з|від)\\s*${timePattern}(${datePattern})${yearSuffix}\\s*(?:до|по|[-–—])\\s*${timePattern}(${datePattern})${yearSuffix}`,
+      "i"
+    );
+    const match = String(fragment || "").match(rangePattern);
+    if (!match) {
+      return null;
+    }
+    const startDate = contractReviewFormatDate(match[1]);
+    const endDate = contractReviewFormatDate(match[2]);
+    return validRange(startDate, endDate) ? { startDate, endDate } : null;
+  };
   const primarySections = [
-    /^(?:\d+(?:\.\d+)*\.?\s*)?строк дії договору/i,
-    /^період страхування(?:\s+за договором)?\s*:?\s*$/i
+    /^(?:\d+(?:\.\d+)*\.?\s*)?(?:строк|термін|період)\s+(?:дії\s+)?(?:договору|страхування|страхового покриття)(?:\s|:|$)/i,
+    /^(?:\d+(?:\.\d+)*\.?\s*)?період страхування(?:\s+за договором)?(?:\s|:|$)/i
   ];
   for (const pattern of primarySections) {
     const indexes = lines
       .map((line, index) => pattern.test(line) ? index : -1)
       .filter((index) => index >= 0);
     for (const sectionIndex of indexes) {
-      const dates = datesFromFragment(lines.slice(sectionIndex, sectionIndex + 24).join(" "));
+      const fragment = lines.slice(sectionIndex, sectionIndex + 24).join(" ");
+      const explicitRange = explicitRangeFromFragment(fragment);
+      if (explicitRange) {
+        return explicitRange;
+      }
+      const dates = datesFromFragment(fragment);
       const startDate = dates[0] || "";
       const endDate = dates.find((date, index) => index > 0 && date !== startDate) || "";
       if (validRange(startDate, endDate)) {
@@ -4122,7 +4207,7 @@ function contractReviewExtractCoverageDatesFromLines(lines) {
 
   const fallbackPatterns = [
     /№ періоду страхування|період \(рік\) страхування/i,
-    /дата початку\s+дата закінчення|дата початку|початок$/i
+    /дата початку\s+дата (?:закінчення|завершення)|дата початку|початок$/i
   ];
   for (const pattern of fallbackPatterns) {
     const scheduleIndex = contractReviewFindLineIndex(lines, pattern);
@@ -4130,6 +4215,10 @@ function contractReviewExtractCoverageDatesFromLines(lines) {
       continue;
     }
     const fragment = lines.slice(scheduleIndex, scheduleIndex + 24).join(" ");
+    const explicitRange = explicitRangeFromFragment(fragment);
+    if (explicitRange) {
+      return explicitRange;
+    }
     const dates = datesFromFragment(fragment);
     if (dates.length >= 2) {
       const distinctRange = dates.find((date, index) => index > 0 && date !== dates[0]);
@@ -4566,8 +4655,13 @@ function contractReviewPeriodReviewMessage(periodOrder) {
 
 function contractReviewExtractDateRange(text) {
   const normalized = String(text || "").replace(/\s+/g, " ");
-  const datePattern = "((?:\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})|(?:\\d{1,2}[-/.]\\d{1,2}[-/.]\\d{2,4}))";
-  const rangePattern = new RegExp(`(?:з|від)\\s*${datePattern}\\s*(?:до|по|-)\\s*${datePattern}`, "i");
+  const datePattern = "((?:\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})|(?:\\d{1,2}[-/.]\\d{1,2}[-/.]\\d{4}))";
+  const timePattern = "(?:(?:о\\s*)?\\d{1,2}[:.]\\d{2}\\s*(?:год(?:\\.|ини?)?|г\\.)?\\s*)?";
+  const yearSuffix = "\\s*(?:р(?:\\.|оку)?)?";
+  const rangePattern = new RegExp(
+    `(?:з|від)\\s*${timePattern}${datePattern}${yearSuffix}\\s*(?:до|по|[-–—])\\s*${timePattern}${datePattern}${yearSuffix}`,
+    "i"
+  );
   const range = normalized.match(rangePattern);
   if (range) {
     return {
@@ -4678,23 +4772,37 @@ function contractReviewClassifyRisks(text) {
   const risks = [];
   const hasProperty = /страхуван[а-яіїєґ]*\s+майна|property insurance|застрахован[а-яіїєґ]*\s+майн/.test(propertyEvidence);
   const allRisks = /all risks|від усіх ризик|від всіх ризик|будь-як[а-яіїєґ]*\s+випадков[а-яіїєґ]*\s+(?:і|та)\s+непередбач[а-яіїєґ]*\s+(?:зовнішн[а-яіїєґ]*\s+)?фізичн[а-яіїєґ]*\s+вплив/.test(affirmativeCoverage);
-  const namedPerils = /named perils|назван[а-яіїєґ]*\s+ризик|пойменован[а-яіїєґ]*\s+ризик|перелічен[а-яіїєґ]*\s+ризик/.test(affirmativeCoverage)
-    || (!allRisks && /(?:перелік страхових ризиків|страховими ризиками (?:є|визнаються)\s*:)/.test(affirmativeCoverage));
+  const explicitNamedPerilsStructure =
+    /named perils|назван[а-яіїєґ]*\s+ризик|пойменован[а-яіїєґ]*\s+ризик|перелічен[а-яіїєґ]*\s+ризик/.test(affirmativeCoverage)
+    || /перелік страхових (?:випадків(?:\s+та\s+страхових ризиків)?|ризиків(?:\s+та\s+страхових випадків)?)/.test(affirmativeCoverage)
+    || /(?:внаслідок|від)\s+таких страхових ризиків/.test(affirmativeCoverage)
+    || /страховими ризиками (?:є|визнаються)\s*:/.test(affirmativeCoverage);
+  const concretePerilSignals = [
+    /пожеж|вогонь|задим|вибух|блискав/,
+    /стихійн|природн|зсув|град|повін|сніг|вітер|землетрус/,
+    /вплив вод|аварі[яї].*(?:водопостач|каналіза|опален|пожежогас)/,
+    /зіткнен|наїзд.*технічн|транспортн.*засоб/,
+    /падіння.*(?:літальн|дерев|стовп|конструкц)/,
+    /протиправн.*трет|крадіж|грабіж|розбій|вандалізм/,
+    /будівництв|реконструкц/,
+    /аварі[яї].*(?:тепло|водо|газопостач|електричн|виробнич)/
+  ].filter((pattern) => pattern.test(affirmativeCoverage)).length;
+  const namedPerils =
+    !allRisks
+    && (explicitNamedPerilsStructure || concretePerilSignals >= 2);
   if (hasProperty && allRisks) {
-    risks.push("PD all risks");
+    risks.push("PD (AR)");
   } else if (hasProperty && namedPerils) {
-    risks.push("PD named perils");
-  } else if (hasProperty) {
-    risks.push("PD");
+    risks.push("PD (NP)");
   }
   if (/перерв[а-яіїєґ]*\s+у\s+господарськ[а-яіїєґ]*\s+діяльност|business interruption/.test(`${titleAndSubject} ${affirmativeCoverage}`)) {
-    risks.push("business interruption");
+    risks.push("BI");
   }
   if (/страхуван[а-яіїєґ]*.*відповідальност.*трет|страхуван[а-яіїєґ]*\s+(?:цивільної\s+)?відповідальності|third[- ]party liability insurance/.test(titleAndSubject)) {
     risks.push("TPL");
   }
   if (/страхуван[а-яіїєґ]*\s+вантаж|cargo insurance/.test(titleAndSubject)) {
-    risks.push("cargo");
+    risks.push("Cargo");
   }
   if (/страхуван[а-яіїєґ]*.*воєнн[а-яіїєґ]*\s+ризик|war risks insurance/.test(`${titleAndSubject} ${affirmativeCoverage}`)) {
     risks.push("WAR");
@@ -4765,7 +4873,7 @@ function contractReviewExtractValues(text) {
     && Number.isFinite(extractedEndTime)
     && extractedEndTime > extractedStartTime;
   const dateRange = dateRangeIsValid ? extractedDateRange : { startDate: "", endDate: "" };
-  const financialValues = contractReviewExtractFinancialValues(lines);
+  const financialValues = contractReviewExtractFinancialValues(contractReviewTextLines(text, 1600));
   const insurer = contractReviewExtractInsurer(lines)
     || contractReviewNormalizePartyName(contractReviewFindLineValue(
       lines,
