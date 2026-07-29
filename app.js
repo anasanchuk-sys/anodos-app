@@ -1921,26 +1921,9 @@ const progressByUserKey = "anodos-progress-by-user-v1";
 const centralParticipantsKey = "anodos-central-participants-v1";
 const accuracyReportsKey = "anodos-accuracy-reports-v1";
 const activeSpaceKey = "anodos-active-space-v1";
-function contractReviewIsDesktopAvailable(navigatorLike = window.navigator) {
-  const mobileHint = navigatorLike?.userAgentData?.mobile;
-  if (typeof mobileHint === "boolean") {
-    return !mobileHint;
-  }
-
-  const userAgent = String(navigatorLike?.userAgent || "");
-  const mobileUserAgent = /Android|iPhone|iPad|iPod|IEMobile|Opera Mini|Mobile/i.test(userAgent);
-  const iPadDesktopUserAgent =
-    /Macintosh/i.test(userAgent)
-    && Number(navigatorLike?.maxTouchPoints || 0) > 1;
-  return !mobileUserAgent && !iPadDesktopUserAgent;
-}
-
-const contractReviewDesktopAvailable = contractReviewIsDesktopAvailable();
 
 function availableRoute(nextRoute) {
-  return nextRoute === "contract-review" && !contractReviewDesktopAvailable
-    ? "home"
-    : nextRoute;
+  return nextRoute;
 }
 
 const spaceDefinitions = {
@@ -2119,7 +2102,7 @@ function activeNavigationRoute() {
   if (
     route === "law"
     || route === "glossary"
-    || (route === "contract-review" && contractReviewDesktopAvailable)
+    || route === "contract-review"
   ) {
     return route;
   }
@@ -2149,14 +2132,9 @@ function renderSpaceShell() {
     button.classList.toggle("brand-menu-option-active", isActive);
   });
 
-  document.querySelectorAll("[data-contract-review-desktop-only]").forEach((element) => {
-    element.hidden = !contractReviewDesktopAvailable;
-  });
-
   if (nav) {
     nav.setAttribute("aria-label", `Навігація простору «${definition.label}»`);
     nav.innerHTML = definition.navigation
-      .filter((item) => item.route !== "contract-review" || contractReviewDesktopAvailable)
       .map((item) => `
       <button
         type="button"
@@ -6336,12 +6314,6 @@ function renderContractReviewTable() {
 }
 
 function renderContractReview() {
-  if (!contractReviewDesktopAvailable) {
-    route = "home";
-    render();
-    return;
-  }
-
   const packageStatus = contractReviewPackageAssignmentStatus(contractReviewFiles);
   const activeFilesCount = packageStatus.activeFiles.length;
   const readyFilesCount = packageStatus.activeFiles.filter(contractReviewCanAutoReadFile).length;
@@ -6369,7 +6341,7 @@ function renderContractReview() {
       <header class="contract-review-head">
         <button class="module-back" type="button" data-route="home" aria-label="Назад до продуктів">←</button>
         <div>
-          <p class="eyebrow">Anodos · desktop</p>
+          <p class="eyebrow">Anodos · договори</p>
           <h1>Порівняння договорів</h1>
           <p class="hero-copy">Завантаж два або більше пакетів документів, перевір їхні ролі та сформуй порівняльну таблицю. Сумнівні або конфліктні дані система позначить окремо.</p>
         </div>
@@ -6378,10 +6350,10 @@ function renderContractReview() {
       <section class="contract-review-dropzone" data-contract-review-dropzone aria-label="Додати договори">
         <input id="contractReviewInput" type="file" multiple accept=".doc,.docx,.pdf,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
         <label for="contractReviewInput">
-          <span>Перетягни договори сюди</span>
-          <strong>або</strong>
+          <span>Додай договори</span>
+          <strong>Перетягни або вибери файли</strong>
           <b class="contract-review-browse-button">Вибрати договори</b>
-          <small>Якщо вбудований браузер не приймає перетягування з Finder, скористайся цією кнопкою.</small>
+          <small>На телефоні натисни кнопку й вибери договори у «Файлах». На комп’ютері їх також можна перетягнути.</small>
         </label>
       </section>
 
