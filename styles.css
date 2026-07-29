@@ -240,9 +240,11 @@ p {
 .brand-name {
   display: block;
   color: var(--brand-navy);
-  font-size: 25px;
-  font-weight: 680;
+  font-family: "Times New Roman", Georgia, serif;
+  font-size: 27px;
+  font-weight: 400;
   line-height: 1;
+  letter-spacing: 0.025em;
   text-align: center;
 }
 
@@ -5189,7 +5191,7 @@ body[data-space="learning"] .bottom-nav {
   }
 
   .brand-name {
-    font-size: 24px;
+    font-size: 26px;
   }
 
   .brand-menu-shell,
