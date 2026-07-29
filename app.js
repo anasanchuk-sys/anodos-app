@@ -1996,7 +1996,7 @@ const contractReviewFieldEvidencePatterns = {
   sumInsured: [/загальна страхова сума/i, /^страхова сума\b/i],
   rate: [/страховий тариф/i],
   limits: [/субліміт/i, /ліміт відповідальності/i, /максимальний період відшкодування/i],
-  premium: [/загальн(?:ий|а)\s+(?:страховий платіж|страхова премія)/i, /^страхов(?:ий платіж|а премія)\b/i]
+  premium: [/загальн(?:ий|а)\s+(?:річн(?:ий|а)\s+)?(?:страховий платіж|страхова премія)/i, /^страхов(?:ий платіж|а премія)\b/i]
 };
 const contractReviewHighRiskFields = new Set([
   "insured",
@@ -3216,7 +3216,7 @@ function contractReviewLineLooksLikePartyValue(line) {
   if (/^(в особі|посада|п\.?і\.?б|діє|номер|дата|адреса|телефон|код єдрпоу|iban|р\/р|п\/р|рахунок|реквізити|bank details|резидент|ідентифікаційний|повна назва|найменування|full name|company name|legal address)/i.test(normalized)) {
     return false;
   }
-  return /товариство|акціонерне|страхова компанія|universalna|універсальна|магелан|бритмарк|приватне|^(?:прат|тов|тдв|пат|ат|ск|дп|пп|кп|фоп)(?:\s|[«"])|^(?:llc|jsc)\b|^(?:акціонерний|державний|комерційний)\s+банк\b|^(?:ат|пат|прат).{0,80}\bбанк\b/i.test(line);
+  return /товариство|акціонерне|страхова компанія|universalna|універсальна|магелан|бритмарк|приватне|^(?:прат|тов|тдв|пат|ат|ск|дп|пп|кп|фоп)(?:\s|[«"])|^(?:llc|jsc)\b|^(?:акціонерний|державний|комерційний)\s+банк\b|^(?:ат|пат|прат).{0,80}\bбанк\b|^[«"][А-ЯA-ZІЇЄҐ][А-ЯA-ZІЇЄҐа-яa-zіїєґ0-9 .,'’&()/-]{2,}[»"]$/i.test(line);
 }
 
 function contractReviewExtractParty(lines, headingPattern, options = {}) {
@@ -3243,7 +3243,12 @@ function contractReviewExtractParty(lines, headingPattern, options = {}) {
         continue;
       }
       values.push(line);
-      if (values.length >= (options.maxValueLines || 1)) {
+      const normalizedCandidate = contractReviewNormalizePartyName(values.join(" "));
+      const bareLegalForm = /^(?:ТОВ|ТДВ|АТ|ПрАТ|ПАТ|ДП|ПП|КП|ФОП)$/i.test(normalizedCandidate);
+      if (
+        values.length >= (options.maxValueLines || 1)
+        || !(options.joinSplitLegalName && bareLegalForm)
+      ) {
         break;
       }
     }
@@ -3276,7 +3281,9 @@ function contractReviewExtractInsurer(lines) {
 function contractReviewExtractInsured(lines) {
   return contractReviewExtractParty(lines, /^страхувальник\s*\/?\s*(?:i?insured)?$/i, {
     maxLookahead: 18,
-    firstHeadingOnly: true
+    firstHeadingOnly: true,
+    maxValueLines: 2,
+    joinSplitLegalName: true
   });
 }
 
@@ -3484,7 +3491,7 @@ function contractReviewFormatPercent(value) {
   if (!Number.isFinite(value)) {
     return "";
   }
-  return `${value.toLocaleString("uk-UA", { minimumFractionDigits: 0, maximumFractionDigits: 4 })}%`;
+  return `${value.toLocaleString("uk-UA", { minimumFractionDigits: 0, maximumFractionDigits: 8 })}%`;
 }
 
 function contractReviewStandaloneNumber(line) {
@@ -3497,13 +3504,28 @@ function contractReviewStandaloneNumber(line) {
 
 function contractReviewMoneyFromLine(line) {
   const cleaned = String(line || "").replace(/\u00a0/g, " ").trim();
-  const match = cleaned.match(/^(\d{1,3}(?: \d{3})+(?:[,.]\d{1,2})?|\d{4,}(?:[,.]\d{1,2})?)\s*(?:грн\.?|uah)?(?:\s*\/.*)?$/i);
+  const match = cleaned.match(
+    /^(\d{1,3}(?:[ \u202f]\d{3})+(?:[,.]\d{1,2})?|\d{4,}(?:[,.]\d{1,2})?)\s*(?:грн\.?|грив(?:ень|ні|ня)|uah)?(?:\s*[.,;:]?\s*(?:\([^)]*\)|(?:зокрема|in particular).*)|\s*\/.*)?$/i
+  );
   return match ? contractReviewFormatMoney(contractReviewParseNumber(match[1])) : "";
+}
+
+function contractReviewMoneyOrZeroFromLine(line) {
+  const money = contractReviewMoneyFromLine(line);
+  if (money) {
+    return money;
+  }
+  const cleaned = String(line || "").replace(/\u00a0/g, " ").trim();
+  return /^0(?:[,.]0{1,2})?\s*(?:грн\.?|грив(?:ень|ні|ня)|uah)?$/i.test(cleaned)
+    ? contractReviewFormatMoney(0)
+    : "";
 }
 
 function contractReviewPercentFromLine(line) {
   const cleaned = String(line || "").replace(/\u00a0/g, " ").trim();
-  const match = cleaned.match(/^(\d{1,2}(?:[,.]\d{1,4})?)\s*%(?:\s*\/.*)?$/);
+  const match = cleaned.match(
+    /^(\d{1,3}(?:[,.]\d{1,8})?)\s*%(?:\s*(?:\/|від|за|[.,;:]).*)?$/i
+  );
   return match ? contractReviewFormatPercent(contractReviewParseNumber(match[1])) : "";
 }
 
@@ -3547,15 +3569,304 @@ function contractReviewJoinCoverageValues(entries) {
   return found.map((entry) => `${entry.label}: ${entry.value}`).join("; ");
 }
 
+function contractReviewFinancialSubjectLabel(line) {
+  const normalized = contractReviewNormalizeComparable(line);
+  if (/перерв.*господар|business interruption|\bbi\b/i.test(normalized)) {
+    return "BI";
+  }
+  if (/виробнич.*машин|машин.*обладнан|manufacturing machinery/i.test(normalized)) {
+    return "Машини та обладнання";
+  }
+  if (/бій скла|glass break/i.test(normalized)) {
+    return "Бій скла";
+  }
+  if (/будівл.*комунікац.*оздоблен|buildings.*communications.*finishing/i.test(normalized)) {
+    return "Будівлі, комунікації та оздоблення";
+  }
+  if (/вміст|contents/i.test(normalized)) {
+    return "Вміст";
+  }
+  if (/землетрус|earthquake/i.test(normalized)) {
+    return "Землетрус";
+  }
+  if (/майн|property/i.test(normalized)) {
+    return "Майно";
+  }
+  const riskMatch = String(line || "").match(/за\s+ризиком\s+[«"]?([^»"]{2,80})[»"]?/i);
+  return riskMatch ? contractReviewCleanValue(riskMatch[1], 80) : "";
+}
+
+function contractReviewJoinFinancialEntries(entries) {
+  const unique = [];
+  (entries || []).forEach((entry) => {
+    if (!entry?.value) {
+      return;
+    }
+    const duplicate = unique.some((candidate) =>
+      candidate.value === entry.value
+      && (!candidate.label || !entry.label || candidate.label === entry.label)
+    );
+    if (duplicate) {
+      const genericIndex = unique.findIndex((candidate) =>
+        candidate.value === entry.value && !candidate.label && entry.label
+      );
+      if (genericIndex >= 0) {
+        unique[genericIndex] = entry;
+      }
+      return;
+    }
+    unique.push(entry);
+  });
+  if (unique.length === 1) {
+    return unique[0].value;
+  }
+  return unique.map((entry) => entry.label ? `${entry.label}: ${entry.value}` : entry.value).join("; ");
+}
+
+function contractReviewExtractExplicitRateEntries(lines) {
+  const entries = [];
+  const addEntry = (value, line) => {
+    if (!value) {
+      return;
+    }
+    entries.push({
+      label: contractReviewFinancialSubjectLabel(line),
+      value
+    });
+  };
+  const sectionStart = contractReviewFindLineIndex(
+    lines,
+    /^(?:\d+(?:\.\d+)*\.?\s*)?страховий тариф\s*$/i
+  );
+  const sectionEnd = sectionStart >= 0
+    ? contractReviewFindLineIndex(
+        lines,
+        /^(?:\d+(?:\.\d+)*\.?\s*)?(?:загальн[а-яіїєґ]*\s+)?страхов[а-яіїєґ]*\s+(?:премія|платіж)|^total insurance premium/i,
+        sectionStart + 1
+      )
+    : -1;
+
+  lines.forEach((line, index) => {
+    if (
+      /(?:витрат|комісі|винагород|частк)[^%]{0,120}страхов(?:ий|ого)\s+тариф/i.test(line)
+    ) {
+      return;
+    }
+    const marker = line.match(/страхов(?:ий|ого)\s+тариф/i);
+    if (marker) {
+      const tail = line.slice((marker.index || 0) + marker[0].length);
+      const match = tail.match(/(\d{1,3}(?:[,.]\d{1,8})?)\s*%/);
+      if (match) {
+        addEntry(contractReviewFormatPercent(contractReviewParseNumber(match[1])), line);
+      }
+    }
+    const insideSection =
+      sectionStart >= 0
+      && index > sectionStart
+      && index <= (sectionEnd > sectionStart ? sectionEnd : sectionStart + 24);
+    if (insideSection) {
+      addEntry(contractReviewPercentFromLine(line), line);
+    }
+  });
+  return entries;
+}
+
+function contractReviewInlineDeductibleValue(line) {
+  const moneyMatch = String(line || "").match(
+    /(\d{1,3}(?:[ \u00a0\u202f]\d{3})+(?:[,.]\d{1,2})?|\d{4,}(?:[,.]\d{1,2})?)\s*(?:грн\.?|грив(?:ень|ні|ня)|uah)/i
+  );
+  if (moneyMatch) {
+    return contractReviewFormatMoney(contractReviewParseNumber(moneyMatch[1]));
+  }
+  const percentMatch = String(line || "").match(/(\d{1,3}(?:[,.]\d{1,8})?)\s*%/);
+  if (percentMatch) {
+    return contractReviewFormatPercent(contractReviewParseNumber(percentMatch[1]));
+  }
+  return "";
+}
+
+function contractReviewExtractDeductibleTableEntries(lines) {
+  const entries = [];
+  for (let tableStart = 0; tableStart < lines.length; tableStart += 1) {
+    if (!/складов[а-яіїєґ]*\s+застрахованого\s+майна/i.test(lines[tableStart])) {
+      continue;
+    }
+    const headerEnd = Math.min(lines.length, tableStart + 12);
+    const deductibleHeaderOffset = lines
+      .slice(tableStart, headerEnd)
+      .findIndex((line) => /франшиз/i.test(line));
+    if (deductibleHeaderOffset < 0) {
+      continue;
+    }
+    const dataStart = tableStart + deductibleHeaderOffset + 1;
+    for (let index = dataStart; index < Math.min(lines.length, tableStart + 100); index += 1) {
+      if (/^\d+\.\s+[А-ЯA-ZІЇЄҐ]/.test(lines[index])) {
+        break;
+      }
+      const categoryMatch = lines[index].match(/^\d+\.\d+(?:\.\d+)*\.\s+(.+)$/);
+      if (!categoryMatch) {
+        continue;
+      }
+      let rowEnd = index + 1;
+      while (
+        rowEnd < Math.min(lines.length, tableStart + 100)
+        && !/^\d+\.\d+(?:\.\d+)*\.\s+/.test(lines[rowEnd])
+        && !/^\d+\.\s+[А-ЯA-ZІЇЄҐ]/.test(lines[rowEnd])
+      ) {
+        rowEnd += 1;
+      }
+      const row = lines.slice(index + 1, rowEnd);
+      if (!row.some((line) => /^так$/i.test(line))) {
+        index = rowEnd - 1;
+        continue;
+      }
+      const rowValues = row
+        .map(contractReviewMoneyOrZeroFromLine)
+        .filter(Boolean);
+      const deductible = rowValues[rowValues.length - 1] || "";
+      if (deductible) {
+        entries.push({
+          label: contractReviewCleanValue(categoryMatch[1], 90),
+          value: deductible
+        });
+      }
+      index = rowEnd - 1;
+    }
+  }
+  return entries;
+}
+
+function contractReviewExtractDeductibleEntries(lines) {
+  const entries = [];
+  lines.forEach((line, index) => {
+    if (!/франшиз|deductible/i.test(line)) {
+      return;
+    }
+    let value = contractReviewInlineDeductibleValue(line);
+    const tableHeaderOnly =
+      /^франшиза\s*(?:\([^)]*\))?\s*,?\s*(?:грн|гривні|%)(?:[.,*].*)?$/i.test(line);
+    if (!value && !tableHeaderOnly) {
+      for (let offset = 1; offset <= 2; offset += 1) {
+        const nextLine = lines[index + offset] || "";
+        value =
+          contractReviewMoneyOrZeroFromLine(nextLine)
+          || contractReviewPercentFromLine(nextLine)
+          || contractReviewDurationFromLine(nextLine);
+        if (value) {
+          break;
+        }
+        if (/^(?:страхов[а-яіїєґ]*\s+(?:ризик|тариф|премія|платіж)|строк дії|перелік винятків)/i.test(nextLine)) {
+          break;
+        }
+      }
+    }
+    if (value) {
+      entries.push({
+        label: contractReviewFinancialSubjectLabel(line),
+        value
+      });
+    }
+  });
+  return [...entries, ...contractReviewExtractDeductibleTableEntries(lines)];
+}
+
+function contractReviewExtractGenericFinancialTable(lines) {
+  for (let sumHeaderIndex = 0; sumHeaderIndex < lines.length; sumHeaderIndex += 1) {
+    if (!/страхова сума[^|]{0,80}(?:грн|uah)/i.test(lines[sumHeaderIndex])) {
+      continue;
+    }
+    const headerWindowStart = Math.max(0, sumHeaderIndex - 8);
+    const headerWindowEnd = Math.min(lines.length - 1, sumHeaderIndex + 10);
+    const headerIndexes = {
+      rate: -1,
+      premium: -1,
+      deductible: -1
+    };
+    for (let index = headerWindowStart; index <= headerWindowEnd; index += 1) {
+      const line = lines[index];
+      if (headerIndexes.rate < 0 && /страхов[а-яіїєґ]*\s+тариф/i.test(line)) {
+        headerIndexes.rate = index;
+      }
+      if (headerIndexes.premium < 0 && /страхов[а-яіїєґ]*\s+(?:премія|платіж)/i.test(line)) {
+        headerIndexes.premium = index;
+      }
+      if (headerIndexes.deductible < 0 && /франшиз/i.test(line)) {
+        headerIndexes.deductible = index;
+      }
+    }
+    if (Object.values(headerIndexes).some((index) => index < 0)) {
+      continue;
+    }
+    const headerEnd = Math.max(sumHeaderIndex, ...Object.values(headerIndexes));
+    const dataEnd = Math.min(lines.length, headerEnd + 100);
+    for (let rateIndex = headerEnd + 1; rateIndex < dataEnd; rateIndex += 1) {
+      const rate = contractReviewRateFromTableLine(lines[rateIndex]);
+      if (!rate) {
+        continue;
+      }
+      const moneyBeforeRate = [];
+      for (let index = rateIndex - 1; index > headerEnd && index >= rateIndex - 45; index -= 1) {
+        const money = contractReviewMoneyOrZeroFromLine(lines[index]);
+        if (money) {
+          moneyBeforeRate.push(money);
+          if (moneyBeforeRate.length >= 2) {
+            break;
+          }
+        }
+      }
+      const moneyAfterRate = [];
+      let deductible = "";
+      for (let index = rateIndex + 1; index <= Math.min(dataEnd - 1, rateIndex + 12); index += 1) {
+        if (/^всього\b/i.test(lines[index]) && moneyAfterRate.length < 1) {
+          break;
+        }
+        const money = contractReviewMoneyOrZeroFromLine(lines[index]);
+        if (money) {
+          moneyAfterRate.push(money);
+          if (moneyAfterRate.length >= 2) {
+            deductible = moneyAfterRate[1];
+            break;
+          }
+          continue;
+        }
+        if (moneyAfterRate.length >= 1 && !deductible) {
+          deductible =
+            contractReviewPercentFromLine(lines[index])
+            || contractReviewDurationFromLine(lines[index]);
+          if (deductible) {
+            break;
+          }
+        }
+      }
+      if (moneyBeforeRate.length && moneyAfterRate.length) {
+        return {
+          sumInsured: moneyBeforeRate[0],
+          rate,
+          premium: moneyAfterRate[0],
+          deductible
+        };
+      }
+    }
+  }
+  return { sumInsured: "", rate: "", premium: "", deductible: "" };
+}
+
 function contractReviewExtractFinancialValues(lines) {
   const numberedClausePrefix = "^(?:\\d+(?:\\.\\d+)*\\.?\\s*)?";
-  const sumLineIndex = contractReviewFindLineIndex(
+  const generalSumLineIndex = contractReviewFindLineIndex(
     lines,
     new RegExp(`${numberedClausePrefix}загальна страхова сума(?:\\s|$)`, "i")
   );
+  const sumSectionLineIndex = contractReviewFindLineIndex(
+    lines,
+    new RegExp(`${numberedClausePrefix}страхова сума(?:\\s+за\\s+(?:цим\\s+)?договором)?(?:\\s+(?:складає|становить|дорівнює))?\\s*:?$`, "i")
+  );
+  const sumLineIndex = generalSumLineIndex >= 0
+    ? generalSumLineIndex
+    : sumSectionLineIndex;
   const generalPremiumLineIndex = contractReviewFindLineIndex(
     lines,
-    new RegExp(`${numberedClausePrefix}загальн(?:ий|а)\\s+(?:страховий платіж|страхова премія)(?:\\s|$)`, "i")
+    new RegExp(`${numberedClausePrefix}загальн(?:ий|а)\\s+(?:річн(?:ий|а)\\s+)?(?:страховий платіж|страхова премія)(?:\\s|$)`, "i")
   );
   const premiumSectionLineIndex = contractReviewFindLineIndex(
     lines,
@@ -3564,8 +3875,13 @@ function contractReviewExtractFinancialValues(lines) {
   const premiumLineIndex = generalPremiumLineIndex >= 0
     ? generalPremiumLineIndex
     : premiumSectionLineIndex;
-  const sumInsured = contractReviewExtractMoneyAfterLine(lines, sumLineIndex, 4);
-  const premium = contractReviewExtractMoneyAfterLine(lines, premiumLineIndex, 4);
+  const genericTableValues = contractReviewExtractGenericFinancialTable(lines);
+  const sumInsured =
+    contractReviewExtractMoneyAfterLine(lines, sumLineIndex, 4)
+    || genericTableValues.sumInsured;
+  const premium =
+    contractReviewExtractMoneyAfterLine(lines, premiumLineIndex, 4)
+    || genericTableValues.premium;
 
   const propertyTableStart = contractReviewFindLineIndex(lines, /перелік майна, що приймається на страхування/i);
   const propertyTableEnd = propertyTableStart >= 0
@@ -3652,39 +3968,19 @@ function contractReviewExtractFinancialValues(lines) {
     { label: "Майно", value: propertyDeductible },
     { label: "BI", value: businessInterruptionDeductible }
   ]);
-  const explicitRates = [];
-  const explicitDeductibles = [];
-  lines.forEach((line) => {
-    const rateMatch = line.match(
-      /страхов(?:ий|ого)\s+тариф[^%]{0,180}?(?:складає|становить|дорівнює|[-–—:])?\s*(\d{1,2}(?:[,.]\d{1,4})?)\s*%/i
-    );
-    if (rateMatch) {
-      const rateValue = contractReviewFormatPercent(contractReviewParseNumber(rateMatch[1]));
-      const riskMatch = line.match(/за\s+ризиком\s+[«"]?([^»"]{2,80})[»"]?/i);
-      explicitRates.push(riskMatch
-        ? `${contractReviewCleanValue(riskMatch[1], 80)}: ${rateValue}`
-        : rateValue);
-    }
-
-    if (!/франшиз/i.test(line)) {
-      return;
-    }
-    const deductibleMatch = line.match(
-      /(\d{1,3}(?:[ \u00a0]\d{3})+(?:[,.]\d{1,2})?|\d{4,}(?:[,.]\d{1,2})?)\s*(грн\.?|грив(?:ень|ні|ня)|uah)|(\d{1,2}(?:[,.]\d{1,4})?)\s*%/i
-    );
-    if (!deductibleMatch) {
-      return;
-    }
-    const deductibleValue = deductibleMatch[1]
-      ? contractReviewFormatMoney(contractReviewParseNumber(deductibleMatch[1]))
-      : contractReviewFormatPercent(contractReviewParseNumber(deductibleMatch[3]));
-    const riskMatch = line.match(/за\s+ризиком\s+[«"]?([^»"]{2,80})[»"]?/i);
-    explicitDeductibles.push(riskMatch
-      ? `${contractReviewCleanValue(riskMatch[1], 80)}: ${deductibleValue}`
-      : deductibleValue);
-  });
-  const rate = coverageRate || [...new Set(explicitRates)].slice(0, 4).join("; ");
-  const deductible = coverageDeductible || [...new Set(explicitDeductibles)].slice(0, 6).join("; ");
+  const explicitRateEntries = contractReviewExtractExplicitRateEntries(lines);
+  const explicitDeductibleEntries = contractReviewExtractDeductibleEntries(lines);
+  const rate =
+    coverageRate
+    || genericTableValues.rate
+    || contractReviewJoinFinancialEntries(explicitRateEntries.slice(0, 8));
+  const deductible = coverageDeductible
+    || (genericTableValues.deductible
+      ? contractReviewJoinFinancialEntries([
+          { label: "Майно", value: genericTableValues.deductible },
+          ...explicitDeductibleEntries.filter((entry) => entry.value !== genericTableValues.deductible)
+        ].slice(0, 8))
+      : contractReviewJoinFinancialEntries(explicitDeductibleEntries.slice(0, 8)));
   const coverageLimits = [
     propertySumInsured ? `Майно: ${propertySumInsured}` : "",
     businessInterruptionSumInsured ? `BI: ${businessInterruptionSumInsured}` : "",
@@ -3773,24 +4069,70 @@ function contractReviewDeriveRate(sumInsured, premium) {
 }
 
 function contractReviewExtractCoverageDatesFromLines(lines) {
-  const candidatePatterns = [
+  const datesFromFragment = (fragment) =>
+    [...fragment.matchAll(/(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4})/g)]
+      .map((match) => contractReviewFormatDate(match[0]))
+      .filter(Boolean);
+  const validRange = (startDate, endDate) => {
+    const startTime = contractReviewDateToTime(startDate);
+    const endTime = contractReviewDateToTime(endDate);
+    return Number.isFinite(startTime)
+      && Number.isFinite(endTime)
+      && endTime > startTime
+      && endTime - startTime <= 10 * 366 * 24 * 60 * 60 * 1000;
+  };
+  const primarySections = [
+    /^(?:\d+(?:\.\d+)*\.?\s*)?строк дії договору/i,
+    /^період страхування(?:\s+за договором)?\s*:?\s*$/i
+  ];
+  for (const pattern of primarySections) {
+    const indexes = lines
+      .map((line, index) => pattern.test(line) ? index : -1)
+      .filter((index) => index >= 0);
+    for (const sectionIndex of indexes) {
+      const dates = datesFromFragment(lines.slice(sectionIndex, sectionIndex + 24).join(" "));
+      const startDate = dates[0] || "";
+      const endDate = dates.find((date, index) => index > 0 && date !== startDate) || "";
+      if (validRange(startDate, endDate)) {
+        return { startDate, endDate };
+      }
+    }
+  }
+
+  const startColumnIndex = contractReviewFindLineIndex(lines, /^дата початку$/i);
+  if (
+    startColumnIndex >= 0
+    && lines.slice(Math.max(0, startColumnIndex - 8), startColumnIndex).some((line) => /термін сплати/i.test(line))
+    && lines.slice(startColumnIndex, startColumnIndex + 5).some((line) => /дата завершення/i.test(line))
+  ) {
+    const nextClauseOffset = lines
+      .slice(startColumnIndex + 1, startColumnIndex + 60)
+      .findIndex((line) => /^\d+(?:\.\d+)+\.\s+[А-ЯA-ZІЇЄҐ]/.test(line));
+    const scheduleEnd = nextClauseOffset >= 0
+      ? startColumnIndex + 1 + nextClauseOffset
+      : startColumnIndex + 40;
+    const dates = datesFromFragment(lines.slice(startColumnIndex, scheduleEnd).join(" "));
+    const startDate = dates[1] || "";
+    const endDate = dates[dates.length - 1] || "";
+    if (validRange(startDate, endDate)) {
+      return { startDate, endDate };
+    }
+  }
+
+  const fallbackPatterns = [
     /№ періоду страхування|період \(рік\) страхування/i,
-    /строк дії договору/i,
     /дата початку\s+дата закінчення|дата початку|початок$/i
   ];
-
-  for (const pattern of candidatePatterns) {
+  for (const pattern of fallbackPatterns) {
     const scheduleIndex = contractReviewFindLineIndex(lines, pattern);
     if (scheduleIndex < 0) {
       continue;
     }
-    const fragment = lines.slice(scheduleIndex, scheduleIndex + 18).join(" ");
-    const dates = [...fragment.matchAll(/(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4})/g)]
-      .map((match) => contractReviewFormatDate(match[0]))
-      .filter(Boolean);
+    const fragment = lines.slice(scheduleIndex, scheduleIndex + 24).join(" ");
+    const dates = datesFromFragment(fragment);
     if (dates.length >= 2) {
       const distinctRange = dates.find((date, index) => index > 0 && date !== dates[0]);
-      if (distinctRange) {
+      if (distinctRange && validRange(dates[0], distinctRange)) {
         return { startDate: dates[0], endDate: distinctRange };
       }
     }
@@ -3915,9 +4257,16 @@ function contractReviewEvidenceForField(lines, fieldKey, value) {
     .replace(/[«»"']/g, "")
     .replace(/\s+/g, " ");
   const valueDigits = value.replace(/\D/g, "");
+  const distanceToLabel = (index) => labelIndexes.length
+    ? Math.min(...labelIndexes.map((labelIndex) => Math.abs(labelIndex - index)))
+    : Number.POSITIVE_INFINITY;
   let exactIndex = -1;
   if (valueDigits.length >= 6) {
-    exactIndex = lines.findIndex((line) => line.replace(/\D/g, "").includes(valueDigits));
+    const exactCandidates = lines
+      .map((line, index) => line.replace(/\D/g, "").includes(valueDigits) ? index : -1)
+      .filter((index) => index >= 0)
+      .sort((left, right) => distanceToLabel(left) - distanceToLabel(right) || left - right);
+    exactIndex = exactCandidates[0] ?? -1;
   }
   if (exactIndex < 0 && normalizedValue.length >= 8) {
     const anchor = normalizedValue.slice(0, Math.min(34, normalizedValue.length));
@@ -3926,12 +4275,54 @@ function contractReviewEvidenceForField(lines, fieldKey, value) {
     );
   }
   if (exactIndex >= 0) {
-    const anchoredToLabel = labelIndexes.some((labelIndex) => Math.abs(labelIndex - exactIndex) <= 8);
+    const anchoredToLabel = distanceToLabel(exactIndex) <= 8;
     return {
       line: exactIndex + 1,
       snippet: contractReviewCleanValue(lines.slice(exactIndex, exactIndex + 2).join(" "), 280),
       match: anchoredToLabel ? "exact-label" : "exact"
     };
+  }
+
+  if (["deductible", "sumInsured", "rate", "premium"].includes(fieldKey) && labelIndexes.length) {
+    const numericTokens = [...String(value).matchAll(
+      /(\d{1,3}(?:[ \u00a0\u202f]\d{3})*(?:[,.]\d+)?|\d+(?:[,.]\d+)?)\s*(грн\.?|%|діб|дн(?:і|ів|я)|годин(?:и)?|місяц(?:ь|і|ів))/gi
+    )]
+      .map((match) => ({
+        number: contractReviewParseNumber(match[1]),
+        unit: match[2].toLowerCase()
+      }))
+      .filter((token) => Number.isFinite(token.number))
+      .filter((token, index, tokens) =>
+        tokens.findIndex((candidate) => candidate.number === token.number && candidate.unit === token.unit) === index
+      );
+    const tokenIndexes = numericTokens.map((token) => {
+      const candidates = [];
+      lines.forEach((line, index) => {
+        const normalizedLine = line.replace(/\u00a0/g, " ").trim();
+        if (token.unit === "%" && !/%/.test(normalizedLine) && !/^\d{1,3}(?:[,.]\d{1,8})$/.test(normalizedLine)) {
+          return;
+        }
+        if (/^(?:діб|дн|годин|місяц)/i.test(token.unit) && !new RegExp(token.unit.slice(0, 3), "i").test(normalizedLine)) {
+          return;
+        }
+        const numbers = normalizedLine.match(/\d{1,3}(?:[ \u202f]\d{3})*(?:[,.]\d+)?|\d+(?:[,.]\d+)?/g) || [];
+        if (numbers.some((number) => contractReviewParseNumber(number) === token.number)) {
+          candidates.push(index);
+        }
+      });
+      return candidates.sort((left, right) => distanceToLabel(left) - distanceToLabel(right) || left - right)[0] ?? -1;
+    });
+    if (
+      numericTokens.length
+      && tokenIndexes.every((index) => index >= 0 && distanceToLabel(index) <= 45)
+    ) {
+      const evidenceIndex = tokenIndexes.sort((left, right) => distanceToLabel(left) - distanceToLabel(right))[0];
+      return {
+        line: evidenceIndex + 1,
+        snippet: contractReviewCleanValue(lines.slice(evidenceIndex, evidenceIndex + 2).join(" "), 280),
+        match: "exact-label"
+      };
+    }
   }
 
   const labelIndex = labelIndexes[0] ?? -1;
@@ -4338,6 +4729,31 @@ function contractReviewExtractValuationBasis(text) {
   return "";
 }
 
+function contractReviewExtractPrimaryContractNumber(lines) {
+  const titleWindowEnd = Math.min(lines.length, 40);
+  for (let index = 0; index < titleWindowEnd; index += 1) {
+    const line = lines[index] || "";
+    const context = `${lines[index - 1] || ""} ${line}`;
+    if (!/договір|contract|agreement/i.test(context) || /доручення|додатков/i.test(line)) {
+      continue;
+    }
+    const match = line.match(
+      /(?:№|N|No\.?)\s*([A-Za-zА-Яа-яІіЇїЄєҐґ0-9][A-Za-zА-Яа-яІіЇїЄєҐґ0-9/.\- ]{0,80})/i
+    );
+    if (!match || !/\d/.test(match[1])) {
+      continue;
+    }
+    const value = contractReviewCleanValue(match[1], 90)
+      .replace(/\s*([/.-])\s*/g, "$1")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (value) {
+      return `№${value}`;
+    }
+  }
+  return "";
+}
+
 function contractReviewExtractValues(text) {
   const lines = contractReviewTextLines(text);
   const extractedDateRange = contractReviewExtractCoverageDatesFromLines(lines) || contractReviewExtractDateRange(text);
@@ -4361,7 +4777,8 @@ function contractReviewExtractValues(text) {
       ["страхувальник", "застрахована особа"],
       { maxLength: 180, validate: contractReviewLineLooksLikePartyValue }
     ));
-  const contractNumber = contractReviewFindNearPattern(text, ["договір страхування", "договір", "поліс"], /(?:№|N|No\.?)\s*([A-Za-zА-Яа-яІіЇїЄєҐґ0-9/.\-]+)/i, 160)
+  const contractNumber = contractReviewExtractPrimaryContractNumber(lines)
+    || contractReviewFindNearPattern(text, ["договір страхування", "договір", "поліс"], /(?:№|N|No\.?)\s*([A-Za-zА-Яа-яІіЇїЄєҐґ0-9/.\-]+)/i, 160)
     || contractReviewFindLineValue(lines, ["№ договору", "номер договору"], { maxLength: 80 });
   const addressValidator = (value) =>
     /(?:м\.|місто|смт|село|вул\.|вулиц|просп|пров\.|обл\.|область|р-н|район|с\/р|сільрад|комплекс будівель)/i.test(value)
