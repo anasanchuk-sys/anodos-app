@@ -1198,53 +1198,93 @@
   }
 
   function buildFooter(docx) {
+    const none = noBorder(docx);
     return new docx.Footer({
       children: [
-        new docx.Paragraph({
-          border: { top: border(docx, "D8E4E1", 5) },
-          spacing: { before: 80, after: 0 },
-          children: [
-            new docx.ExternalHyperlink({
-              link: BRITMARK_WEBSITE,
+        new docx.Table({
+          width: { size: 9360, type: docx.WidthType.DXA },
+          indent: { size: 120, type: docx.WidthType.DXA },
+          columnWidths: [6400, 2960],
+          layout: docx.TableLayoutType.FIXED,
+          margins: { top: 80, bottom: 0, left: 0, right: 0 },
+          borders: {
+            top: border(docx, "D8E4E1", 5),
+            bottom: none,
+            left: none,
+            right: none,
+            insideHorizontal: none,
+            insideVertical: none
+          },
+          rows: [
+            new docx.TableRow({
+              cantSplit: true,
               children: [
-                new docx.TextRun({
-                  text: "brit-mark.com",
-                  color: "337F6D",
-                  underline: { type: docx.UnderlineType.SINGLE, color: "337F6D" },
-                  size: 17,
-                  font: "Calibri"
+                new docx.TableCell({
+                  width: { size: 6400, type: docx.WidthType.DXA },
+                  verticalAlign: docx.VerticalAlign.CENTER,
+                  children: [
+                    new docx.Paragraph({
+                      spacing: { before: 80, after: 0 },
+                      children: [
+                        new docx.ExternalHyperlink({
+                          link: BRITMARK_WEBSITE,
+                          children: [
+                            new docx.TextRun({
+                              text: "brit-mark.com",
+                              color: "337F6D",
+                              underline: { type: docx.UnderlineType.SINGLE, color: "337F6D" },
+                              size: 17,
+                              font: "Calibri"
+                            })
+                          ]
+                        }),
+                        new docx.TextRun({
+                          text: "  ·  Страхові рішення BritMark",
+                          color: "647486",
+                          size: 17,
+                          font: "Calibri"
+                        })
+                      ]
+                    })
+                  ]
+                }),
+                new docx.TableCell({
+                  width: { size: 2960, type: docx.WidthType.DXA },
+                  verticalAlign: docx.VerticalAlign.CENTER,
+                  children: [
+                    new docx.Paragraph({
+                      alignment: docx.AlignmentType.RIGHT,
+                      spacing: { before: 80, after: 0 },
+                      children: [
+                        new docx.TextRun({
+                          text: "Сторінка ",
+                          color: "647486",
+                          size: 17,
+                          font: "Calibri"
+                        }),
+                        new docx.TextRun({
+                          children: [docx.PageNumber.CURRENT],
+                          color: "647486",
+                          size: 17,
+                          font: "Calibri"
+                        }),
+                        new docx.TextRun({
+                          text: " з ",
+                          color: "647486",
+                          size: 17,
+                          font: "Calibri"
+                        }),
+                        new docx.TextRun({
+                          children: [docx.PageNumber.TOTAL_PAGES],
+                          color: "647486",
+                          size: 17,
+                          font: "Calibri"
+                        })
+                      ]
+                    })
+                  ]
                 })
               ]
-            }),
-            new docx.TextRun({
-              text: "  ·  Страхові рішення BritMark",
-              color: "647486",
-              size: 17,
-              font: "Calibri"
-            }),
-            new docx.TextRun({
-              text: "                                      Сторінка ",
-              color: "647486",
-              size: 17,
-              font: "Calibri"
-            }),
-            new docx.TextRun({
-              children: [docx.PageNumber.CURRENT],
-              color: "647486",
-              size: 17,
-              font: "Calibri"
-            }),
-            new docx.TextRun({
-              text: " з ",
-              color: "647486",
-              size: 17,
-              font: "Calibri"
-            }),
-            new docx.TextRun({
-              children: [docx.PageNumber.TOTAL_PAGES],
-              color: "647486",
-              size: 17,
-              font: "Calibri"
             })
           ]
         })
@@ -1396,7 +1436,7 @@
             border: { bottom: border(docx, "B8C9CF", 3) },
             children: [
               new docx.TextRun({
-                text: " ",
+                text: "\u00A0",
                 color: "7B8A96",
                 size: 18,
                 font: "Calibri"
@@ -1424,6 +1464,10 @@
           rows: [
             new docx.TableRow({
               cantSplit: true,
+              height: {
+                value: 450 + responseLines * 300,
+                rule: docx.HeightRule.ATLEAST
+              },
               children: [
                 new docx.TableCell({
                   width: { size: 9360, type: docx.WidthType.DXA },
