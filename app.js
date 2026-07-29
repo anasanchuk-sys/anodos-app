@@ -3795,6 +3795,11 @@ function contractReviewExtractGenericFinancialTable(lines) {
     ) {
       continue;
     }
+    const rowBeforeTotal = lines[index].split(/(?:всього|total)/i)[0];
+    const categoryMarkers = rowBeforeTotal.match(/\d+\.\d+\.\d+\.\s*(?=[A-ZА-ЯІЇЄҐ])/g) || [];
+    if (categoryMarkers.length !== 1) {
+      continue;
+    }
     const candidates = [];
     for (let precision = 1; precision <= 8; precision += 1) {
       const rowPattern = new RegExp(
@@ -4148,7 +4153,7 @@ function contractReviewExtractCoverageDatesFromLines(lines) {
   };
   const explicitRangeFromFragment = (fragment) => {
     const datePattern = "(?:\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}|\\d{1,2}[-/.]\\d{1,2}[-/.]\\d{4})";
-    const timePattern = "(?:(?:о\\s*)?\\d{1,2}[:.]\\d{2}\\s*(?:год(?:\\.|ини?)?|г\\.)?\\s*)?";
+    const timePattern = "(?:(?:о\\s*)?(?:\\d{1,2}[:.]\\d{2}\\s*(?:год(?:\\.|ини?)?|г\\.)?|\\d{1,2}\\s*(?:год(?:\\.|ини?)?|г\\.)\\s*\\d{1,2}\\s*(?:хв(?:\\.|илин[аи]?)?))\\s*)?";
     const yearSuffix = "\\s*(?:р(?:\\.|оку)?)?";
     const rangePattern = new RegExp(
       `(?:з|від)\\s*${timePattern}(${datePattern})${yearSuffix}\\s*(?:до|по|[-–—])\\s*${timePattern}(${datePattern})${yearSuffix}`,
@@ -4656,7 +4661,7 @@ function contractReviewPeriodReviewMessage(periodOrder) {
 function contractReviewExtractDateRange(text) {
   const normalized = String(text || "").replace(/\s+/g, " ");
   const datePattern = "((?:\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2})|(?:\\d{1,2}[-/.]\\d{1,2}[-/.]\\d{4}))";
-  const timePattern = "(?:(?:о\\s*)?\\d{1,2}[:.]\\d{2}\\s*(?:год(?:\\.|ини?)?|г\\.)?\\s*)?";
+  const timePattern = "(?:(?:о\\s*)?(?:\\d{1,2}[:.]\\d{2}\\s*(?:год(?:\\.|ини?)?|г\\.)?|\\d{1,2}\\s*(?:год(?:\\.|ини?)?|г\\.)\\s*\\d{1,2}\\s*(?:хв(?:\\.|илин[аи]?)?))\\s*)?";
   const yearSuffix = "\\s*(?:р(?:\\.|оку)?)?";
   const rangePattern = new RegExp(
     `(?:з|від)\\s*${timePattern}${datePattern}${yearSuffix}\\s*(?:до|по|[-–—])\\s*${timePattern}${datePattern}${yearSuffix}`,
@@ -4740,12 +4745,13 @@ function contractReviewCoverageSection(lines, startPattern, maxLines = 30) {
   if (startIndex < 0) {
     return [];
   }
+  const stopPattern = /^(?:\d+(?:\.\d+)*\.?\s*)?(?:(?:перелік|загальні|основні)\s+)?(?:виключенн[а-яіїєґ]*|винятк[а-яіїєґ]*|exceptions)(?:\s|:|$)|^(?:\d+(?:\.\d+)*\.?\s*)?(?:не (?:є|визнаються?) страхов|не підлягають|не покриваються)/i;
   const result = [];
   for (let index = startIndex; index < Math.min(lines.length, startIndex + maxLines); index += 1) {
     const line = lines[index];
     if (
       index > startIndex
-      && /^(?:виключення|не (?:є|визнаються?) страхов|не підлягають|не покриваються)/i.test(line)
+      && stopPattern.test(line)
     ) {
       break;
     }
@@ -4764,19 +4770,19 @@ function contractReviewClassifyRisks(text) {
     45
   );
   const titleAndSubject = [...titleLines, ...subjectLines].join(" ").toLowerCase();
-  const affirmativeCoverage = [...subjectLines, ...riskLines]
-    .filter((line) => !/^(?:виключення|не (?:є|визнаються?) страхов|не підлягають|не покриваються)/i.test(line))
-    .join(" ")
-    .toLowerCase();
+  const subjectCoverage = subjectLines.join(" ").toLowerCase();
+  const riskCoverage = riskLines.join(" ").toLowerCase();
+  const classificationCoverage = riskCoverage || subjectCoverage;
+  const affirmativeCoverage = [subjectCoverage, riskCoverage].filter(Boolean).join(" ");
   const propertyEvidence = `${titleAndSubject} ${affirmativeCoverage}`;
   const risks = [];
   const hasProperty = /страхуван[а-яіїєґ]*\s+майна|property insurance|застрахован[а-яіїєґ]*\s+майн/.test(propertyEvidence);
-  const allRisks = /all risks|від усіх ризик|від всіх ризик|будь-як[а-яіїєґ]*\s+випадков[а-яіїєґ]*\s+(?:і|та)\s+непередбач[а-яіїєґ]*\s+(?:зовнішн[а-яіїєґ]*\s+)?фізичн[а-яіїєґ]*\s+вплив/.test(affirmativeCoverage);
+  const allRisks = /all risks|від усіх ризик|від всіх ризик|будь-як[а-яіїєґ]*\s+випадков[а-яіїєґ]*\s+(?:і|та)\s+непередбач[а-яіїєґ]*\s+(?:зовнішн[а-яіїєґ]*\s+)?фізичн[а-яіїєґ]*\s+вплив/.test(classificationCoverage);
   const explicitNamedPerilsStructure =
-    /named perils|назван[а-яіїєґ]*\s+ризик|пойменован[а-яіїєґ]*\s+ризик|перелічен[а-яіїєґ]*\s+ризик/.test(affirmativeCoverage)
-    || /перелік страхових (?:випадків(?:\s+та\s+страхових ризиків)?|ризиків(?:\s+та\s+страхових випадків)?)/.test(affirmativeCoverage)
-    || /(?:внаслідок|від)\s+таких страхових ризиків/.test(affirmativeCoverage)
-    || /страховими ризиками (?:є|визнаються)\s*:/.test(affirmativeCoverage);
+    /named perils|назван[а-яіїєґ]*\s+ризик|пойменован[а-яіїєґ]*\s+ризик|перелічен[а-яіїєґ]*\s+ризик/.test(classificationCoverage)
+    || /перелік страхових (?:випадків(?:\s+та\s+страхових ризиків)?|ризиків(?:\s+та\s+страхових випадків)?)/.test(classificationCoverage)
+    || /(?:внаслідок|від)\s+таких страхових ризиків/.test(classificationCoverage)
+    || /страховими ризиками (?:є|визнаються)\s*:/.test(classificationCoverage);
   const concretePerilSignals = [
     /пожеж|вогонь|задим|вибух|блискав/,
     /стихійн|природн|зсув|град|повін|сніг|вітер|землетрус/,
@@ -4786,10 +4792,10 @@ function contractReviewClassifyRisks(text) {
     /протиправн.*трет|крадіж|грабіж|розбій|вандалізм/,
     /будівництв|реконструкц/,
     /аварі[яї].*(?:тепло|водо|газопостач|електричн|виробнич)/
-  ].filter((pattern) => pattern.test(affirmativeCoverage)).length;
+  ].filter((pattern) => pattern.test(riskCoverage)).length;
   const namedPerils =
     !allRisks
-    && (explicitNamedPerilsStructure || concretePerilSignals >= 2);
+    && (explicitNamedPerilsStructure || (riskLines.length > 0 && concretePerilSignals >= 1));
   if (hasProperty && allRisks) {
     risks.push("PD (AR)");
   } else if (hasProperty && namedPerils) {
