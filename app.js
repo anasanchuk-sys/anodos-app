@@ -2280,6 +2280,7 @@ const allowedEmployeeEmails = new Set([
   "vlieonova@britmark.com",
   "vlebedovskyi@britmark.com",
   "vpantyukhov@britmark.com",
+  "ssergienko@britmark.com",
   "onasanchuk@britmark.com"
 ]);
 const emailAccessDeniedMessage = "Зазначеного email немає в базі Anodos. Введіть інший email або зверніться до підтримки Anodos.";
