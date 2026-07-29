@@ -1923,6 +1923,9 @@ const accuracyReportsKey = "anodos-accuracy-reports-v1";
 const activeSpaceKey = "anodos-active-space-v1";
 
 function availableRoute(nextRoute) {
+  if (nextRoute === "questionnaire-generator" && !questionnaireGeneratorIsAllowed()) {
+    return "home";
+  }
   return nextRoute;
 }
 
@@ -2042,6 +2045,11 @@ let activeMunichClauseId = "munich-001";
 let munichSearchTimer = null;
 let activeContractTemplateId = "arx-named-perils";
 let brandMenuOpen = false;
+let questionnaireGeneratorInput = "";
+let questionnaireGeneratorResult = null;
+let questionnaireGeneratorError = "";
+let questionnaireGeneratorDownloadMessage = "";
+let questionnaireGeneratorBusy = false;
 let activeSpace = normalizeActiveSpace(localStorage.getItem(activeSpaceKey));
 let contractReviewFiles = [];
 let contractReviewResult = null;
@@ -2131,6 +2139,11 @@ function renderSpaceShell() {
     button.setAttribute("aria-checked", String(isActive));
     button.classList.toggle("brand-menu-option-active", isActive);
   });
+
+  const questionnaireTool = document.querySelector("[data-private-questionnaire-tool]");
+  if (questionnaireTool) {
+    questionnaireTool.hidden = !questionnaireGeneratorIsAllowed();
+  }
 
   if (nav) {
     nav.setAttribute("aria-label", `Навігація простору «${definition.label}»`);
@@ -2295,6 +2308,10 @@ function isAllowedEmployeeEmail(value) {
 
 function currentUser() {
   return registeredUsers.find((user) => user.id === currentUserId) || null;
+}
+
+function questionnaireGeneratorIsAllowed(user = currentUser()) {
+  return Boolean(window.AnodosQuestionnaireGenerator?.isAllowedUser(user));
 }
 
 function isAuthorizedUser(user) {
@@ -6130,6 +6147,11 @@ function render() {
     return;
   }
 
+  if (route === "questionnaire-generator") {
+    renderQuestionnaireGenerator();
+    return;
+  }
+
   renderHome();
 }
 
@@ -6378,6 +6400,98 @@ function renderContractReview() {
         : ""}
 
       ${renderContractReviewTable()}
+    </section>
+  `;
+}
+
+function renderQuestionnaireGenerator() {
+  if (!questionnaireGeneratorIsAllowed()) {
+    setActiveSpace("products", "home");
+    return;
+  }
+
+  const result = questionnaireGeneratorResult;
+  const prepareButtonText = questionnaireGeneratorBusy
+    ? "Готую документ..."
+    : "Підготувати опитувальник";
+  const sectionsPreview = result
+    ? result.sections.map((section) => `
+        <li>
+          <span>${escapeHtml(section.title)}</span>
+          <strong>${section.questions.length}</strong>
+        </li>
+      `).join("")
+    : "";
+
+  screen.innerHTML = `
+    <section class="questionnaire-generator-workspace">
+      <header class="questionnaire-generator-head">
+        <button class="module-back" type="button" data-route="home" aria-label="Назад до продуктів">←</button>
+        <div>
+          <p class="eyebrow">Anodos · приватний інструмент</p>
+          <h1>Генератор опитувальників</h1>
+          <p class="hero-copy">Опишіть майно, діяльність, перевезення, роботи або відповідальність. Anodos підбере страховий профіль і підготує редагований опитувальник BritMark у форматі DOCX.</p>
+        </div>
+      </header>
+
+      <section class="questionnaire-generator-form-card">
+        <form id="questionnaireGeneratorForm" class="questionnaire-generator-form">
+          <label for="questionnaireSubject">
+            <span>Що потрібно застрахувати або дослідити?</span>
+            <textarea
+              id="questionnaireSubject"
+              name="questionnaireSubject"
+              rows="3"
+              required
+              minlength="2"
+              maxlength="240"
+              autocomplete="off"
+              placeholder="Наприклад: елеватор, разове вантажоперевезення, будівельно-монтажні роботи або відповідальність за якість продукції"
+            >${escapeHtml(questionnaireGeneratorInput)}</textarea>
+          </label>
+          ${questionnaireGeneratorError ? `<p class="questionnaire-generator-error">${escapeHtml(questionnaireGeneratorError)}</p>` : ""}
+          <button class="primary-action primary-action-wide" type="submit" ${questionnaireGeneratorBusy ? "disabled" : ""}>${escapeHtml(prepareButtonText)}</button>
+        </form>
+        <p class="questionnaire-generator-privacy">Опис обробляється лише у вашому браузері. Введені дані й підготовлений документ не надсилаються назовні та не зберігаються в Anodos.</p>
+      </section>
+
+      ${result ? `
+        <section class="questionnaire-generator-result" aria-live="polite">
+          <header class="questionnaire-generator-result-head">
+            <div>
+              <p class="eyebrow">Опитувальник готовий</p>
+              <h2>${escapeHtml(result.title)}</h2>
+            </div>
+            <span class="questionnaire-generator-count">${result.questionCount} питань</span>
+          </header>
+          <div class="questionnaire-generator-profile">
+            <span>Визначений профіль</span>
+            <strong>${escapeHtml(result.profileLabel)}</strong>
+          </div>
+          <ol class="questionnaire-generator-sections">
+            ${sectionsPreview}
+          </ol>
+          <div class="questionnaire-generator-download">
+            <div>
+              <strong>Редагований документ BritMark</strong>
+              <span>DOCX · логотип, сайт, секції, поля для відповідей і підпису</span>
+            </div>
+            <button class="primary-action" type="button" data-download-questionnaire ${questionnaireGeneratorBusy ? "disabled" : ""}>
+              ${questionnaireGeneratorBusy ? "Створюю DOCX..." : "Завантажити DOCX"}
+            </button>
+          </div>
+          ${questionnaireGeneratorDownloadMessage ? `<p class="questionnaire-generator-status">${escapeHtml(questionnaireGeneratorDownloadMessage)}</p>` : ""}
+          <p class="questionnaire-generator-note">Перед переданням Клієнту перегляньте опитувальник і за потреби видаліть питання, які не стосуються конкретного ризику.</p>
+        </section>
+      ` : `
+        <section class="questionnaire-generator-empty">
+          <img src="./assets/britmark-logo.png?v=1" alt="BritMark" />
+          <div>
+            <strong>Один опис — структурований страховий запит</strong>
+            <p>База охоплює майно, комерційну нерухомість, елеватори, енергетику, вантажі, будівельно-монтажні роботи, відповідальність, кіберризики та інші профілі.</p>
+          </div>
+        </section>
+      `}
     </section>
   `;
 }
@@ -9392,6 +9506,7 @@ document.addEventListener("click", async (event) => {
   const clearContractReviewFilesButton = event.target.closest("[data-clear-contract-review-files]");
   const runContractReviewButton = event.target.closest("[data-run-contract-review]");
   const copyContractReviewButton = event.target.closest("[data-copy-contract-review]");
+  const downloadQuestionnaireButton = event.target.closest("[data-download-questionnaire]");
 
   if (compassButton) {
     event.preventDefault();
@@ -9449,6 +9564,26 @@ document.addEventListener("click", async (event) => {
 
   if (copyContractReviewButton) {
     await copyContractReviewTable();
+    return;
+  }
+
+  if (downloadQuestionnaireButton) {
+    if (!questionnaireGeneratorResult || questionnaireGeneratorBusy) {
+      return;
+    }
+    questionnaireGeneratorBusy = true;
+    questionnaireGeneratorError = "";
+    questionnaireGeneratorDownloadMessage = "";
+    renderQuestionnaireGenerator();
+    try {
+      const downloadResult = await window.AnodosQuestionnaireGenerator.download(questionnaireGeneratorResult);
+      questionnaireGeneratorDownloadMessage = `Завантажено: ${downloadResult.filename}`;
+    } catch (error) {
+      questionnaireGeneratorError = `Не вдалося створити DOCX: ${error.message}`;
+    } finally {
+      questionnaireGeneratorBusy = false;
+      renderQuestionnaireGenerator();
+    }
     return;
   }
 
@@ -10146,6 +10281,34 @@ document.addEventListener("drop", (event) => {
 }, true);
 
 document.addEventListener("submit", async (event) => {
+  if (event.target.id === "questionnaireGeneratorForm") {
+    event.preventDefault();
+    if (!questionnaireGeneratorIsAllowed()) {
+      setActiveSpace("products", "home");
+      return;
+    }
+    const formData = new FormData(event.target);
+    questionnaireGeneratorInput = String(formData.get("questionnaireSubject") || "").trim();
+    questionnaireGeneratorError = "";
+    questionnaireGeneratorDownloadMessage = "";
+    try {
+      questionnaireGeneratorResult = window.AnodosQuestionnaireGenerator.prepare(questionnaireGeneratorInput);
+      renderQuestionnaireGenerator();
+      window.requestAnimationFrame(() => {
+        document.querySelector(".questionnaire-generator-result")?.scrollIntoView({
+          behavior: prefersReducedMotion ? "auto" : "smooth",
+          block: "start"
+        });
+      });
+    } catch (error) {
+      questionnaireGeneratorResult = null;
+      questionnaireGeneratorError = error.message;
+      renderQuestionnaireGenerator();
+      document.getElementById("questionnaireSubject")?.focus();
+    }
+    return;
+  }
+
   if (event.target.id === "adminRegistryForm") {
     event.preventDefault();
     const formData = new FormData(event.target);
