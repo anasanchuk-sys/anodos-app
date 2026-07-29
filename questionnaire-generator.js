@@ -135,7 +135,7 @@
       id: "property",
       label: "Майно",
       patterns: [
-        /майно/i, /нерухом/i, /будівл/i, /споруд/i, /обладнан/i,
+        /майн/i, /нерухом/i, /будівл/i, /споруд/i, /обладнан/i,
         /станц/i, /property/i
       ]
     }
@@ -145,47 +145,114 @@
     text,
     response,
     hint,
+    responseLines,
+    kind: "longText"
+  });
+
+  const shortQ = (text, hint = "") => ({
+    text,
+    hint,
+    kind: "shortText",
+    responseLines: 1
+  });
+
+  const longQ = (text, hint = "", responseLines = 2) => ({
+    text,
+    hint,
+    kind: "longText",
     responseLines
+  });
+
+  const singleChoiceQ = (text, options, hint = "") => ({
+    text,
+    options,
+    hint,
+    kind: "singleChoice",
+    responseLines: 0
+  });
+
+  const multiChoiceQ = (text, options, hint = "") => ({
+    text,
+    options,
+    hint,
+    kind: "multiChoice",
+    responseLines: 0
+  });
+
+  const yesNoQ = (text, detailsLabel = "", hint = "") => ({
+    text,
+    options: ["Так", "Ні"],
+    detailsLabel,
+    hint,
+    kind: "yesNo",
+    responseLines: detailsLabel ? 1 : 0
   });
 
   function generalSection() {
     return {
-      title: "Заявник і строк страхування",
+      title: "Заявник",
       questions: [
-        q("Повна юридична назва заявника та код ЄДРПОУ або інший реєстраційний номер.", "", "", 2),
-        q("Контактна особа: ПІБ, посада, телефон та електронна пошта.", "", "", 2),
-        q("Бажаний період страхування та дата, з якої має діяти покриття.", "", "", 2)
+        shortQ("Повна юридична назва"),
+        shortQ("Код ЄДРПОУ", "Або інший реєстраційний номер"),
+        shortQ("Контактна особа", "ПІБ і посада"),
+        shortQ("Телефон або електронна пошта"),
+        shortQ("Бажаний період страхування", "З ___ / ___ / 20___ до ___ / ___ / 20___")
       ]
     };
   }
 
-  function insuranceSection() {
+  function insuranceSection(profileId) {
+    const questions = [
+      shortQ("Страхова сума або ліміт", "Сума і валюта")
+    ];
+    if (profileId !== "generic") {
+      questions.push(
+        singleChoiceQ(
+          "Воєнні ризики",
+          ["включити", "не потрібні", "розрахувати окремо"]
+        )
+      );
+    }
+    questions.push(
+      yesNoQ(
+        "Чи є вимоги банку або договору?",
+        "Якщо так — додайте документ або коротко зазначте вимогу"
+      )
+    );
     return {
       title: "Бажане покриття",
-      questions: [
-        q("Бажана страхова сума або ліміт відповідальності, валюта та спосіб визначення вартості.", "", "", 3),
-        q("Які ризики й додаткові витрати потрібно покрити? Зазначте бажану франшизу та спеціальні вимоги договору, банку або іншої сторони.", "", "", 3)
-      ]
+      questions
     };
   }
 
   function lossesSection() {
     return {
-      title: "Збитки та попереднє страхування",
+      title: "Збитки",
       questions: [
-        q("Опишіть збитки та інциденти за останні п’ять років, відомі обставини, що можуть призвести до збитку, і чинне або попереднє страхування. Якщо нічого з цього не було — зазначте це.", "", "", 4)
+        yesNoQ(
+          "Чи були збитки або страхові події за останні п’ять років?",
+          "Якщо так — рік, причина та сума збитку"
+        )
       ]
     };
   }
 
   function documentsSection(extra = []) {
     const suggested = extra.length
-      ? extra.slice(0, 3).map((item) => item.text.replace(/[.?]\s*$/, "")).join("; ")
-      : "реєстр об’єктів або договорів із вартостями; фотографії, плани чи технічну документацію; дозволи, ліцензії або сертифікати";
+      ? extra.slice(0, 4).map((item) => item.text.replace(/[.?]\s*$/, ""))
+      : [
+          "реєстр об’єктів або договорів із вартостями",
+          "фотографії, плани або технічну документацію",
+          "дозволи, ліцензії або сертифікати"
+        ];
     return {
-      title: "Матеріали",
+      title: "Документи",
       questions: [
-        q(`Додайте за наявності: ${suggested}. Зазначте, що додається зараз, буде надано пізніше або не застосовується.`, "", "", 2)
+        multiChoiceQ(
+          "Що додається до опитувальника?",
+          [...suggested, "нічого наразі"],
+          "Позначте наявні матеріали"
+        )
       ]
     };
   }
@@ -1007,6 +1074,379 @@
       .filter((section) => section.questions.length);
   }
 
+  const formSection = (title, questions) => ({ title, questions });
+
+  function propertyFriendlySections(extraQuestions = []) {
+    return [
+      formSection("Об’єкт", [
+        shortQ("Точне призначення об’єкта"),
+        shortQ("Адреса"),
+        singleChoiceQ("Право на майно", ["власність", "оренда", "лізинг", "інше"]),
+        shortQ("Рік будівництва або введення в експлуатацію"),
+        shortQ("Загальна площа", "м²"),
+        ...extraQuestions
+      ]),
+      formSection("Захист об’єкта", [
+        singleChoiceQ(
+          "Основний матеріал будівлі",
+          ["залізобетон", "цегла", "метал", "сендвіч-панелі", "дерево", "інше"]
+        ),
+        yesNoQ("Чи є автоматична пожежна сигналізація?"),
+        yesNoQ("Чи є автоматичне пожежогасіння?"),
+        multiChoiceQ(
+          "Засоби охорони",
+          ["фізична охорона", "сигналізація", "відеонагляд", "контроль доступу", "огородження", "немає"]
+        ),
+        multiChoiceQ(
+          "Природні небезпеки для адреси",
+          ["повінь", "підтоплення", "буря", "град", "просідання ґрунту", "не відомі"]
+        )
+      ])
+    ];
+  }
+
+  function friendlyProfileSections(profileId, subject) {
+    switch (profileId) {
+      case "cargo": {
+        const grainCargo = /зерн|пшениц|кукурудз|ячмен|ріпак|соняшник|соя/i.test(subject);
+        return [
+          formSection("Вантаж", [
+            shortQ(grainCargo ? "Точне найменування зерна" : "Точне найменування вантажу"),
+            multiChoiceQ(
+              grainCargo ? "Особливості вантажу" : "Стан вантажу",
+              grainCargo
+                ? ["насипний", "потребує контролю вологості", "схильний до самозігрівання", "інше"]
+                : ["новий", "вживаний", "насипний", "крихкий", "небезпечний", "швидкопсувний", "інше"]
+            ),
+            multiChoiceQ(
+              "Пакування",
+              ["без пакування", "мішки", "короби", "палети", "контейнер", "цистерна", "інше"]
+            ),
+            shortQ("Загальна вага"),
+            shortQ("Максимальна вартість однієї відправки"),
+            singleChoiceQ(
+              "База страхової суми",
+              ["вартість за інвойсом", "інвойс і перевезення", "інвойс, перевезення та мито", "інше"]
+            ),
+            singleChoiceQ(
+              "Страховий інтерес заявника",
+              ["власник", "продавець", "покупець", "перевізник", "експедитор", "інше"]
+            )
+          ]),
+          formSection("Перевезення", [
+            singleChoiceQ("Характер перевезень", ["разове", "регулярні перевезення"]),
+            multiChoiceQ("Вид транспорту", ["авто", "залізниця", "море", "авіа", "мультимодальне"]),
+            shortQ("Пункт відправлення"),
+            shortQ("Пункт призначення"),
+            shortQ("Країни транзиту", "Якщо немає — поставте прочерк"),
+            shortQ("Перевізник", "Якщо вже визначений"),
+            yesNoQ(
+              "Чи буде проміжне зберігання?",
+              "Якщо так — місце та максимальний строк"
+            ),
+            multiChoiceQ(
+              "Засоби захисту під час перевезення",
+              ["пломба", "GPS", "охорона", "супровід", "датчик температури", "датчик вологості", "немає"]
+            ),
+            singleChoiceQ(
+              "Завантаження та розвантаження",
+              ["включити до покриття", "не включати", "потрібна рекомендація"]
+            )
+          ])
+        ];
+      }
+
+      case "construction":
+        return [
+          formSection("Проєкт", [
+            shortQ("Назва проєкту"),
+            shortQ("Адреса майданчика"),
+            shortQ("Замовник"),
+            shortQ("Генеральний підрядник"),
+            multiChoiceQ(
+              "Види робіт",
+              ["будівельні", "монтажні", "демонтажні", "пусконалагоджувальні", "реконструкція", "інше"]
+            ),
+            shortQ("Строк виконання робіт", "З ___ / ___ / 20___ до ___ / ___ / 20___"),
+            shortQ("Готовність на дату заповнення", "%"),
+            shortQ("Контрактна вартість")
+          ]),
+          formSection("Основні ризики", [
+            yesNoQ("Чи ведуться роботи на діючому підприємстві?"),
+            yesNoQ("Чи є поруч майно третіх осіб?"),
+            multiChoiceQ(
+              "Роботи підвищеної небезпеки",
+              ["вогневі", "висотні", "земляні", "підземні", "підводні", "немає"]
+            ),
+            yesNoQ("Чи передбачені випробування обладнання?", "Якщо так — тривалість"),
+            multiChoiceQ(
+              "Захист майданчика",
+              ["огородження", "охорона", "відеонагляд", "пожежні засоби", "контроль доступу", "немає"]
+            )
+          ])
+        ];
+
+      case "productLiability":
+        return [
+          formSection("Продукція", [
+            longQ("Продукція, яку потрібно застрахувати", "Короткий перелік груп продукції", 2),
+            multiChoiceQ(
+              "Роль компанії",
+              ["виробник", "імпортер", "дистриб’ютор", "продавець", "власник торгової марки"]
+            ),
+            shortQ("Річний оборот цієї продукції"),
+            multiChoiceQ("Країни продажу", ["Україна", "ЄС", "Велика Британія", "США / Канада", "інші"]),
+            multiChoiceQ(
+              "Сфери використання",
+              ["звичайне споживання", "харчова продукція", "медицина", "дитячі товари", "авто / авіа", "промисловість", "інше"]
+            )
+          ]),
+          formSection("Якість і претензії", [
+            yesNoQ("Чи є сертифікована система контролю якості?", "Якщо так — назва стандарту"),
+            yesNoQ("Чи можна простежити кожну партію продукції?"),
+            yesNoQ("Чи є письмова процедура відкликання?"),
+            yesNoQ(
+              "Чи були скарги, повернення або відкликання за п’ять років?",
+              "Якщо так — коротко зазначте подію"
+            )
+          ])
+        ];
+
+      case "professionalLiability":
+        return [
+          formSection("Професійні послуги", [
+            longQ("Послуги, які потрібно застрахувати", "Коротко, без рекламного опису", 2),
+            shortQ("Річний дохід від цих послуг"),
+            multiChoiceQ("Територія роботи", ["Україна", "ЄС", "Велика Британія", "США / Канада", "інші"]),
+            shortQ("Кількість профільних фахівців"),
+            yesNoQ("Чи залучаються субпідрядники?", "Якщо так — частка робіт"),
+            yesNoQ("Чи укладаються письмові договори з клієнтами?")
+          ]),
+          formSection("Контроль якості", [
+            yesNoQ("Чи перевіряє результат роботи інший фахівець?"),
+            yesNoQ("Чи обмежена відповідальність у типових договорах?"),
+            yesNoQ(
+              "Чи були претензії через професійні помилки за п’ять років?",
+              "Якщо так — коротко зазначте подію"
+            ),
+            shortQ("Бажана ретроактивна дата", "Якщо потрібна")
+          ])
+        ];
+
+      case "cyber":
+        return [
+          formSection("Цифровий контур", [
+            shortQ("Кількість працівників"),
+            shortQ("Кількість записів із персональними даними", "Орієнтовно"),
+            multiChoiceQ(
+              "Критичні дані",
+              ["персональні", "платіжні", "медичні", "комерційна таємниця", "дані клієнтів", "інше"]
+            ),
+            yesNoQ("Чи є багатофакторна автентифікація?"),
+            yesNoQ("Чи є резервні копії поза основною мережею?"),
+            yesNoQ("Чи є цілодобовий моніторинг кіберподій?")
+          ]),
+          formSection("Інциденти та покриття", [
+            yesNoQ(
+              "Чи були кібератаки або витоки даних за п’ять років?",
+              "Якщо так — коротко зазначте подію"
+            ),
+            yesNoQ("Чи передано ІТ або кібербезпеку зовнішньому підряднику?"),
+            multiChoiceQ(
+              "Потрібне покриття",
+              ["відновлення даних", "перерва в роботі", "кібервимагання", "відповідальність за дані", "реагування на інцидент"]
+            )
+          ])
+        ];
+
+      case "managementLiability":
+        return [
+          formSection("Компанія та керівництво", [
+            shortQ("Кількість компаній у групі"),
+            shortQ("Річний оборот групи"),
+            shortQ("Загальна вартість активів"),
+            yesNoQ("Чи торгуються цінні папери компанії на біржі?"),
+            multiChoiceQ("Територія діяльності", ["Україна", "ЄС", "Велика Британія", "США / Канада", "інші"]),
+            multiChoiceQ(
+              "Зміни за останні два роки",
+              ["злиття або придбання", "залучення інвестицій", "реструктуризація", "скорочення персоналу", "не було"]
+            )
+          ]),
+          formSection("Претензії", [
+            yesNoQ("Чи є поточні судові або регуляторні провадження?", "Якщо так — коротко зазначте"),
+            yesNoQ(
+              "Чи були претензії до керівників за п’ять років?",
+              "Якщо так — коротко зазначте подію"
+            ),
+            yesNoQ("Чи потрібне покриття трудових спорів?")
+          ])
+        ];
+
+      case "solar":
+        return [
+          formSection("Об’єкт", [
+            shortQ("Адреса"),
+            singleChoiceQ("Тип розміщення", ["наземна", "дахова", "комбінована", "інше"]),
+            singleChoiceQ("Право на об’єкт", ["власність", "оренда", "лізинг", "інше"]),
+            shortQ("Встановлена потужність", "МВт"),
+            singleChoiceQ("Статус об’єкта", ["будується", "тестується", "експлуатується"]),
+            shortQ("Рік введення в експлуатацію"),
+            shortQ("Виробник модулів"),
+            shortQ("Виробник інверторів")
+          ]),
+          formSection("Захист об’єкта", [
+            yesNoQ("Чи є дистанційний моніторинг роботи?"),
+            yesNoQ("Чи є блискавкозахист і захист від перенапруги?"),
+            multiChoiceQ(
+              "Засоби охорони",
+              ["фізична охорона", "сигналізація", "відеонагляд", "огородження", "контроль доступу", "немає"]
+            ),
+            multiChoiceQ(
+              "Засоби пожежного захисту",
+              ["вогнегасники", "пожежний резервуар", "гідранти", "автоматичне гасіння", "немає"]
+            ),
+            multiChoiceQ(
+              "Природні небезпеки для адреси",
+              ["повінь", "підтоплення", "буря", "град", "пожежа рослинності", "не відомі"]
+            )
+          ])
+        ];
+
+      case "grain":
+        return propertyFriendlySections([
+          shortQ("Проєктна місткість", "тонн"),
+          multiChoiceQ("Культури", ["пшениця", "кукурудза", "ячмінь", "ріпак", "соняшник", "соя", "інші"]),
+          multiChoiceQ("Спосіб зберігання", ["силоси", "підлогові склади", "рукави", "відкриті майданчики"]),
+          yesNoQ("Чи є зерносушарка?"),
+          yesNoQ("Чи є аспірація та контроль температури зерна?")
+        ]);
+
+      case "commercialProperty":
+        return propertyFriendlySections([
+          multiChoiceQ(
+            "Основне використання",
+            ["офіси", "торгівля", "заклади харчування", "розваги", "склад", "інше"]
+          ),
+          shortQ("Максимальна кількість відвідувачів за день"),
+          yesNoQ("Чи є підземний паркінг?"),
+          yesNoQ("Чи є орендарі з вогневими або іншими небезпечними процесами?")
+        ]);
+
+      case "warehouse":
+        return propertyFriendlySections([
+          longQ("Основні групи товарів", "", 2),
+          shortQ("Максимальна вартість запасів"),
+          multiChoiceQ("Спосіб зберігання", ["стелажі", "штабелі", "піддони", "холодильні камери", "відкритий майданчик"]),
+          yesNoQ("Чи є небезпечні або легкозаймисті товари?", "Якщо так — назва"),
+          yesNoQ("Чи потрібен температурний режим?")
+        ]);
+
+      case "manufacturing":
+        return propertyFriendlySections([
+          shortQ("Основна продукція"),
+          multiChoiceQ(
+            "Небезпечні процеси",
+            ["нагрівання", "тиск", "пил", "фарбування", "зварювання", "хімічні реакції", "немає"]
+          ),
+          longQ("Критичне обладнання без резерву", "Якщо немає — поставте прочерк", 2),
+          yesNoQ("Чи є автоматичне аварійне відключення?"),
+          yesNoQ("Чи використовуються легкозаймисті або вибухонебезпечні речовини?")
+        ]);
+
+      case "hospitality":
+        return propertyFriendlySections([
+          shortQ("Кількість номерів або посадкових місць"),
+          yesNoQ("Чи є професійна кухня?"),
+          yesNoQ("Чи є басейн, SPA або сауна?"),
+          shortQ("Максимальна кількість гостей одночасно")
+        ]);
+
+      case "motor":
+        return [
+          formSection("Транспортні засоби", [
+            shortQ("Кількість транспортних засобів"),
+            multiChoiceQ("Типи", ["легкові", "вантажні", "автобуси", "причепи", "спецтехніка", "залізничний транспорт"]),
+            singleChoiceQ("Право користування", ["власність", "лізинг", "оренда", "інше"]),
+            shortQ("Загальна вартість парку"),
+            multiChoiceQ("Територія використання", ["Україна", "Європа", "інші країни"]),
+            yesNoQ("Чи перевозяться небезпечні вантажі?")
+          ]),
+          formSection("Керування ризиком", [
+            yesNoQ("Чи встановлено GPS або телематику?"),
+            multiChoiceQ("Нічне зберігання", ["закрита територія", "охоронювана стоянка", "відкрита стоянка", "у водіїв"]),
+            yesNoQ("Чи є письмовий порядок технічного обслуговування?"),
+            yesNoQ(
+              "Чи були значні ДТП або викрадення за п’ять років?",
+              "Якщо так — коротко зазначте подію"
+            )
+          ])
+        ];
+
+      case "agriculture":
+        return [
+          formSection("Об’єкт страхування", [
+            multiChoiceQ("Що страхується", ["посіви", "урожай", "тварини", "теплиці", "техніка", "інше"]),
+            shortQ("Область і громада"),
+            shortQ("Загальна площа", "га"),
+            longQ("Культури або види тварин", "", 2),
+            shortQ("Бажана страхова вартість")
+          ]),
+          formSection("Природні ризики", [
+            multiChoiceQ("Основні небезпеки", ["посуха", "град", "заморозок", "буря", "повінь", "пожежа", "хвороби"]),
+            yesNoQ("Чи є зрошення?"),
+            yesNoQ("Чи є резервне електроживлення?"),
+            yesNoQ(
+              "Чи були значні втрати за п’ять років?",
+              "Якщо так — рік і причина"
+            )
+          ])
+        ];
+
+      case "generalLiability":
+        return [
+          formSection("Діяльність", [
+            longQ("Діяльність, яку потрібно застрахувати", "", 2),
+            shortQ("Адреса або територія робіт"),
+            shortQ("Річний оборот"),
+            shortQ("Кількість працівників"),
+            shortQ("Максимальна кількість відвідувачів або третіх осіб"),
+            multiChoiceQ("Територія покриття", ["Україна", "ЄС", "Велика Британія", "США / Канада", "інші"])
+          ]),
+          formSection("Фактори відповідальності", [
+            multiChoiceQ(
+              "Небезпечні роботи",
+              ["вогневі", "висотні", "земляні", "робота з хімікатами", "на території клієнта", "немає"]
+            ),
+            yesNoQ("Чи перебуває майно третіх осіб під контролем компанії?"),
+            yesNoQ("Чи залучаються субпідрядники?"),
+            yesNoQ(
+              "Чи були претензії третіх осіб за п’ять років?",
+              "Якщо так — коротко зазначте подію"
+            )
+          ])
+        ];
+
+      case "property":
+        return propertyFriendlySections();
+
+      default:
+        return [
+          formSection("Предмет страхування", [
+            longQ(`Що саме потрібно застрахувати: ${subject}`, "Коротко опишіть об’єкт або діяльність", 2),
+            shortQ("Де виникає ризик?", "Адреса, маршрут або країна"),
+            singleChoiceQ(
+              "Що може бути втрачено?",
+              ["майно", "гроші або дохід", "відповідальність перед іншими", "життя або здоров’я", "інше"]
+            ),
+            multiChoiceQ(
+              "Основні небезпеки",
+              ["пожежа", "аварія", "поломка", "крадіжка", "природне явище", "помилка працівника", "кіберподія", "інше"]
+            )
+          ])
+        ];
+    }
+  }
+
   function prepare(subjectValue) {
     const subject = normalizeSubject(subjectValue);
     if (subject.length < 2) {
@@ -1014,15 +1454,15 @@
     }
 
     const profile = resolveProfile(subject);
-    const builder = profileBuilders[profile.id] || profileBuilders.generic;
-    const specialized = builder(subject);
+    const coverage = insuranceSection(profile.id);
+    coverage.title = "Покриття та збитки";
+    coverage.questions.push(...lossesSection().questions);
     const sections = uniqueQuestions([
       generalSection(),
-      ...minimalSpecializedSections(profile.id, specialized.sections),
-      insuranceSection(),
-      lossesSection(),
-      documentsSection(specialized.documents)
+      ...friendlyProfileSections(profile.id, subject),
+      coverage
     ]);
+    const questions = sections.flatMap((section) => section.questions);
 
     return {
       subject,
@@ -1031,7 +1471,13 @@
       title: questionnaireTitles[profile.id] || questionnaireTitles.generic,
       preparedAt: new Date().toISOString(),
       sections,
-      questionCount: sections.reduce((total, section) => total + section.questions.length, 0)
+      questionCount: questions.length,
+      choiceCount: questions.filter((question) =>
+        ["singleChoice", "multiChoice", "yesNo"].includes(question.kind)
+      ).length,
+      writingFieldCount: questions.filter((question) =>
+        ["shortText", "longText"].includes(question.kind)
+      ).length
     };
   }
 
@@ -1392,100 +1838,148 @@
   }
 
   function questionCards(docx, section, startNumber) {
-    const cards = [];
-    section.questions.forEach((question, index) => {
-      const responseLines = Math.max(2, Math.min(5, Number(question.responseLines) || 2));
-      const children = [
-        new docx.Paragraph({
-          spacing: { after: question.hint ? 50 : 85, line: 280 },
-          keepLines: true,
-          children: [
-            new docx.TextRun({
-              text: `${startNumber + index}. `,
-              bold: true,
-              color: "337F6D",
-              size: 19,
-              font: "Calibri"
-            }),
-            new docx.TextRun({
-              text: question.text,
-              bold: true,
-              color: "243247",
-              size: 19,
-              font: "Calibri"
-            })
-          ]
-        })
-      ];
+    const rows = section.questions.map((question, index) => {
+      const questionNumber = startNumber + index;
+      const responseChildren = [];
 
       if (question.hint) {
-        children.push(
+        responseChildren.push(
           paragraphText(docx, question.hint, {
             italics: true,
             color: "647486",
             size: 16,
-            spacing: { after: 80, line: 250 }
+            spacing: { after: 55, line: 235 }
           })
         );
       }
 
-      for (let lineIndex = 0; lineIndex < responseLines; lineIndex += 1) {
-        children.push(
-          new docx.Paragraph({
-            spacing: { after: lineIndex === responseLines - 1 ? 20 : 65, line: 265 },
-            border: { bottom: border(docx, "B8C9CF", 3) },
-            children: [
+      if (["singleChoice", "multiChoice", "yesNo"].includes(question.kind)) {
+        const options = Array.isArray(question.options) ? question.options : [];
+        for (let offset = 0; offset < options.length; offset += 3) {
+          const optionRuns = [];
+          options.slice(offset, offset + 3).forEach((option, optionIndex) => {
+            const absoluteOptionIndex = offset + optionIndex;
+            optionRuns.push(
+              new docx.CheckBox({
+                alias: `britmark-q${questionNumber}-option${absoluteOptionIndex + 1}`,
+                checked: false,
+                checkedState: { value: "2612", font: "MS Gothic" },
+                uncheckedState: { value: "2610", font: "MS Gothic" }
+              }),
               new docx.TextRun({
-                text: "\u00A0",
-                color: "7B8A96",
+                text: ` ${option}${absoluteOptionIndex === options.length - 1 ? "" : "   "}`,
+                color: "243247",
                 size: 18,
                 font: "Calibri"
               })
-            ]
+            );
+          });
+          responseChildren.push(
+            new docx.Paragraph({
+              spacing: { after: offset + 3 >= options.length ? 15 : 45, line: 255 },
+              keepLines: true,
+              children: optionRuns
+            })
+          );
+        }
+      }
+
+      if (question.detailsLabel) {
+        responseChildren.push(
+          paragraphText(docx, question.detailsLabel, {
+            color: "647486",
+            size: 16,
+            spacing: { before: 35, after: 20, line: 235 }
+          }),
+          new docx.Paragraph({
+            spacing: { after: 10, line: 250 },
+            border: { bottom: border(docx, "9DB3BF", 3) },
+            children: [new docx.TextRun({ text: "\u00A0", font: "Calibri", size: 18 })]
+          })
+        );
+      } else if (["shortText", "longText"].includes(question.kind)) {
+        const responseLines = question.kind === "longText"
+          ? Math.max(2, Math.min(3, Number(question.responseLines) || 2))
+          : 1;
+        for (let lineIndex = 0; lineIndex < responseLines; lineIndex += 1) {
+          responseChildren.push(
+            new docx.Paragraph({
+              spacing: { after: lineIndex === responseLines - 1 ? 10 : 55, line: 250 },
+              border: { bottom: border(docx, "9DB3BF", 3) },
+              children: [new docx.TextRun({ text: "\u00A0", font: "Calibri", size: 18 })]
+            })
+          );
+        }
+      }
+
+      if (!responseChildren.length) {
+        responseChildren.push(
+          new docx.Paragraph({
+            spacing: { after: 10 },
+            children: [new docx.TextRun({ text: "\u00A0", font: "Calibri", size: 18 })]
           })
         );
       }
 
-      cards.push(
-        new docx.Table({
-          width: { size: 9360, type: docx.WidthType.DXA },
-          indent: { size: 120, type: docx.WidthType.DXA },
-          columnWidths: [9360],
-          layout: docx.TableLayoutType.FIXED,
-          margins: { top: 125, bottom: 115, left: 160, right: 160 },
-          borders: {
-            top: border(docx, "D7E2E5", 4),
-            bottom: border(docx, "D7E2E5", 4),
-            left: border(docx, "337F6D", 10),
-            right: border(docx, "D7E2E5", 4),
-            insideHorizontal: noBorder(docx),
-            insideVertical: noBorder(docx)
-          },
-          rows: [
-            new docx.TableRow({
-              cantSplit: true,
-              height: {
-                value: 450 + responseLines * 300,
-                rule: docx.HeightRule.ATLEAST
-              },
-              children: [
-                new docx.TableCell({
-                  width: { size: 9360, type: docx.WidthType.DXA },
-                  verticalAlign: docx.VerticalAlign.TOP,
-                  shading: { type: docx.ShadingType.CLEAR, fill: "F8FBFA", color: "auto" },
-                  children
-                })
-              ]
-            })
-          ]
-        }),
-        new docx.Paragraph({
-          spacing: { after: 55 },
-          children: []
-        })
-      );
+      return new docx.TableRow({
+        cantSplit: true,
+        height: { value: 470, rule: docx.HeightRule.ATLEAST },
+        children: [
+          new docx.TableCell({
+            width: { size: 3400, type: docx.WidthType.DXA },
+            verticalAlign: docx.VerticalAlign.CENTER,
+            shading: { type: docx.ShadingType.CLEAR, fill: "F0F3F5", color: "auto" },
+            children: [
+              new docx.Paragraph({
+                spacing: { after: 0, line: 255 },
+                keepLines: true,
+                children: [
+                  new docx.TextRun({
+                    text: `${questionNumber}. `,
+                    bold: true,
+                    color: "337F6D",
+                    size: 18,
+                    font: "Calibri"
+                  }),
+                  new docx.TextRun({
+                    text: question.text,
+                    bold: true,
+                    color: "132961",
+                    size: 18,
+                    font: "Calibri"
+                  })
+                ]
+              })
+            ]
+          }),
+          new docx.TableCell({
+            width: { size: 5960, type: docx.WidthType.DXA },
+            verticalAlign: docx.VerticalAlign.CENTER,
+            shading: { type: docx.ShadingType.CLEAR, fill: "F5F9FC", color: "auto" },
+            children: responseChildren
+          })
+        ]
+      });
     });
-    return cards;
+
+    return [
+      new docx.Table({
+        width: { size: 9360, type: docx.WidthType.DXA },
+        indent: { size: 120, type: docx.WidthType.DXA },
+        columnWidths: [3400, 5960],
+        layout: docx.TableLayoutType.FIXED,
+        margins: { top: 90, bottom: 80, left: 125, right: 125 },
+        borders: {
+          top: border(docx, "C7D6E0", 4),
+          bottom: border(docx, "C7D6E0", 4),
+          left: border(docx, "C7D6E0", 4),
+          right: border(docx, "C7D6E0", 4),
+          insideHorizontal: border(docx, "C7D6E0", 3),
+          insideVertical: border(docx, "C7D6E0", 3)
+        },
+        rows
+      })
+    ];
   }
 
   function signatureBlock(docx) {
@@ -1550,7 +2044,7 @@
       }),
       paragraphText(
         docx,
-        "Заповніть застосовні поля. Якщо запитання не стосується ризику, зазначте «Не застосовується». Поля автоматично розширюються під час введення.",
+        "Клацніть потрібні квадратики та заповніть лише світлі поля. У переліках можна обрати кілька варіантів.",
         {
           style: "QuestionnaireSubtitle",
           spacing: { after: 100 }
@@ -1565,8 +2059,8 @@
           heading: docx.HeadingLevel.HEADING_1,
           keepNext: true,
           spacing: {
-            before: sectionIndex === 0 ? 100 : 210,
-            after: 65,
+            before: sectionIndex === 0 ? 80 : 135,
+            after: 55,
             line: 270
           },
           children: [
@@ -1583,33 +2077,6 @@
       content.push(...questionCards(docx, section, number));
       number += section.questions.length;
     });
-
-    content.push(
-      new docx.Paragraph({
-        heading: docx.HeadingLevel.HEADING_1,
-        keepNext: true,
-        spacing: { before: 230, after: 80 },
-        children: [
-          new docx.TextRun({
-            text: "Підтвердження",
-            color: "132961",
-            bold: true,
-            size: 27,
-            font: "Calibri"
-          })
-        ]
-      }),
-      paragraphText(
-        docx,
-        "Підписом підтверджую, що надана інформація є повною та достовірною на дату заповнення. У разі істотних змін зобов’язуюся повідомити про них до укладення договору страхування.",
-        {
-          color: "35495B",
-          size: 18,
-          spacing: { after: 130, line: 280 }
-        }
-      ),
-      signatureBlock(docx)
-    );
 
     return new docx.Document({
       creator: "BritMark / Anodos",

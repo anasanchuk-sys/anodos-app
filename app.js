@@ -6462,7 +6462,7 @@ function renderQuestionnaireGenerator() {
               <p class="eyebrow">Опитувальник готовий</p>
               <h2>${escapeHtml(result.title)}</h2>
             </div>
-            <span class="questionnaire-generator-count">${result.questionCount} питань</span>
+            <span class="questionnaire-generator-count">Галочки й короткі поля</span>
           </header>
           <div class="questionnaire-generator-profile">
             <span>Визначений профіль</span>
@@ -6474,14 +6474,14 @@ function renderQuestionnaireGenerator() {
           <div class="questionnaire-generator-download">
             <div>
               <strong>Редагований документ BritMark</strong>
-              <span>DOCX · логотип, сайт, секції, поля для відповідей і підпису</span>
+              <span>DOCX · ${result.choiceCount} пунктів із клікабельними галочками · ${result.writingFieldCount} коротких полів</span>
             </div>
             <button class="primary-action" type="button" data-download-questionnaire ${questionnaireGeneratorBusy ? "disabled" : ""}>
               ${questionnaireGeneratorBusy ? "Створюю DOCX..." : "Завантажити DOCX"}
             </button>
           </div>
           ${questionnaireGeneratorDownloadMessage ? `<p class="questionnaire-generator-status">${escapeHtml(questionnaireGeneratorDownloadMessage)}</p>` : ""}
-          <p class="questionnaire-generator-note">Перед переданням Клієнту перегляньте опитувальник і за потреби видаліть питання, які не стосуються конкретного ризику.</p>
+          <p class="questionnaire-generator-note">У кожному рядку одна проста дія: позначити варіант або вписати коротку відповідь.</p>
         </section>
       ` : `
         <section class="questionnaire-generator-empty">
