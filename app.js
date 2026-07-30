@@ -5148,6 +5148,14 @@ function contractReviewCompareField(row, previousValue, renewalValue, previousMe
   return "Змінено";
 }
 
+function renderContractReviewCurrentSurface() {
+  if (route === "client-recommendation" && clientRecommendationIsAllowed()) {
+    renderClientRecommendation();
+    return;
+  }
+  renderContractReview();
+}
+
 function addContractReviewFiles(files) {
   const incoming = Array.from(files || []).filter(isContractReviewFile);
   const existingIds = new Set(contractReviewFiles.map((file) => file.id));
@@ -5169,7 +5177,7 @@ function addContractReviewFiles(files) {
 
   if (!nextFiles.length) {
     contractReviewCopyMessage = incoming.length ? "Ці файли вже додано." : "Підтримуються DOC, DOCX, PDF, XLS, XLSX.";
-    renderContractReview();
+    renderContractReviewCurrentSurface();
     return;
   }
 
@@ -5190,7 +5198,7 @@ function addContractReviewFiles(files) {
   contractReviewResult = null;
   clientRecommendationResult = null;
   contractReviewCopyMessage = "";
-  renderContractReview();
+  renderContractReviewCurrentSurface();
 }
 
 function updateContractReviewFileAssignment(fileId, assignmentType, value) {
@@ -5208,7 +5216,7 @@ function updateContractReviewFileAssignment(fileId, assignmentType, value) {
   contractReviewResult = null;
   clientRecommendationResult = null;
   contractReviewCopyMessage = "";
-  renderContractReview();
+  renderContractReviewCurrentSurface();
 }
 
 function removeContractReviewFile(fileId) {
@@ -5225,7 +5233,7 @@ function removeContractReviewFile(fileId) {
   contractReviewResult = null;
   clientRecommendationResult = null;
   contractReviewCopyMessage = "";
-  renderContractReview();
+  renderContractReviewCurrentSurface();
 }
 
 function resetContractReviewFiles() {
@@ -5233,7 +5241,7 @@ function resetContractReviewFiles() {
   contractReviewResult = null;
   clientRecommendationResult = null;
   contractReviewCopyMessage = "";
-  renderContractReview();
+  renderContractReviewCurrentSurface();
 }
 
 function contractReviewSupportingAlerts(supportingRecords, previousValues, renewalValues) {
@@ -5347,19 +5355,19 @@ async function buildContractReviewResult() {
   clientRecommendationDownloadMessage = "";
   if (contractReviewFiles.length < 2) {
     contractReviewCopyMessage = "Додай щонайменше два договори.";
-    renderContractReview();
+    renderContractReviewCurrentSurface();
     return;
   }
   const packageStatus = contractReviewPackageAssignmentStatus(contractReviewFiles);
   if (!packageStatus.valid) {
     contractReviewCopyMessage = "У кожному пакеті має бути рівно один читабельний основний договір. Додатки й додаткові угоди признач до відповідного пакета окремо.";
-    renderContractReview();
+    renderContractReviewCurrentSurface();
     return;
   }
 
   contractReviewBusy = true;
   contractReviewCopyMessage = "Читаю договори...";
-  renderContractReview();
+  renderContractReviewCurrentSurface();
 
   const sorted = [...contractReviewFiles].sort((a, b) => a.score - b.score || a.name.localeCompare(b.name, "uk"));
   try {
@@ -5401,7 +5409,7 @@ async function buildContractReviewResult() {
         ? "Порівняння не запущено: прочитано лише один договір. Додай другий DOC, DOCX або текстовий PDF."
         : "Порівняння не запущено: Anodos не зміг прочитати текст договорів. Для автоматичного аналізу потрібні два DOC, DOCX або текстові PDF.";
       contractReviewBusy = false;
-      renderContractReview();
+      renderContractReviewCurrentSurface();
       return;
     }
     const readablePreviousMain = readableFiles.find((file) =>
@@ -5434,7 +5442,7 @@ async function buildContractReviewResult() {
       };
       contractReviewCopyMessage = "Один із призначених основних договорів не вдалося прочитати. Обери читабельні DOC, DOCX або текстові PDF.";
       contractReviewBusy = false;
-      renderContractReview();
+      renderContractReviewCurrentSurface();
       return;
     }
 
@@ -5467,7 +5475,7 @@ async function buildContractReviewResult() {
       };
       contractReviewCopyMessage = "Після читання документів роль пакета виявилася неоднозначною. Перевір тип кожного файла й залиш рівно один основний договір у кожному пакеті.";
       contractReviewBusy = false;
-      renderContractReview();
+      renderContractReviewCurrentSurface();
       return;
     }
 
@@ -5499,7 +5507,7 @@ async function buildContractReviewResult() {
       };
       contractReviewCopyMessage = periodMessage;
       contractReviewBusy = false;
-      renderContractReview();
+      renderContractReviewCurrentSurface();
       return;
     }
 
@@ -5590,7 +5598,7 @@ async function buildContractReviewResult() {
   } finally {
     contractReviewBusy = false;
   }
-  renderContractReview();
+  renderContractReviewCurrentSurface();
 }
 
 function contractReviewTableTsv() {
@@ -6691,6 +6699,24 @@ function renderClientRecommendation() {
   }
 
   if (!contractReviewResult?.foundCount) {
+    const packageStatus = contractReviewPackageAssignmentStatus(contractReviewFiles);
+    const activeFilesCount = packageStatus.activeFiles.length;
+    const readyFilesCount = packageStatus.activeFiles.filter(contractReviewCanAutoReadFile).length;
+    const canAnalyze = readyFilesCount >= 2 && packageStatus.valid && !contractReviewBusy;
+    const analyzeButtonText = contractReviewBusy
+      ? "Аналізую договори..."
+      : contractReviewFiles.length < 2
+        ? "Додай два договори"
+        : readyFilesCount < 2
+          ? "Потрібні читабельні файли"
+          : !packageStatus.valid
+            ? "Перевір склад пакетів"
+            : "Проаналізувати й підготувати рекомендацію";
+    const readinessText = contractReviewFiles.length
+      ? packageStatus.valid
+        ? `Готові до аналізу: ${readyFilesCount} з ${activeFilesCount}.`
+        : `Готові до аналізу: ${readyFilesCount} з ${activeFilesCount}. У кожному пакеті має бути рівно один основний договір.`
+      : "";
     screen.innerHTML = `
       <section class="client-recommendation-workspace">
         <header class="contract-review-head">
@@ -6698,14 +6724,39 @@ function renderClientRecommendation() {
           <div>
             <p class="eyebrow">Приватний інструмент · Олександр Насанчук</p>
             <h1>Рекомендація Клієнту</h1>
-            <p class="hero-copy">Спочатку порівняй попередній договір і пакет поновлення. Anodos використає підтверджені параметри та позначить усе, що потребує ручної перевірки.</p>
+            <p class="hero-copy">Додай попередній договір і пакет поновлення. Anodos одразу проаналізує зміни та сформує робочий брокерський висновок.</p>
           </div>
         </header>
-        <section class="client-recommendation-empty">
-          <strong>Потрібне готове порівняння договорів</strong>
-          <p>Документи залишаються у браузері й не надсилаються назовні.</p>
-          <button class="primary-action" type="button" data-route="contract-review">Перейти до порівняння</button>
+
+        <section class="contract-review-dropzone" data-contract-review-dropzone aria-label="Додати договори для рекомендації">
+          <input id="contractReviewInput" type="file" multiple accept=".doc,.docx,.pdf,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+          <label for="contractReviewInput">
+            <span>Документи Клієнта</span>
+            <strong>Перетягни або вибери файли</strong>
+            <b class="contract-review-browse-button">Вибрати договори</b>
+            <small>Додай попередній договір, договір поновлення та, за потреби, додатки або додаткові угоди.</small>
+          </label>
         </section>
+
+        ${contractReviewFiles.length ? `
+          <section class="contract-review-files-panel">
+            <div class="contract-review-panel-head">
+              <p>${contractReviewFiles.length} файли</p>
+              <button type="button" data-clear-contract-review-files>Очистити</button>
+            </div>
+            <ol class="contract-review-files">
+              ${contractReviewFiles.map(renderContractReviewFile).join("")}
+            </ol>
+            <p class="${canAnalyze ? "contract-review-readiness" : "contract-review-readiness contract-review-readiness-warning"}">${escapeHtml(readinessText)}</p>
+            <button class="primary-action primary-action-wide" type="button" data-run-contract-review ${canAnalyze ? "" : "disabled"}>
+              ${escapeHtml(analyzeButtonText)}
+            </button>
+            ${contractReviewCopyMessage ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>` : ""}
+          </section>
+        ` : contractReviewCopyMessage
+          ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>`
+          : ""}
+        <p class="questionnaire-generator-privacy">Документи обробляються лише у вашому браузері й не зберігаються в Anodos.</p>
       </section>
     `;
     return;
@@ -6715,7 +6766,7 @@ function renderClientRecommendation() {
   screen.innerHTML = `
     <section class="client-recommendation-workspace">
       <header class="contract-review-head">
-        <button class="module-back" type="button" data-route="contract-review" aria-label="Назад до порівняння">←</button>
+        <button class="module-back" type="button" data-route="home" aria-label="Назад до продуктів">←</button>
         <div>
           <p class="eyebrow">Приватний інструмент · Олександр Насанчук</p>
           <h1>Рекомендація Клієнту</h1>
@@ -9957,6 +10008,23 @@ document.addEventListener("click", async (event) => {
 
   if (runContractReviewButton) {
     await buildContractReviewResult();
+    if (
+      route === "client-recommendation"
+      && clientRecommendationIsAllowed()
+      && contractReviewResult?.foundCount
+    ) {
+      try {
+        clientRecommendationResult = window.AnodosClientRecommendation.prepare(
+          contractReviewResult,
+          { brokerNote: clientRecommendationBrokerNote }
+        );
+        clientRecommendationError = "";
+      } catch (error) {
+        clientRecommendationResult = null;
+        clientRecommendationError = error.message;
+      }
+      renderClientRecommendation();
+    }
     return;
   }
 
@@ -10694,7 +10762,7 @@ function contractReviewSetDropzoneActive(active) {
 }
 
 function contractReviewPrepareFileDrag(event) {
-  if (route !== "contract-review" || !contractReviewDataTransferHasFiles(event.dataTransfer)) {
+  if (!["contract-review", "client-recommendation"].includes(route) || !contractReviewDataTransferHasFiles(event.dataTransfer)) {
     return false;
   }
   event.preventDefault();
@@ -10718,13 +10786,13 @@ document.addEventListener("dragover", (event) => {
 }, true);
 
 document.addEventListener("dragleave", (event) => {
-  if (route === "contract-review" && !event.relatedTarget) {
+  if (["contract-review", "client-recommendation"].includes(route) && !event.relatedTarget) {
     contractReviewSetDropzoneActive(false);
   }
 }, true);
 
 document.addEventListener("drop", (event) => {
-  if (route !== "contract-review" || !contractReviewDataTransferHasFiles(event.dataTransfer)) {
+  if (!["contract-review", "client-recommendation"].includes(route) || !contractReviewDataTransferHasFiles(event.dataTransfer)) {
     return;
   }
   event.preventDefault();
@@ -10736,7 +10804,7 @@ document.addEventListener("drop", (event) => {
     return;
   }
   contractReviewCopyMessage = "Вбудований браузер не передав файли з Finder. Натисни «Вибрати договори» і додай їх через системне вікно.";
-  renderContractReview();
+  renderContractReviewCurrentSurface();
 }, true);
 
 document.addEventListener("submit", async (event) => {
