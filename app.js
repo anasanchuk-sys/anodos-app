@@ -2284,7 +2284,7 @@ function renderSpaceShell() {
     button.classList.toggle("brand-menu-option-active", isActive);
   });
 
-  const questionnaireTool = document.querySelector("[data-private-questionnaire-tool]");
+  const questionnaireTool = document.querySelector("[data-questionnaire-tool]");
   if (questionnaireTool) {
     questionnaireTool.hidden = !questionnaireGeneratorIsAllowed();
   }
@@ -2455,7 +2455,7 @@ function currentUser() {
 }
 
 function questionnaireGeneratorIsAllowed(user = currentUser()) {
-  return Boolean(window.AnodosQuestionnaireGenerator?.isAllowedUser(user));
+  return Boolean(window.AnodosQuestionnaireGenerator && isAuthorizedUser(user));
 }
 
 function isAuthorizedUser(user) {
@@ -6581,7 +6581,7 @@ function renderQuestionnaireGenerator() {
       <header class="questionnaire-generator-head">
         <button class="module-back" type="button" data-route="home" aria-label="Назад до продуктів">←</button>
         <div>
-          <p class="eyebrow">Anodos · приватний інструмент</p>
+          <p class="eyebrow">Anodos · робочий інструмент</p>
           <h1>Генератор опитувальників</h1>
           <p class="hero-copy">Опишіть майно, діяльність, перевезення, роботи або відповідальність. Anodos підбере страховий профіль і підготує редагований опитувальник BritMark у форматі DOCX.</p>
         </div>

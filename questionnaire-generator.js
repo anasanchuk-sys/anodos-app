@@ -1,7 +1,6 @@
 (function questionnaireGeneratorModule() {
   "use strict";
 
-  const OWNER_EMAIL = "onasanchuk@britmark.com";
   const DOCX_VENDOR_URL = "./assets/vendor/docx.iife.js?v=1";
   const BRITMARK_LOGO_URL = "./assets/britmark-logo.png?v=1";
   const BRITMARK_WEBSITE = "https://brit-mark.com/";
@@ -1722,10 +1721,6 @@
     };
   }
 
-  function isAllowedUser(user) {
-    return String(user?.email || "").trim().toLowerCase() === OWNER_EMAIL;
-  }
-
   let docxLibraryPromise = null;
 
   function ensureDocxLibrary() {
@@ -2506,10 +2501,8 @@
   }
 
   window.AnodosQuestionnaireGenerator = Object.freeze({
-    ownerEmail: OWNER_EMAIL,
     prepare,
     resolveProfile,
-    isAllowedUser,
     filenameFor,
     buildBlob,
     download
