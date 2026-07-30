@@ -2090,6 +2090,7 @@ const spaceDefinitions = {
       { route: "home", label: "Продукти" },
       { route: "law", label: "ЗУпС" },
       { route: "glossary", label: "Словник" },
+      { route: "bank-accreditation", label: "Банки" },
       { route: "contract-review", label: "Договори" }
     ]
   }
@@ -2262,6 +2263,7 @@ function activeNavigationRoute() {
   if (
     route === "law"
     || route === "glossary"
+    || route === "bank-accreditation"
     || route === "contract-review"
   ) {
     return route;
@@ -6331,6 +6333,11 @@ function render() {
     return;
   }
 
+  if (route === "bank-accreditation") {
+    renderBankAccreditation();
+    return;
+  }
+
   if (route === "questionnaire-generator") {
     renderQuestionnaireGenerator();
     return;
@@ -6342,6 +6349,168 @@ function render() {
   }
 
   renderHome();
+}
+
+function bankAccreditationStatusMeta(status) {
+  if (status === "official") {
+    return { symbol: "✓", label: "За списком страховика", className: "bank-accreditation-official" };
+  }
+  if (status === "conditional") {
+    return { symbol: "◇", label: "Погоджується для конкретної угоди", className: "bank-accreditation-conditional" };
+  }
+  return { symbol: "•", label: "Підтверджено робочим кейсом", className: "bank-accreditation-working" };
+}
+
+function formatBankAccreditationDate(value) {
+  const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return match ? `${match[3]}.${match[2]}.${match[1]}` : value;
+}
+
+function renderBankAccreditationCell(bank, insurer) {
+  const record = bank.insurers?.[insurer.id];
+  if (!record) {
+    return `<td class="bank-accreditation-empty" aria-label="${escapeHtml(`${insurer.name}: немає підтвердження`)}">—</td>`;
+  }
+  const meta = bankAccreditationStatusMeta(record.status);
+  const label = `${insurer.name} · ${bank.name}: ${meta.label}, підтвердження ${formatBankAccreditationDate(record.date)}`;
+  return `
+    <td class="${meta.className}">
+      <button
+        type="button"
+        class="bank-accreditation-cell"
+        data-accreditation-cell
+        data-bank="${escapeHtml(bank.name)}"
+        data-insurer="${escapeHtml(insurer.id)}"
+        aria-label="${escapeHtml(label)}"
+        title="${escapeHtml(label)}"
+      >
+        <span aria-hidden="true">${meta.symbol}</span>
+        <small>${escapeHtml(formatBankAccreditationDate(record.date).slice(3))}</small>
+      </button>
+    </td>
+  `;
+}
+
+function renderBankAccreditation() {
+  const data = window.AnodosBankAccreditation;
+  if (!data?.banks?.length || !data?.insurers?.length) {
+    screen.innerHTML = `
+      <section class="bank-accreditation-workspace">
+        <header class="contract-review-head">
+          <button class="module-back" type="button" data-route="home" aria-label="Назад до продуктів">←</button>
+          <div>
+            <p class="eyebrow">Anodos · банки</p>
+            <h1>Акредитація страхових компаній</h1>
+            <p class="hero-copy">Дані поки недоступні.</p>
+          </div>
+        </header>
+      </section>
+    `;
+    return;
+  }
+
+  screen.innerHTML = `
+    <section class="bank-accreditation-workspace">
+      <header class="contract-review-head bank-accreditation-head">
+        <button class="module-back" type="button" data-route="home" aria-label="Назад до продуктів">←</button>
+        <div>
+          <p class="eyebrow">Anodos · банки</p>
+          <h1>Акредитація страхових компаній</h1>
+          <p class="hero-copy">Знайдіть банк і перегляньте страховиків, яких підтверджують списки страхових компаній або наша робоча практика із заставним майном.</p>
+        </div>
+      </header>
+
+      <section class="bank-accreditation-controls" aria-label="Пошук і пояснення статусів">
+        <label for="bankAccreditationSearch">
+          <span>Банк</span>
+          <input id="bankAccreditationSearch" type="search" autocomplete="off" placeholder="Наприклад: ПУМБ або Сенс" />
+        </label>
+        <div class="bank-accreditation-legend" aria-label="Умовні позначення">
+          <span><b class="bank-accreditation-official">✓</b> за списком страховика</span>
+          <span><b class="bank-accreditation-working">•</b> робочий кейс</span>
+          <span><b class="bank-accreditation-conditional">◇</b> індивідуальне погодження</span>
+        </div>
+        <p class="bank-accreditation-count" data-bank-accreditation-count>${data.banks.length} банків</p>
+      </section>
+
+      <section class="bank-accreditation-table-shell" aria-label="Матриця акредитації">
+        <table class="bank-accreditation-table">
+          <thead>
+            <tr>
+              <th scope="col">Банк</th>
+              ${data.insurers.map((insurer) => `
+                <th scope="col" title="${escapeHtml(insurer.name)}">${escapeHtml(insurer.shortName || insurer.name)}</th>
+              `).join("")}
+            </tr>
+          </thead>
+          <tbody>
+            ${data.banks.map((bank) => {
+              const searchText = [bank.name, ...(bank.aliases || [])].join(" ").toLocaleLowerCase("uk");
+              return `
+                <tr data-bank-row data-search="${escapeHtml(searchText)}">
+                  <th scope="row">
+                    <strong>${escapeHtml(bank.name)}</strong>
+                    ${bank.aliases?.length ? `<small>${escapeHtml(bank.aliases.join(" · "))}</small>` : ""}
+                  </th>
+                  ${data.insurers.map((insurer) => renderBankAccreditationCell(bank, insurer)).join("")}
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      </section>
+
+      <p class="bank-accreditation-no-results" data-bank-accreditation-empty hidden>Банк не знайдено. Спробуйте коротшу назву.</p>
+      <aside class="bank-accreditation-evidence" data-bank-accreditation-evidence aria-live="polite">
+        <strong>Як читати таблицю</strong>
+        <p>Натисніть позначку в клітинці, щоб побачити дату й джерело. Порожня клітинка означає, що в дослідженій пошті немає достатнього підтвердження.</p>
+      </aside>
+      <p class="bank-accreditation-caution">Реєстр зібрано з локального архіву пошти станом на 30.07.2026. Банки можуть змінювати перелік і умови акредитації, тому перед випуском договору статус потрібно підтвердити для конкретного виду майна та угоди.</p>
+    </section>
+  `;
+}
+
+function filterBankAccreditationRows(query) {
+  const normalized = String(query || "").trim().toLocaleLowerCase("uk");
+  const rows = [...document.querySelectorAll("[data-bank-row]")];
+  let visible = 0;
+  rows.forEach((row) => {
+    const matches = !normalized || String(row.dataset.search || "").includes(normalized);
+    row.hidden = !matches;
+    if (matches) {
+      visible += 1;
+    }
+  });
+  const count = document.querySelector("[data-bank-accreditation-count]");
+  if (count) {
+    count.textContent = `${visible} ${visible === 1 ? "банк" : visible >= 2 && visible <= 4 ? "банки" : "банків"}`;
+  }
+  document.querySelector("[data-bank-accreditation-empty]")?.toggleAttribute("hidden", visible > 0);
+}
+
+function showBankAccreditationEvidence(button) {
+  const data = window.AnodosBankAccreditation;
+  const bank = data?.banks?.find((item) => item.name === button.dataset.bank);
+  const insurer = data?.insurers?.find((item) => item.id === button.dataset.insurer);
+  const record = bank?.insurers?.[insurer?.id];
+  const panel = document.querySelector("[data-bank-accreditation-evidence]");
+  if (!record || !panel || !bank || !insurer) {
+    return;
+  }
+  const meta = bankAccreditationStatusMeta(record.status);
+  panel.innerHTML = `
+    <div>
+      <p class="eyebrow">${escapeHtml(bank.name)}</p>
+      <strong>${escapeHtml(insurer.name)}</strong>
+    </div>
+    <span class="${meta.className}">${escapeHtml(meta.label)}</span>
+    <dl>
+      <div><dt>Підтвердження</dt><dd>${escapeHtml(formatBankAccreditationDate(record.date))}</dd></div>
+      <div><dt>Джерело</dt><dd>${escapeHtml(record.source)}</dd></div>
+    </dl>
+    ${record.note ? `<p>${escapeHtml(record.note)}</p>` : ""}
+  `;
+  panel.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "nearest" });
 }
 
 function renderContractReviewFile(file, index) {
@@ -9948,6 +10117,7 @@ document.addEventListener("click", async (event) => {
   const cancelAccuracyReportButton = event.target.closest("[data-cancel-accuracy-report]");
   const scenarioExampleButton = event.target.closest("[data-scenario-example]");
   const scenarioAction = event.target.closest("[data-scenario-action]");
+  const bankAccreditationCell = event.target.closest("[data-accreditation-cell]");
   const removeContractReviewFileButton = event.target.closest("[data-remove-contract-review-file]");
   const clearContractReviewFilesButton = event.target.closest("[data-clear-contract-review-files]");
   const runContractReviewButton = event.target.closest("[data-run-contract-review]");
@@ -9990,6 +10160,11 @@ document.addEventListener("click", async (event) => {
 
   if (brandMenuOpen && !event.target.closest(".brand-menu-shell")) {
     setBrandMenu(false);
+  }
+
+  if (bankAccreditationCell) {
+    showBankAccreditationEvidence(bankAccreditationCell);
+    return;
   }
 
   if (compassOpen && !event.target.closest(".compass-panel") && !event.target.closest("[data-open-compass]")) {
@@ -10613,6 +10788,11 @@ document.addEventListener("input", (event) => {
     body.classList.toggle("scenario-search-active", scenarioSearchTerm.trim().length > 0);
     window.clearTimeout(scenarioSearchTimer);
     scenarioSearchTimer = window.setTimeout(renderScenarioSearchResults, 120);
+    return;
+  }
+
+  if (event.target.id === "bankAccreditationSearch") {
+    filterBankAccreditationRows(event.target.value);
     return;
   }
 
