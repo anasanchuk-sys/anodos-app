@@ -2070,6 +2070,9 @@ function availableRoute(nextRoute) {
   if (nextRoute === "questionnaire-generator" && !questionnaireGeneratorIsAllowed()) {
     return "home";
   }
+  if (nextRoute === "client-recommendation" && !clientRecommendationIsAllowed()) {
+    return "home";
+  }
   return nextRoute;
 }
 
@@ -2194,6 +2197,11 @@ let questionnaireGeneratorResult = null;
 let questionnaireGeneratorError = "";
 let questionnaireGeneratorDownloadMessage = "";
 let questionnaireGeneratorBusy = false;
+let clientRecommendationResult = null;
+let clientRecommendationBrokerNote = "";
+let clientRecommendationError = "";
+let clientRecommendationDownloadMessage = "";
+let clientRecommendationBusy = false;
 let activeSpace = normalizeActiveSpace(localStorage.getItem(activeSpaceKey));
 let contractReviewFiles = [];
 let contractReviewResult = null;
@@ -2287,6 +2295,10 @@ function renderSpaceShell() {
   const questionnaireTool = document.querySelector("[data-private-questionnaire-tool]");
   if (questionnaireTool) {
     questionnaireTool.hidden = !questionnaireGeneratorIsAllowed();
+  }
+  const clientRecommendationTool = document.querySelector("[data-private-client-recommendation]");
+  if (clientRecommendationTool) {
+    clientRecommendationTool.hidden = !clientRecommendationIsAllowed();
   }
 
   if (nav) {
@@ -2456,6 +2468,10 @@ function currentUser() {
 
 function questionnaireGeneratorIsAllowed(user = currentUser()) {
   return Boolean(window.AnodosQuestionnaireGenerator?.isAllowedUser(user));
+}
+
+function clientRecommendationIsAllowed(user = currentUser()) {
+  return Boolean(window.AnodosClientRecommendation?.isAllowedUser(user));
 }
 
 function isAuthorizedUser(user) {
@@ -5172,6 +5188,7 @@ function addContractReviewFiles(files) {
     }
   });
   contractReviewResult = null;
+  clientRecommendationResult = null;
   contractReviewCopyMessage = "";
   renderContractReview();
 }
@@ -5189,6 +5206,7 @@ function updateContractReviewFileAssignment(fileId, assignmentType, value) {
     fileRecord.documentRoleTouched = true;
   }
   contractReviewResult = null;
+  clientRecommendationResult = null;
   contractReviewCopyMessage = "";
   renderContractReview();
 }
@@ -5205,6 +5223,7 @@ function removeContractReviewFile(fileId) {
     }
   }
   contractReviewResult = null;
+  clientRecommendationResult = null;
   contractReviewCopyMessage = "";
   renderContractReview();
 }
@@ -5212,6 +5231,7 @@ function removeContractReviewFile(fileId) {
 function resetContractReviewFiles() {
   contractReviewFiles = [];
   contractReviewResult = null;
+  clientRecommendationResult = null;
   contractReviewCopyMessage = "";
   renderContractReview();
 }
@@ -5322,6 +5342,9 @@ function contractReviewResolvePackageAnalysis(mainRecord, packageRecords) {
 }
 
 async function buildContractReviewResult() {
+  clientRecommendationResult = null;
+  clientRecommendationError = "";
+  clientRecommendationDownloadMessage = "";
   if (contractReviewFiles.length < 2) {
     contractReviewCopyMessage = "Додай щонайменше два договори.";
     renderContractReview();
@@ -6305,6 +6328,11 @@ function render() {
     return;
   }
 
+  if (route === "client-recommendation") {
+    renderClientRecommendation();
+    return;
+  }
+
   renderHome();
 }
 
@@ -6404,7 +6432,14 @@ function renderContractReviewTable() {
           <p class="eyebrow">Результат</p>
           <h2>Порівняльна таблиця</h2>
         </div>
-        <button class="primary-action" type="button" data-copy-contract-review>Копіювати таблицю</button>
+        <div class="contract-review-result-actions">
+          <button class="primary-action" type="button" data-copy-contract-review>Копіювати таблицю</button>
+          ${clientRecommendationIsAllowed() ? `
+            <button class="secondary-action" type="button" data-open-client-recommendation>
+              Підготувати рекомендацію Клієнту
+            </button>
+          ` : ""}
+        </div>
       </header>
       <div class="contract-review-pair">
         <article>
@@ -6645,6 +6680,123 @@ function renderQuestionnaireGenerator() {
           </div>
         </section>
       `}
+    </section>
+  `;
+}
+
+function renderClientRecommendation() {
+  if (!clientRecommendationIsAllowed()) {
+    setActiveSpace("products", "home");
+    return;
+  }
+
+  if (!contractReviewResult?.foundCount) {
+    screen.innerHTML = `
+      <section class="client-recommendation-workspace">
+        <header class="contract-review-head">
+          <button class="module-back" type="button" data-route="home" aria-label="Назад до продуктів">←</button>
+          <div>
+            <p class="eyebrow">Приватний інструмент · Олександр Насанчук</p>
+            <h1>Рекомендація Клієнту</h1>
+            <p class="hero-copy">Спочатку порівняй попередній договір і пакет поновлення. Anodos використає підтверджені параметри та позначить усе, що потребує ручної перевірки.</p>
+          </div>
+        </header>
+        <section class="client-recommendation-empty">
+          <strong>Потрібне готове порівняння договорів</strong>
+          <p>Документи залишаються у браузері й не надсилаються назовні.</p>
+          <button class="primary-action" type="button" data-route="contract-review">Перейти до порівняння</button>
+        </section>
+      </section>
+    `;
+    return;
+  }
+
+  const result = clientRecommendationResult;
+  screen.innerHTML = `
+    <section class="client-recommendation-workspace">
+      <header class="contract-review-head">
+        <button class="module-back" type="button" data-route="contract-review" aria-label="Назад до порівняння">←</button>
+        <div>
+          <p class="eyebrow">Приватний інструмент · Олександр Насанчук</p>
+          <h1>Рекомендація Клієнту</h1>
+          <p class="hero-copy">Сформуй робочий брокерський висновок, питання до страховика та чернетку листа Клієнту на основі порівняння договорів.</p>
+        </div>
+      </header>
+
+      <section class="client-recommendation-source">
+        <article>
+          <span>Попередній договір</span>
+          <strong>${escapeHtml(contractReviewResult.previous.name)}</strong>
+        </article>
+        <article>
+          <span>Пакет поновлення</span>
+          <strong>${escapeHtml(contractReviewResult.renewal.name)}</strong>
+        </article>
+      </section>
+
+      <form id="clientRecommendationForm" class="client-recommendation-form">
+        <label for="clientRecommendationBrokerNote">
+          <span>Коментар брокера — необов’язково</span>
+          <textarea
+            id="clientRecommendationBrokerNote"
+            name="brokerNote"
+            rows="3"
+            maxlength="1200"
+            placeholder="Наприклад: Клієнт просить зберегти франшизу та окремо погодити воєнні ризики."
+          >${escapeHtml(clientRecommendationBrokerNote)}</textarea>
+        </label>
+        ${clientRecommendationError ? `<p class="questionnaire-generator-error">${escapeHtml(clientRecommendationError)}</p>` : ""}
+        <button class="primary-action primary-action-wide" type="submit" ${clientRecommendationBusy ? "disabled" : ""}>
+          ${clientRecommendationBusy ? "Готую висновок..." : result ? "Оновити рекомендацію" : "Підготувати рекомендацію"}
+        </button>
+        <p>Це робоча чернетка. Anodos не робить остаточного висновку замість брокера й не приховує непідтверджені параметри.</p>
+      </form>
+
+      ${result ? `
+        <section class="client-recommendation-result" aria-live="polite">
+          <header>
+            <div>
+              <p class="eyebrow">Попередній висновок</p>
+              <h2>${escapeHtml(result.decision)}</h2>
+            </div>
+            <span>${escapeHtml(result.clientName)}</span>
+          </header>
+          <p class="client-recommendation-rationale">${escapeHtml(result.rationale)}</p>
+          <div class="client-recommendation-metrics">
+            <article>
+              <strong>${result.criticalChanges.length}</strong>
+              <span>критичних змін</span>
+            </article>
+            <article class="${result.criticalAttention.length ? "client-recommendation-warning" : ""}">
+              <strong>${result.criticalAttention.length}</strong>
+              <span>критичних уточнень</span>
+            </article>
+            <article>
+              <strong>${result.questions.length}</strong>
+              <span>питань страховикові</span>
+            </article>
+          </div>
+          <section class="client-recommendation-questions">
+            <h3>Що потрібно підтвердити</h3>
+            ${result.questions.length
+              ? `<ol>${result.questions.map((question) => `<li>${escapeHtml(question)}</li>`).join("")}</ol>`
+              : `<p>Критичних питань за автоматично зіставленими параметрами не виявлено.</p>`}
+          </section>
+          <section class="client-recommendation-email">
+            <h3>Чернетка листа Клієнту</h3>
+            <strong>Тема: ${escapeHtml(result.emailSubject)}</strong>
+            <pre>${escapeHtml(result.emailBody)}</pre>
+          </section>
+          <div class="client-recommendation-actions">
+            <button class="primary-action" type="button" data-download-client-recommendation ${clientRecommendationBusy ? "disabled" : ""}>
+              ${clientRecommendationBusy ? "Створюю DOCX..." : "Завантажити DOCX"}
+            </button>
+            <button class="secondary-action" type="button" data-copy-client-recommendation-email>Копіювати лист</button>
+          </div>
+          ${clientRecommendationDownloadMessage ? `<p class="questionnaire-generator-status">${escapeHtml(clientRecommendationDownloadMessage)}</p>` : ""}
+        </section>
+      ` : ""}
+      <p class="questionnaire-generator-privacy">Документи, порівняння та рекомендація обробляються лише у вашому браузері й не зберігаються в Anodos.</p>
     </section>
   `;
 }
@@ -9750,6 +9902,9 @@ document.addEventListener("click", async (event) => {
   const runContractReviewButton = event.target.closest("[data-run-contract-review]");
   const copyContractReviewButton = event.target.closest("[data-copy-contract-review]");
   const downloadQuestionnaireButton = event.target.closest("[data-download-questionnaire]");
+  const openClientRecommendationButton = event.target.closest("[data-open-client-recommendation]");
+  const downloadClientRecommendationButton = event.target.closest("[data-download-client-recommendation]");
+  const copyClientRecommendationEmailButton = event.target.closest("[data-copy-client-recommendation-email]");
 
   if (compassButton) {
     event.preventDefault();
@@ -9807,6 +9962,58 @@ document.addEventListener("click", async (event) => {
 
   if (copyContractReviewButton) {
     await copyContractReviewTable();
+    return;
+  }
+
+  if (openClientRecommendationButton) {
+    if (!clientRecommendationIsAllowed()) {
+      setActiveSpace("products", "home");
+      return;
+    }
+    clientRecommendationResult = null;
+    clientRecommendationError = "";
+    clientRecommendationDownloadMessage = "";
+    setActiveSpace("products", "client-recommendation");
+    return;
+  }
+
+  if (downloadClientRecommendationButton) {
+    if (!clientRecommendationIsAllowed()) {
+      setActiveSpace("products", "home");
+      return;
+    }
+    if (!clientRecommendationResult || clientRecommendationBusy) {
+      return;
+    }
+    clientRecommendationBusy = true;
+    clientRecommendationError = "";
+    clientRecommendationDownloadMessage = "";
+    renderClientRecommendation();
+    try {
+      const downloadResult = await window.AnodosClientRecommendation.download(clientRecommendationResult);
+      clientRecommendationDownloadMessage = `Завантажено: ${downloadResult.filename}`;
+    } catch (error) {
+      clientRecommendationError = `Не вдалося створити DOCX: ${error.message}`;
+    } finally {
+      clientRecommendationBusy = false;
+      renderClientRecommendation();
+    }
+    return;
+  }
+
+  if (copyClientRecommendationEmailButton) {
+    if (!clientRecommendationIsAllowed() || !clientRecommendationResult) {
+      setActiveSpace("products", "home");
+      return;
+    }
+    const emailText = `Тема: ${clientRecommendationResult.emailSubject}\n\n${clientRecommendationResult.emailBody}`;
+    try {
+      await navigator.clipboard.writeText(emailText);
+      clientRecommendationDownloadMessage = "Текст листа скопійовано.";
+    } catch {
+      clientRecommendationDownloadMessage = "Не вдалося скопіювати автоматично. Виділіть текст листа вручну.";
+    }
+    renderClientRecommendation();
     return;
   }
 
@@ -10533,6 +10740,39 @@ document.addEventListener("drop", (event) => {
 }, true);
 
 document.addEventListener("submit", async (event) => {
+  if (event.target.id === "clientRecommendationForm") {
+    event.preventDefault();
+    if (!clientRecommendationIsAllowed()) {
+      setActiveSpace("products", "home");
+      return;
+    }
+    if (!contractReviewResult?.foundCount) {
+      clientRecommendationResult = null;
+      clientRecommendationError = "Спочатку сформуйте порівняння договорів.";
+      renderClientRecommendation();
+      return;
+    }
+    const formData = new FormData(event.target);
+    clientRecommendationBrokerNote = String(formData.get("brokerNote") || "").trim();
+    clientRecommendationBusy = true;
+    clientRecommendationError = "";
+    clientRecommendationDownloadMessage = "";
+    renderClientRecommendation();
+    try {
+      clientRecommendationResult = window.AnodosClientRecommendation.prepare(
+        contractReviewResult,
+        { brokerNote: clientRecommendationBrokerNote }
+      );
+    } catch (error) {
+      clientRecommendationResult = null;
+      clientRecommendationError = error.message;
+    } finally {
+      clientRecommendationBusy = false;
+      renderClientRecommendation();
+    }
+    return;
+  }
+
   if (event.target.id === "questionnaireGeneratorForm") {
     event.preventDefault();
     if (!questionnaireGeneratorIsAllowed()) {
