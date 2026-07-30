@@ -9811,6 +9811,10 @@ document.addEventListener("click", async (event) => {
   }
 
   if (downloadQuestionnaireButton) {
+    if (!questionnaireGeneratorIsAllowed()) {
+      setActiveSpace("products", "home");
+      return;
+    }
     if (!questionnaireGeneratorResult || questionnaireGeneratorBusy) {
       return;
     }
