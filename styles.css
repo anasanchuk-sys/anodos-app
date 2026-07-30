@@ -398,7 +398,7 @@ h3,
   background: rgba(65, 108, 145, 0.035) !important;
 }
 
-[data-questionnaire-tool][hidden] {
+[data-private-questionnaire-tool][hidden] {
   display: none !important;
 }
 
