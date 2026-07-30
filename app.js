@@ -510,7 +510,7 @@ const propertyAdvancedQuiz = [
 
 const propertyPartnerQuiz = {
   title: "Тести партнерів",
-  disclaimer: "Цей тест розроблено партнером компанії Катериною Шум.",
+  disclaimer: "Цей тест розроблено Партнером Компанії Катериною Шум.",
   intro: "Тест перевіряє базову логіку майнового страхування. Правильною є одна відповідь у кожному питанні.",
   threshold: 80,
   quiz: [
@@ -7530,19 +7530,10 @@ function moduleSectionDefinitions(item, briefing) {
     });
   }
 
-  if (item.partnerTests?.quiz?.length) {
-    sections.push({
-      id: "partner-tests",
-      title: "Тести партнерів",
-      meta: `${item.partnerTests.quiz.length} питань`,
-      content: renderPartnerTestsContent(item)
-    });
-  }
-
   sections.push({
     id: "test",
-    title: "Тест",
-    meta: `${item.threshold}% для проходження`,
+    title: item.partnerTests?.quiz?.length ? "Тести" : "Тест",
+    meta: item.partnerTests?.quiz?.length ? "2 тести" : `${item.threshold}% для проходження`,
     content: renderTestContent(item)
   });
 
@@ -8215,7 +8206,7 @@ function renderLessonShelf(item) {
 
 function renderTestShelf(item) {
   return renderPanel(
-    "Тест",
+    item.partnerTests?.quiz?.length ? "Тести" : "Тест",
     `${item.threshold}% для проходження`,
     renderTestContent(item)
   );
@@ -8231,6 +8222,7 @@ function renderTestContent(item) {
       </div>
       <button class="article-action" type="button" data-open-quiz="${item.id}">Почати</button>
     </article>
+    ${item.partnerTests?.quiz?.length ? renderPartnerTestsContent(item) : ""}
   `;
 }
 
@@ -8263,7 +8255,7 @@ function renderPartnerTestsContent(item) {
       <div>
         <span class="article-topic">Авторський тест</span>
         <h3>${escapeHtml(test.title)}</h3>
-        <p><strong>Дисклеймер:</strong> ${escapeHtml(test.disclaimer)}</p>
+        <p>${escapeHtml(test.disclaimer)}</p>
         <p>${escapeHtml(test.intro)}</p>
       </div>
       <button class="article-action" type="button" data-open-partner-quiz="${escapeHtml(item.id)}">Почати</button>
@@ -8700,11 +8692,11 @@ function renderPartnerQuiz(item) {
       eyebrow: "Тести партнерів",
       title: test.title,
       copy: `Питання ${answered}/${test.quiz.length}. Прохідний результат: ${test.threshold}%.`,
-      backAttributes: `data-open-module-section="partner-tests" data-module-section-lesson="${escapeHtml(item.id)}"`
+      backAttributes: `data-open-module-section="test" data-module-section-lesson="${escapeHtml(item.id)}"`
     })}
 
     <section class="quiz-source-strip">
-      <p><strong>Дисклеймер:</strong> ${escapeHtml(test.disclaimer)}</p>
+      <p>${escapeHtml(test.disclaimer)}</p>
       <p>${escapeHtml(test.intro)}</p>
     </section>
 
