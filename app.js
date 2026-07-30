@@ -508,6 +508,149 @@ const propertyAdvancedQuiz = [
   }
 ];
 
+const propertyPartnerQuiz = {
+  title: "Тести партнерів",
+  disclaimer: "Цей тест розроблено партнером компанії Катериною Шум.",
+  intro: "Тест перевіряє базову логіку майнового страхування. Правильною є одна відповідь у кожному питанні.",
+  threshold: 80,
+  quiz: [
+    {
+      question: "Яка максимальна кількість Сторін може бути в договорі страхування майна?",
+      options: ["1", "2", "3", "Може бути й більше трьох"],
+      answer: 3,
+      explanation: "Кількість сторін договору не обмежується трьома."
+    },
+    {
+      question: "Страхова компанія несе відповідальність у межах:",
+      options: [
+        "Ліміту страхування",
+        "Страхової суми",
+        "Страхової премії",
+        "Правильні відповіді 1 і 2",
+        "Правильні відповіді 2 і 3"
+      ],
+      answer: 3,
+      explanation: "Межі відповідальності визначаються страховою сумою та передбаченими договором лімітами."
+    },
+    {
+      question: "Франшиза може бути встановлена:",
+      options: [
+        "У гривнях",
+        "У доларах",
+        "У % від суми збитку",
+        "У % від страхової суми",
+        "У всіх перелічених вище варіантах",
+        "Неправильна відповідь 3"
+      ],
+      answer: 4,
+      explanation: "Спосіб визначення франшизи встановлюється умовами договору."
+    },
+    {
+      question: "Недострахування — це:",
+      options: [
+        "Коли франшиза більша за 1%",
+        "Коли страхова сума нижча за реальну вартість",
+        "Коли страхова сума вища за реальну вартість"
+      ],
+      answer: 1,
+      explanation: "Недострахування виникає, коли страхова сума нижча за вартість застрахованого майна."
+    },
+    {
+      question: "Яка страхова сума, найімовірніше, буде вищою?",
+      options: ["Балансова", "Відновна", "Дійсна"],
+      answer: 1,
+      explanation: "Відновна вартість враховує витрати на відновлення або заміну майна."
+    },
+    {
+      question: "FLEXA включає ризики:",
+      options: [
+        "Блискавка",
+        "Землетрус",
+        "Вибух",
+        "Град",
+        "Правильні відповіді 1 і 2",
+        "Правильні відповіді 1 і 3"
+      ],
+      answer: 5,
+      explanation: "FLEXA охоплює пожежу, удар блискавки та вибух; серед наведених варіантів правильні 1 і 3."
+    },
+    {
+      question: "Крадіжка має:",
+      options: [
+        "Бути вчинена в нічний час",
+        "Бути вчинена групою осіб за попередньою змовою",
+        "Мати сліди проникнення",
+        "Правильні відповіді 1 і 3"
+      ],
+      answer: 2,
+      explanation: "Для покриття крадіжки зі зломом зазвичай важливі підтверджені сліди проникнення."
+    },
+    {
+      question: "У договорі страхування майна, крім стандартних ризиків, додатково можна застрахувати:",
+      options: [
+        "Громадські заворушення, бунти та страйки",
+        "Умисні дії Страхувальника",
+        "Дрібні ремонтні роботи",
+        "Поломку обладнання",
+        "Неправильна відповідь 2",
+        "Правильні відповіді 1 і 3",
+        "Правильні відповіді 1, 2, 3 і 4"
+      ],
+      answer: 6,
+      explanation: "За окремим погодженням і відповідним формулюванням покриття можуть бути включені всі чотири перелічені розширення."
+    },
+    {
+      question: "За відсутності договору страхування майна не страхують:",
+      options: [
+        "Відповідальність",
+        "Будівельно-монтажні роботи",
+        "Перерву в діяльності",
+        "Воєнні ризики"
+      ],
+      answer: 2,
+      explanation: "Покриття перерви в діяльності зазвичай прив’язане до майнового збитку, передбаченого договором."
+    },
+    {
+      question: "Кому виплачується страхове відшкодування?",
+      options: [
+        "Банку — Вигодонабувачу",
+        "Вигодонабувачу, зазначеному в договорі",
+        "Страхувальнику",
+        "Банку, через який сплачено страхову премію",
+        "Правильна відповідь 3",
+        "Неправильна відповідь 4"
+      ],
+      answer: 5,
+      explanation: "Сам факт сплати премії через банк не надає йому права на страхове відшкодування."
+    },
+    {
+      question: "До категорій майна, що страхується за договором, можуть бути віднесені:",
+      options: [
+        "Конструктивні елементи та комунікації",
+        "Внутрішнє та зовнішнє оздоблення",
+        "Товарні запаси",
+        "Скло",
+        "Обладнання",
+        "Усе перелічене вище",
+        "Усе, крім 3 і 5"
+      ],
+      answer: 5,
+      explanation: "Усі перелічені категорії можуть бути включені до складу застрахованого майна."
+    },
+    {
+      question: "Договір страхування майна укладається на строк:",
+      options: [
+        "Будівництва цього об’єкта",
+        "1 рік і не більше",
+        "Менше одного року",
+        "За погодженням Сторін"
+      ],
+      answer: 3,
+      explanation: "Строк страхування визначається за погодженням Сторін і фіксується в договорі."
+    }
+  ]
+};
+
 const lessons = [
   {
     id: "property",
@@ -526,6 +669,7 @@ const lessons = [
     quizIntro: "Вбудована версія тесту з логіки майнового страхування: названі ризики, покриття від усіх ризиків, винятки, ліміти, франшиза і врегулювання.",
     quizSourceUrl: notebookInsuranceTestUrl,
     quizSourceLabel: "Оригінал у NotebookLM",
+    partnerTests: propertyPartnerQuiz,
     lawTests: {
       title: "Тести до ЗУпС",
       intro: "Коротка перевірка базових норм Закону України «Про страхування», які молодий фахівець має впізнавати під час роботи з майновими договорами.",
@@ -5554,7 +5698,11 @@ function saveAccuracyReport(reportId, note) {
   const [scope, lessonId, questionIndexText] = reportId.split(":");
   const questionIndex = Number(questionIndexText);
   const item = getLesson(lessonId);
-  const test = scope === "law" ? item.lawTests : item;
+  const test = scope === "law"
+    ? item.lawTests
+    : scope === "partner"
+      ? item.partnerTests
+      : item;
   const question = test?.quiz?.[questionIndex];
   if (!item || !question) {
     return false;
@@ -6099,6 +6247,11 @@ function render() {
 
   if (route === "law-quiz") {
     renderLawQuiz(getLesson());
+    return;
+  }
+
+  if (route === "partner-quiz") {
+    renderPartnerQuiz(getLesson());
     return;
   }
 
@@ -7377,6 +7530,15 @@ function moduleSectionDefinitions(item, briefing) {
     });
   }
 
+  if (item.partnerTests?.quiz?.length) {
+    sections.push({
+      id: "partner-tests",
+      title: "Тести партнерів",
+      meta: `${item.partnerTests.quiz.length} питань`,
+      content: renderPartnerTestsContent(item)
+    });
+  }
+
   sections.push({
     id: "test",
     title: "Тест",
@@ -8090,6 +8252,25 @@ function renderLawTestsContent(item) {
   `;
 }
 
+function renderPartnerTestsContent(item) {
+  const test = item.partnerTests;
+  if (!test) {
+    return "";
+  }
+
+  return `
+    <article class="article-card article-card-action">
+      <div>
+        <span class="article-topic">Авторський тест</span>
+        <h3>${escapeHtml(test.title)}</h3>
+        <p><strong>Дисклеймер:</strong> ${escapeHtml(test.disclaimer)}</p>
+        <p>${escapeHtml(test.intro)}</p>
+      </div>
+      <button class="article-action" type="button" data-open-partner-quiz="${escapeHtml(item.id)}">Почати</button>
+    </article>
+  `;
+}
+
 function buildPresentationSlides(item) {
   const firstChecklist = item.checklist.slice(0, 3);
   const secondChecklist = item.checklist.slice(3, 6);
@@ -8498,6 +8679,75 @@ function renderLawQuizResult(test) {
             <p><strong>Відповідь:</strong> ${escapeHtml(question.options[question.answer])}</p>
             ${question.explanation ? `<p>${escapeHtml(question.explanation)}</p>` : ""}
             ${renderQuestionTrustBlock("law", getLesson(activeLessonId), question, index)}
+          </article>
+        `;
+      }).join("")}
+    </section>
+  `;
+}
+
+function renderPartnerQuiz(item) {
+  const test = item.partnerTests;
+  if (!test?.quiz?.length) {
+    renderModule(item);
+    return;
+  }
+
+  const answered = Object.values(quizAnswers).filter((value) => value !== null).length;
+  screen.innerHTML = `
+    ${renderModuleContextHead({
+      item,
+      eyebrow: "Тести партнерів",
+      title: test.title,
+      copy: `Питання ${answered}/${test.quiz.length}. Прохідний результат: ${test.threshold}%.`,
+      backAttributes: `data-open-module-section="partner-tests" data-module-section-lesson="${escapeHtml(item.id)}"`
+    })}
+
+    <section class="quiz-source-strip">
+      <p><strong>Дисклеймер:</strong> ${escapeHtml(test.disclaimer)}</p>
+      <p>${escapeHtml(test.intro)}</p>
+    </section>
+
+    <form class="quiz-form" id="partnerQuizForm">
+      ${test.quiz.map((question, questionIndex) => `
+        <fieldset class="question-block">
+          <legend>${escapeHtml(question.question)}</legend>
+          ${renderQuestionTrustBlock("partner", item, question, questionIndex)}
+          ${question.options.map((option, optionIndex) => `
+            <label class="answer-row" data-answer="${questionIndex}-${optionIndex}">
+              <input type="radio" name="q${questionIndex}" value="${optionIndex}" ${quizAnswers[questionIndex] === optionIndex ? "checked" : ""} />
+              <span>${escapeHtml(option)}</span>
+            </label>
+          `).join("")}
+        </fieldset>
+      `).join("")}
+      <button class="primary-action primary-action-wide" type="submit">Завершити тест</button>
+    </form>
+
+    ${quizResult ? renderPartnerQuizResult(test, item) : ""}
+  `;
+}
+
+function renderPartnerQuizResult(test, item) {
+  const passed = quizResult.score >= test.threshold;
+  return `
+    <section class="result-panel ${passed ? "result-pass" : "result-review"}">
+      <p class="section-kicker">${passed ? "Пройдено" : "Повторити"}</p>
+      <h2>${quizResult.score}%</h2>
+      <p>${passed ? "Результат тесту партнерів зафіксовано." : "Варто переглянути пояснення та пройти тест ще раз."}</p>
+    </section>
+
+    <section class="answer-feedback-list" aria-label="Пояснення до відповідей">
+      ${test.quiz.map((question, index) => {
+        const selected = quizAnswers[index];
+        const isCorrect = selected === question.answer;
+        return `
+          <article class="answer-feedback-row ${isCorrect ? "feedback-correct" : "feedback-missed"}">
+            <span>${isCorrect ? "Правильно" : "Перевірити"}</span>
+            <h3>${escapeHtml(question.question)}</h3>
+            <p><strong>Відповідь:</strong> ${escapeHtml(question.options[question.answer])}</p>
+            ${question.explanation ? `<p>${escapeHtml(question.explanation)}</p>` : ""}
+            ${renderQuestionTrustBlock("partner", item, question, index)}
           </article>
         `;
       }).join("")}
@@ -9479,6 +9729,7 @@ document.addEventListener("click", async (event) => {
   const stateCompensationViewButton = event.target.closest("[data-state-compensation-view]");
   const quizButton = event.target.closest("[data-open-quiz]");
   const lawQuizButton = event.target.closest("[data-open-law-quiz]");
+  const partnerQuizButton = event.target.closest("[data-open-partner-quiz]");
   const presentationButton = event.target.closest("[data-open-presentation]");
   const contractTemplateButton = event.target.closest("[data-open-template]");
   const contractZoomResetButton = event.target.closest("[data-reset-contract-zoom]");
@@ -9832,6 +10083,11 @@ document.addEventListener("click", async (event) => {
 
   if (lawQuizButton) {
     setRoute("law-quiz", lawQuizButton.dataset.openLawQuiz);
+    return;
+  }
+
+  if (partnerQuizButton) {
+    setRoute("partner-quiz", partnerQuizButton.dataset.openPartnerQuiz);
     return;
   }
 
@@ -10195,7 +10451,7 @@ document.addEventListener("change", (event) => {
   }
 
   const answerForm = event.target.closest("form");
-  if (!answerForm || (answerForm.id !== "quizForm" && answerForm.id !== "lawQuizForm")) {
+  if (!answerForm || !["quizForm", "lawQuizForm", "partnerQuizForm"].includes(answerForm.id)) {
     return;
   }
 
@@ -10426,6 +10682,42 @@ document.addEventListener("submit", async (event) => {
     profileEditMode = false;
     render();
     window.scrollTo(0, 0);
+    return;
+  }
+
+  if (event.target.id === "partnerQuizForm") {
+    event.preventDefault();
+    const item = getLesson();
+    const test = item.partnerTests;
+    if (!test?.quiz?.length) {
+      return;
+    }
+
+    const formData = new FormData(event.target);
+    let correct = 0;
+
+    test.quiz.forEach((question, index) => {
+      const value = formData.get(`q${index}`);
+      const selected = value === null ? null : Number(value);
+      quizAnswers[index] = selected;
+      if (selected === question.answer) {
+        correct += 1;
+      }
+    });
+
+    quizResult = {
+      correct,
+      score: Math.round((correct / test.quiz.length) * 100)
+    };
+
+    progress[item.id] = {
+      ...(progress[item.id] || {}),
+      partnerScore: quizResult.score,
+      partnerDone: quizResult.score >= test.threshold,
+      partnerUpdatedAt: new Date().toISOString()
+    };
+    saveCurrentProgress();
+    renderPartnerQuiz(item);
     return;
   }
 
