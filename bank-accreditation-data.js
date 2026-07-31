@@ -1,25 +1,52 @@
 (function () {
-  const official = (date, source, note = "") => ({
-    status: "official",
-    date,
-    source,
-    note
-  });
-  const working = (date, source, note = "") => ({
-    status: "working",
-    date,
-    source,
-    note
-  });
-  const conditional = (date, source, note = "") => ({
-    status: "conditional",
-    date,
+  const publicSource = (url, source, note = "") => ({
+    status: "public",
+    date: "2026-07-31",
+    url,
     source,
     note
   });
 
+  const sources = {
+    pivdennyi: {
+      url: "https://bank.com.ua/insurance-partners-business",
+      source: "Банк Південний · Партнери зі страхування для бізнесу"
+    },
+    otp: {
+      url: "https://www.otpbank.com.ua/about/partners/assurance/",
+      source: "OTP Bank · Перелік страхових компаній для великих корпорацій"
+    },
+    pumb: {
+      url: "https://www.pumb.ua/service/insurance/insurance_ipoteka",
+      source: "ПУМБ · Акредитовані страхові компанії для заставного майна"
+    },
+    exim: {
+      url: "https://www.eximb.com/ua/bank/partners/insurance/insurance-ended-events/akreditovani-z-06-07-2023-strahovi-kompaniji.html",
+      source: "Укрексімбанк · Акредитовані по системі Банку"
+    },
+    procredit: {
+      url: "https://procreditbank.com.ua/strakhuvannia-i-otsinka",
+      source: "ПроКредит Банк · Страхування і оцінка заставного майна"
+    },
+    agricole: {
+      url: "https://credit-agricole.ua/o-banke/partneri/strahovi-kompaniyi",
+      source: "Credit Agricole · Партнери — страхові компанії"
+    },
+    creditDnipro: {
+      url: "https://creditdnepr.com.ua/pro-bank/partneram/strahovi-kompaniyi-partnery",
+      source: "Банк Кредит Дніпро · Страхові компанії-партнери"
+    },
+    bankLviv: {
+      url: "https://www.banklviv.com/wp-content/uploads/2021/01/Perelik-akredytovanykh-SK-13.12.2023-1.pdf",
+      source: "Банк Львів · Перелік акредитованих страхових компаній від 13.12.2023"
+    }
+  };
+
+  const mark = (source, note = "") => publicSource(source.url, source.source, note);
+
   window.AnodosBankAccreditation = {
-    researchedAt: "2026-07-30",
+    researchedAt: "2026-07-31",
+    sourcePolicy: "official-web-only",
     insurers: [
       { id: "arx", name: "ARX" },
       { id: "ingo", name: "ІНГО" },
@@ -32,100 +59,94 @@
     ],
     banks: [
       {
-        name: "Банк Восток",
-        insurers: {
-          arx: working("2025-08-08", "KFC, зміна вигодонабувача по одній локації", "Заставний кейс у листуванні з ARX.")
-        }
-      },
-      {
         name: "Банк Львів",
         insurers: {
-          universalna: working("2025-07-01", "Сетвік - Банк Львів (Універсальна)", "Договір випущено та оплачено.")
+          arx: mark(sources.bankLviv, "Офіційний PDF банку датований 13.12.2023; перед укладенням договору варто перевірити актуальність у банку."),
+          uniqa: mark(sources.bankLviv, "Офіційний PDF банку датований 13.12.2023; перед укладенням договору варто перевірити актуальність у банку."),
+          universalna: mark(sources.bankLviv, "Офіційний PDF банку датований 13.12.2023; перед укладенням договору варто перевірити актуальність у банку."),
+          pzu: mark(sources.bankLviv, "Офіційний PDF банку датований 13.12.2023; перед укладенням договору варто перевірити актуальність у банку."),
+          vuso: mark(sources.bankLviv, "Офіційний PDF банку датований 13.12.2023; перед укладенням договору варто перевірити актуальність у банку.")
         }
       },
       {
         name: "Кредит Дніпро",
         insurers: {
-          arx: working("2023-07-07", "Асканія_АРКС_застава б. Кредит Дніпро", "Підготовлено проєкт договору із заставою банку."),
-          ingo: official("2022-07-20", "ІНГО · Акредитація_20.07.22.xlsx", "У списку зазначено страхування рухомого й нерухомого майна.")
+          arx: mark(sources.creditDnipro),
+          ingo: mark(sources.creditDnipro),
+          uniqa: mark(sources.creditDnipro),
+          pzu: mark(sources.creditDnipro)
         }
       },
       {
         name: "Креді Агріколь Банк",
+        aliases: ["Credit Agricole"],
         insurers: {
-          arx: official("2022-07-25", "ARX · Аккредитованные_2022-25.07.xlsx", "Централізована акредитація; майно підприємств та інші корпоративні види."),
-          ingo: conditional("2022-07-20", "ІНГО · Акредитація_20.07.22.xlsx", "У джерелі прямо зазначено: акредитацію потрібно уточнювати.")
+          arx: mark(sources.agricole),
+          uniqa: mark(sources.agricole),
+          universalna: mark(sources.agricole),
+          pzu: mark(sources.agricole),
+          usg: mark(sources.agricole),
+          arsenal: mark(sources.agricole)
         }
       },
       {
         name: "ОТП Банк",
+        aliases: ["OTP Bank"],
         insurers: {
-          arx: official("2023-10-16", "ARX · список акредитації та листування «УАХ, НХПП, застава ОТП»", "Акредитація є в офіційному списку; робочий заставний запит підтверджено листуванням."),
-          ingo: official("2026-02-17", "ІНГО · список акредитації та «Агріматко, передача частини майна в заставу ОТП»", "Акредитація є в офіційному списку; є новіший робочий кейс.")
+          arx: mark(sources.otp),
+          ingo: mark(sources.otp),
+          uniqa: mark(sources.otp),
+          universalna: mark(sources.otp),
+          pzu: mark(sources.otp),
+          vuso: mark(sources.otp),
+          usg: mark(sources.otp),
+          arsenal: mark(sources.otp)
         }
       },
       {
         name: "ПУМБ",
         insurers: {
-          arx: official("2025-11-26", "ARX · список акредитації та робочі договори ПУМБ", "Централізована акредитація; підтверджена кількома заставними кейсами."),
-          ingo: official("2026-04-23", "ІНГО · список акредитації та «КЛО Инго письмо для банка»", "Акредитація й робочі договори підтверджені."),
-          uniqa: working("2025-11-21", "Потоки, нове обладнання, застава ПУМБ", "Страховик брав участь у робочому заставному кейсі."),
-          universalna: working("2025-12-05", "Немиров залог ПУМБ", "Є робочий ланцюжок щодо заставного договору."),
-          pzu: working("2025-12-03", "Асканія, когенераційні установки в заставу ПУМБа", "Є робоче підтвердження участі страховика.")
+          arx: mark(sources.pumb),
+          ingo: mark(sources.pumb),
+          pzu: mark(sources.pumb),
+          vuso: mark(sources.pumb),
+          arsenal: mark(sources.pumb)
         }
       },
       {
         name: "Південний",
         insurers: {
-          arx: conditional("2023-07-11", "ARX · список акредитації та «КЛО_застави Південного і РІБ»", "Банк визначає страховика рішенням кредитного комітету за кожною угодою."),
-          ingo: conditional("2026-07-08", "Асканія, застава Південного; КЛО, застава Південного", "Підтверджені робочі кейси; погодження потрібне для конкретної угоди."),
-          uniqa: conditional("2026-05-19", "Асканія, застава Південного", "Підтверджений робочий кейс; погодження банку індивідуальне."),
-          universalna: conditional("2026-05-21", "Асканія, застава Південного", "Підтверджений робочий кейс; погодження банку індивідуальне."),
-          pzu: conditional("2026-05-26", "Асканія, застава Південного", "Підтверджений робочий кейс; погодження банку індивідуальне."),
-          vuso: conditional("2024-09-04", "Тайфун Плюс, майно в заставу Південного", "Підтверджений робочий кейс; погодження банку індивідуальне."),
-          usg: conditional("2024-09-04", "Тайфун Плюс, майно в заставу Південного", "Підтверджений робочий кейс; погодження банку індивідуальне."),
-          arsenal: conditional("2026-05-19", "Асканія, застава Південного", "Підтверджений робочий кейс; погодження банку індивідуальне.")
+          arx: mark(sources.pivdennyi),
+          ingo: mark(sources.pivdennyi),
+          uniqa: mark(sources.pivdennyi),
+          universalna: mark(sources.pivdennyi),
+          pzu: mark(sources.pivdennyi),
+          vuso: mark(sources.pivdennyi),
+          usg: mark(sources.pivdennyi),
+          arsenal: mark(sources.pivdennyi)
         }
       },
       {
-        name: "ПриватБанк",
+        name: "ПроКредит Банк",
+        aliases: ["ProCredit Bank"],
         insurers: {
-          arx: official("2022-07-25", "ARX · Аккредитованные_2022-25.07.xlsx", "Централізована акредитація для майна підприємств та іпотеки."),
-          universalna: working("2026-06-03", "ПриватБанк", "Є новий робочий ланцюжок щодо банківського договору.")
-        }
-      },
-      {
-        name: "Райффайзен Банк",
-        insurers: {
-          arx: official("2024-03-12", "ARX · список акредитації та «УАХ, зміна ОТП на Райфайзен»", "Централізована акредитація; є робочий заставний кейс."),
-          ingo: working("2024-11-21", "Агріматко, частина товарів в заставу Райффайзен", "Є робочий заставний кейс.")
-        }
-      },
-      {
-        name: "Сенс Банк",
-        aliases: ["Альфа-Банк", "Sense Bank"],
-        insurers: {
-          arx: official("2025-04-29", "ARX · список акредитації та заставні кейси Сенс Банку", "Акредитація є в офіційному списку; є кілька робочих кейсів."),
-          ingo: official("2026-06-08", "ІНГО · список акредитації та договори КЛО для Сенс Банку", "Акредитація й новіші робочі договори підтверджені."),
-          uniqa: working("2024-03-20", "Асканія, товари + нерухомість в Сенс Банк", "Страховик залучений у заставний кейс."),
-          universalna: working("2025-05-23", "КЛО договор Сенс банк", "Є робочий ланцюжок щодо договору для банку.")
-        }
-      },
-      {
-        name: "Укргазбанк",
-        aliases: ["УГБ"],
-        insurers: {
-          arx: official("2025-07-29", "ARX · список акредитації та заставні кейси УГБ", "Централізована акредитація; є новіші робочі запити."),
-          ingo: official("2025-05-19", "ІНГО · список акредитації та зустріч СК ІНГО з Укргазбанком", "Акредитація й робоча взаємодія підтверджені."),
-          uniqa: working("2025-06-04", "Солар Квант Енерджи, застава УГБ", "Страховик залучений у заставний запит.")
+          arx: mark(sources.procredit),
+          uniqa: mark(sources.procredit),
+          universalna: mark(sources.procredit),
+          pzu: mark(sources.procredit),
+          usg: mark(sources.procredit)
         }
       },
       {
         name: "Укрексімбанк",
         insurers: {
-          arx: official("2023-07-10", "ARX · відновлення акредитації в Укрексімбанку", "Окремим листом підтверджено відновлення акредитації."),
-          ingo: official("2022-07-20", "ІНГО · Акредитація_20.07.22.xlsx", "У списку зазначено страхування рухомого й нерухомого майна."),
-          universalna: working("2023-12-20", "Sirius, обладнання в заставі Укрексім", "Є робочий ланцюжок щодо заставного майна.")
+          arx: mark(sources.exim, "Офіційна сторінка банку містить перелік акредитованих по системі Банку з 06.07.2023."),
+          uniqa: mark(sources.exim, "Офіційна сторінка банку містить перелік акредитованих по системі Банку з 06.07.2023."),
+          universalna: mark(sources.exim, "Офіційна сторінка банку містить перелік акредитованих по системі Банку з 06.07.2023."),
+          pzu: mark(sources.exim, "Офіційна сторінка банку містить перелік акредитованих по системі Банку з 06.07.2023."),
+          vuso: mark(sources.exim, "Офіційна сторінка банку містить перелік акредитованих по системі Банку з 06.07.2023."),
+          usg: mark(sources.exim, "Офіційна сторінка банку містить перелік акредитованих по системі Банку з 06.07.2023."),
+          arsenal: mark(sources.exim, "Офіційна сторінка банку містить перелік акредитованих по системі Банку з 06.07.2023.")
         }
       }
     ]

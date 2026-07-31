@@ -3341,6 +3341,21 @@ body[data-route="home"] .module-arrow {
   line-height: 1.35;
 }
 
+.bank-accreditation-source-link {
+  grid-column: 1 / -1;
+  justify-self: start;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.bank-accreditation-source-link:hover,
+.bank-accreditation-source-link:focus-visible {
+  color: var(--ink);
+}
+
 .bank-accreditation-no-results,
 .bank-accreditation-caution {
   margin: 0;

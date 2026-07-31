@@ -6352,13 +6352,7 @@ function render() {
 }
 
 function bankAccreditationStatusMeta(status) {
-  if (status === "official") {
-    return { symbol: "✓", label: "За списком страховика", className: "bank-accreditation-official" };
-  }
-  if (status === "conditional") {
-    return { symbol: "◇", label: "Погоджується для конкретної угоди", className: "bank-accreditation-conditional" };
-  }
-  return { symbol: "•", label: "Підтверджено робочим кейсом", className: "bank-accreditation-working" };
+  return { symbol: "✓", label: "Публічно підтверджено", className: "bank-accreditation-official" };
 }
 
 function formatBankAccreditationDate(value) {
@@ -6416,7 +6410,7 @@ function renderBankAccreditation() {
         <div>
           <p class="eyebrow">Anodos · банки</p>
           <h1>Акредитація страхових компаній</h1>
-          <p class="hero-copy">Знайдіть банк і перегляньте страховиків, яких підтверджують списки страхових компаній або наша робоча практика із заставним майном.</p>
+          <p class="hero-copy">Знайдіть банк і перегляньте страховиків, зазначених у відкритих переліках на офіційних сайтах банків.</p>
         </div>
       </header>
 
@@ -6426,9 +6420,8 @@ function renderBankAccreditation() {
           <input id="bankAccreditationSearch" type="search" autocomplete="off" placeholder="Наприклад: ПУМБ або Сенс" />
         </label>
         <div class="bank-accreditation-legend" aria-label="Умовні позначення">
-          <span><b class="bank-accreditation-official">✓</b> за списком страховика</span>
-          <span><b class="bank-accreditation-working">•</b> робочий кейс</span>
-          <span><b class="bank-accreditation-conditional">◇</b> індивідуальне погодження</span>
+          <span><b class="bank-accreditation-official">✓</b> є публічне підтвердження</span>
+          <span>— публічного підтвердження не знайдено</span>
         </div>
         <p class="bank-accreditation-count" data-bank-accreditation-count>${data.banks.length} банків</p>
       </section>
@@ -6463,9 +6456,9 @@ function renderBankAccreditation() {
       <p class="bank-accreditation-no-results" data-bank-accreditation-empty hidden>Банк не знайдено. Спробуйте коротшу назву.</p>
       <aside class="bank-accreditation-evidence" data-bank-accreditation-evidence aria-live="polite">
         <strong>Як читати таблицю</strong>
-        <p>Натисніть позначку в клітинці, щоб побачити дату й джерело. Порожня клітинка означає, що в дослідженій пошті немає достатнього підтвердження.</p>
+        <p>Натисніть позначку, щоб відкрити джерело. Порожня клітинка означає, що на офіційних сайтах банку або страховика публічного підтвердження не знайдено.</p>
       </aside>
-      <p class="bank-accreditation-caution">Реєстр зібрано з локального архіву пошти станом на 30.07.2026. Банки можуть змінювати перелік і умови акредитації, тому перед випуском договору статус потрібно підтвердити для конкретного виду майна та угоди.</p>
+      <p class="bank-accreditation-caution">Перевірено 31.07.2026. У таблиці немає даних із пошти, внутрішніх файлів або робочих кейсів — лише відкриті сторінки на офіційних сайтах. Банки можуть змінювати перелік і умови акредитації, тому перед випуском договору статус потрібно підтвердити для конкретного виду майна та угоди.</p>
     </section>
   `;
 }
@@ -6505,9 +6498,10 @@ function showBankAccreditationEvidence(button) {
     </div>
     <span class="${meta.className}">${escapeHtml(meta.label)}</span>
     <dl>
-      <div><dt>Підтвердження</dt><dd>${escapeHtml(formatBankAccreditationDate(record.date))}</dd></div>
+      <div><dt>Перевірено</dt><dd>${escapeHtml(formatBankAccreditationDate(record.date))}</dd></div>
       <div><dt>Джерело</dt><dd>${escapeHtml(record.source)}</dd></div>
     </dl>
+    <a class="bank-accreditation-source-link" href="${escapeHtml(record.url)}" target="_blank" rel="noopener noreferrer">Відкрити офіційне джерело ↗</a>
     ${record.note ? `<p>${escapeHtml(record.note)}</p>` : ""}
   `;
   panel.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "nearest" });
