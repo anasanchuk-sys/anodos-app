@@ -6450,11 +6450,7 @@ function renderBankAccreditation() {
       </section>
 
       <p class="bank-accreditation-no-results" data-bank-accreditation-empty hidden>Банк не знайдено. Спробуйте коротшу назву.</p>
-      <aside class="bank-accreditation-evidence" data-bank-accreditation-evidence aria-live="polite">
-        <strong>Як читати таблицю</strong>
-        <p>Натисніть позначку, щоб відкрити джерело. Порожня клітинка означає, що на офіційних сайтах банку або страховика публічного підтвердження не знайдено.</p>
-      </aside>
-      <p class="bank-accreditation-caution">Перевірено 31.07.2026. У таблиці немає даних із пошти, внутрішніх файлів або робочих кейсів — лише відкриті сторінки на офіційних сайтах. Банки можуть змінювати перелік і умови акредитації, тому перед випуском договору статус потрібно підтвердити для конкретного виду майна та угоди.</p>
+      <aside class="bank-accreditation-evidence" data-bank-accreditation-evidence aria-live="polite" hidden></aside>
     </section>
   `;
 }
@@ -6487,6 +6483,7 @@ function showBankAccreditationEvidence(button) {
     return;
   }
   const meta = bankAccreditationStatusMeta(record.status);
+  panel.hidden = false;
   panel.innerHTML = `
     <div>
       <p class="eyebrow">${escapeHtml(bank.name)}</p>
