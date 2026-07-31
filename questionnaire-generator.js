@@ -193,8 +193,6 @@
       questions: [
         shortQ("Повна юридична назва"),
         shortQ("Код ЄДРПОУ", "Або інший реєстраційний номер"),
-        shortQ("Контактна особа", "ПІБ і посада"),
-        shortQ("Телефон або електронна пошта"),
         shortQ("Бажаний період страхування", "З ___ / ___ / 20___ до ___ / ___ / 20___")
       ]
     };
@@ -1988,7 +1986,7 @@
         month: "long",
         day: "numeric"
       }).format(new Date(result.preparedAt))],
-      ["Контакт BritMark", "brit-mark.com"]
+      ["Сайт BritMark", "brit-mark.com"]
     ];
     return new docx.Table({
       width: { size: 9360, type: docx.WidthType.DXA },
@@ -2221,60 +2219,6 @@
         rows
       })
     ];
-  }
-
-  function signatureBlock(docx) {
-    const none = noBorder(docx);
-    return new docx.Table({
-      width: { size: 9360, type: docx.WidthType.DXA },
-      indent: { size: 120, type: docx.WidthType.DXA },
-      columnWidths: [4680, 4680],
-      layout: docx.TableLayoutType.FIXED,
-      margins: { top: 160, bottom: 120, left: 80, right: 160 },
-      borders: {
-        top: none,
-        bottom: none,
-        left: none,
-        right: none,
-        insideHorizontal: none,
-        insideVertical: none
-      },
-      rows: [
-        new docx.TableRow({
-          cantSplit: true,
-          children: [
-            new docx.TableCell({
-              width: { size: 4680, type: docx.WidthType.DXA },
-              children: [
-                paragraphText(docx, "ПІБ та посада уповноваженої особи", {
-                  color: "647486",
-                  size: 17,
-                  spacing: { after: 260 }
-                }),
-                new docx.Paragraph({
-                  border: { bottom: border(docx, "647486", 4) },
-                  children: [new docx.TextRun({ text: " ", font: "Calibri" })]
-                })
-              ]
-            }),
-            new docx.TableCell({
-              width: { size: 4680, type: docx.WidthType.DXA },
-              children: [
-                paragraphText(docx, "Дата, підпис та печатка за наявності", {
-                  color: "647486",
-                  size: 17,
-                  spacing: { after: 260 }
-                }),
-                new docx.Paragraph({
-                  border: { bottom: border(docx, "647486", 4) },
-                  children: [new docx.TextRun({ text: " ", font: "Calibri" })]
-                })
-              ]
-            })
-          ]
-        })
-      ]
-    });
   }
 
   function buildDocument(docx, result, logo) {
