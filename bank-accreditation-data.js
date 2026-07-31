@@ -39,6 +39,14 @@
     bankLviv: {
       url: "https://www.banklviv.com/wp-content/uploads/2021/01/Perelik-akredytovanykh-SK-13.12.2023-1.pdf",
       source: "Банк Львів · Перелік акредитованих страхових компаній від 13.12.2023"
+    },
+    ukrgasbank: {
+      url: "https://www.ukrgasbank.com/about/insur/",
+      source: "Укргазбанк · Страхування заставного майна — партнери для юридичних осіб"
+    },
+    bankVostokIngo: {
+      url: "https://ingo.ua/cms/image/uploads/Perelik_strakhovykh_poserednykiv_INGO_f5cee059a2.pdf?v=1743763832306",
+      source: "ІНГО · Перелік агентів, з якими співпрацює страховик"
     }
   };
 
@@ -58,6 +66,12 @@
       { id: "arsenal", name: "Арсенал Страхування", shortName: "Арсенал" }
     ],
     banks: [
+      {
+        name: "Банк Восток",
+        insurers: {
+          ingo: mark(sources.bankVostokIngo, "Офіційний перелік ІНГО підтверджує співпрацю з Банком Восток. Обсяг акредитації для конкретного заставного договору потрібно погодити з банком.")
+        }
+      },
       {
         name: "Банк Львів",
         insurers: {
@@ -135,6 +149,19 @@
           universalna: mark(sources.procredit),
           pzu: mark(sources.procredit),
           usg: mark(sources.procredit)
+        }
+      },
+      {
+        name: "Укргазбанк",
+        aliases: ["UGB", "УГБ"],
+        insurers: {
+          arx: mark(sources.ukrgasbank),
+          ingo: mark(sources.ukrgasbank),
+          uniqa: mark(sources.ukrgasbank),
+          universalna: mark(sources.ukrgasbank),
+          vuso: mark(sources.ukrgasbank),
+          usg: mark(sources.ukrgasbank),
+          arsenal: mark(sources.ukrgasbank)
         }
       },
       {
