@@ -1,7 +1,7 @@
 (function () {
   const publicSource = (url, source, note = "") => ({
     status: "public",
-    date: "2026-07-31",
+    date: "2026-08-03",
     url,
     source,
     note
@@ -53,7 +53,7 @@
   const mark = (source, note = "") => publicSource(source.url, source.source, note);
 
   window.AnodosBankAccreditation = {
-    researchedAt: "2026-07-31",
+    researchedAt: "2026-08-03",
     sourcePolicy: "official-web-only",
     insurers: [
       { id: "arx", name: "ARX" },
