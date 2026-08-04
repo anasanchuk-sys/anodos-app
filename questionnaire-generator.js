@@ -1719,8 +1719,8 @@
     };
   }
 
-  function isAllowedUser(user) {
-    return Boolean(String(user?.email || "").trim());
+  function isAllowedUser() {
+    return true;
   }
 
   let docxLibraryPromise = null;

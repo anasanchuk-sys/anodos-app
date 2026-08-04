@@ -27,10 +27,6 @@ function isEditableElement(target) {
   return Boolean(target?.closest?.("input, textarea, select, [contenteditable='true'], .law-article"));
 }
 
-function isContractViewerElement(target) {
-  return Boolean(target?.closest?.(".contract-viewer-panel"));
-}
-
 function isHomeRoute() {
   return body.dataset.route === "home";
 }
@@ -73,9 +69,6 @@ function openModuleButton(button) {
     return;
   }
 
-  contractAccessGranted = false;
-  pendingContractTemplateId = "";
-  contractPasswordError = "";
   activeModuleSectionId = "";
   activeStateCompensationView = "";
   markOpeningModule(button);
@@ -102,12 +95,6 @@ function openModuleSectionButton(button) {
 
   activeModuleSectionId = sectionId;
   activeStateCompensationView = "";
-  if (sectionId === "contracts" && !contractAccessGranted) {
-    contractPasswordError = "";
-    setRoute("contract-auth", lessonId);
-    return;
-  }
-
   setRoute("module-section", lessonId);
 
   window.setTimeout(() => {
@@ -162,9 +149,8 @@ document.addEventListener("contextmenu", (event) => {
 });
 
 document.addEventListener("touchmove", (event) => {
-  const isContractPinch = event.touches?.length > 1 && isContractViewerElement(event.target);
   const isBlockedHomeScroll = isHomeRoute() && !isScenarioSearchActive();
-  if ((isBlockedHomeScroll || event.touches?.length > 1) && !isContractPinch) {
+  if (isBlockedHomeScroll || event.touches?.length > 1) {
     event.preventDefault();
   }
 }, { passive: false });
@@ -177,36 +163,12 @@ document.addEventListener("wheel", (event) => {
 
 ["gesturestart", "gesturechange", "gestureend"].forEach((eventName) => {
   document.addEventListener(eventName, (event) => {
-    if (isContractViewerElement(event.target)) {
-      if (eventName === "gesturestart") {
-        contractGestureStartZoom = contractZoom;
-      }
-      if (eventName === "gesturechange") {
-        setContractZoom(contractGestureStartZoom * (event.scale || 1));
-      }
-      event.preventDefault();
-      return;
-    }
     event.preventDefault();
   }, { passive: false });
 });
 
 new MutationObserver(lockStaticUiElements).observe(document.body, { childList: true, subtree: true });
 lockStaticUiElements();
-
-function buildContractTemplatePages(folder, count, padLength = 0) {
-  return Array.from({ length: count }, (_, index) => {
-    const pageNumber = padLength ? String(index + 1).padStart(padLength, "0") : String(index + 1);
-    return `./assets/contract-templates/rendered/${folder}/page-${pageNumber}.png`;
-  });
-}
-
-const contractTemplatePageMap = {
-  "arx-named-perils": buildContractTemplatePages("arx-named-perils", 28, 2),
-  "arx-all-risks": buildContractTemplatePages("arx-all-risks", 27, 2),
-  "ingo-named-perils": buildContractTemplatePages("ingo-named-perils", 3),
-  "ingo-all-risks": buildContractTemplatePages("ingo-all-risks", 3)
-};
 
 const propertyAdvancedQuiz = [
   {
@@ -756,32 +718,6 @@ const lessons = [
       runtime: "6 хв 15 с",
       chapters: ["об'єкт", "модель покриття", "страхова сума", "винятки", "врегулювання"]
     },
-    contractTemplates: [
-      {
-        id: "arx-named-perils",
-        label: "АРКС - Названі ризики",
-        href: "./assets/contract-templates/arx-named-perils.docx",
-        pages: contractTemplatePageMap["arx-named-perils"]
-      },
-      {
-        id: "arx-all-risks",
-        label: "АРКС - All Risks",
-        href: "./assets/contract-templates/arx-all-risks.docx",
-        pages: contractTemplatePageMap["arx-all-risks"]
-      },
-      {
-        id: "ingo-named-perils",
-        label: "ІНГО - Названі ризики",
-        href: "./assets/contract-templates/ingo-named-perils.docx",
-        pages: contractTemplatePageMap["ingo-named-perils"]
-      },
-      {
-        id: "ingo-all-risks",
-        label: "ІНГО - All Risks",
-        href: "./assets/contract-templates/ingo-all-risks.docx",
-        pages: contractTemplatePageMap["ingo-all-risks"]
-      }
-    ],
     articles: [
       {
         title: "Як грамотно організувати страхування майна",
@@ -1753,7 +1689,7 @@ const lessons = [
     outcome: "Розуміти, кого захищає D&O, які вимоги можуть бути покриті і як відрізнити особисту відповідальність посадової особи від ризику компанії.",
     progress: 0,
     sourceFolder: "Матеріали для навчання/06_D&O",
-    sourceStatus: "Потрібно додати шаблони договорів, правила, умови D&O і приклади типових вимог",
+    sourceStatus: "Потрібно додати правила, умови D&O і приклади типових вимог",
     duration: "30 хв",
     threshold: 80,
     accent: "navy",
@@ -2095,7 +2031,7 @@ const spaceDefinitions = {
     ]
   }
 };
-const contractAccessPassword = "02022004";
+const adminAccessPassword = "02022004";
 const contractReviewSupportedExtensions = [".doc", ".docx", ".pdf", ".xls", ".xlsx"];
 const contractReviewFields = [
   { key: "insured", label: "Юридична особа", control: "Повна назва страхувальника з договору, додаткової угоди або реквізитів." },
@@ -2191,7 +2127,6 @@ let munichSearchTerm = "";
 let munichResultsExpanded = false;
 let activeMunichClauseId = "munich-001";
 let munichSearchTimer = null;
-let activeContractTemplateId = "arx-named-perils";
 let brandMenuOpen = false;
 let questionnaireGeneratorInput = "";
 let questionnaireGeneratorResult = null;
@@ -2209,10 +2144,6 @@ let contractReviewResult = null;
 let contractReviewCopyMessage = "";
 let contractReviewBusy = false;
 let contractReviewPdfModulePromise = null;
-let contractZoom = 1;
-let contractPinchStartDistance = 0;
-let contractPinchStartZoom = 1;
-let contractGestureStartZoom = 1;
 let profileEditMode = false;
 let registeredUsers = readJson(usersKey, []);
 let currentUserId = localStorage.getItem(currentUserKey) || "";
@@ -2227,11 +2158,8 @@ let syncStatus = {
 };
 let editorDrafts = readJson(editorKey, {});
 let loginError = "";
-let contractPasswordError = "";
 let adminPasswordError = "";
-let contractAccessGranted = false;
 let adminRegistryUnlocked = false;
-let pendingContractTemplateId = "";
 let routeTransitionTimer = null;
 let routeTransitionInTimer = null;
 let pendingRoute = "";
@@ -2336,9 +2264,6 @@ function setActiveSpace(nextSpace, nextRoute = "home") {
   window.clearTimeout(routeTransitionInTimer);
   activeModuleSectionId = "";
   activeStateCompensationView = "";
-  contractAccessGranted = false;
-  pendingContractTemplateId = "";
-  contractPasswordError = "";
   pendingRoute = "";
   pendingLessonId = "";
   route = availableRoute(nextRoute);
@@ -2464,8 +2389,8 @@ function currentUser() {
   return registeredUsers.find((user) => user.id === currentUserId) || null;
 }
 
-function questionnaireGeneratorIsAllowed(user = currentUser()) {
-  return Boolean(window.AnodosQuestionnaireGenerator?.isAllowedUser(user));
+function questionnaireGeneratorIsAllowed() {
+  return Boolean(window.AnodosQuestionnaireGenerator);
 }
 
 function clientRecommendationIsAllowed(user = currentUser()) {
@@ -2499,33 +2424,6 @@ function saveCurrentProgress() {
   progressByUser[currentUserId] = progress;
   writeJson(progressByUserKey, progressByUser);
   void syncCurrentParticipant("progress");
-}
-
-function clearCurrentUser() {
-  currentUserId = "";
-  localStorage.removeItem(currentUserKey);
-  progress = {};
-}
-
-function setCurrentUser(userId) {
-  const selectedUser = registeredUsers.find((user) => user.id === userId) || null;
-  if (!isAuthorizedUser(selectedUser)) {
-    clearCurrentUser();
-    return false;
-  }
-  currentUserId = userId;
-  localStorage.setItem(currentUserKey, userId);
-  progress = progressForCurrentUser();
-  selectedUser.email = normalizeEmail(selectedUser.email);
-  selectedUser.lastSeenAt = new Date().toISOString();
-  delete selectedUser.organization;
-  delete selectedUser.role;
-  saveRegisteredUsers();
-  return true;
-}
-
-function createUserId() {
-  return `user-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
 
 function initialsFor(user) {
@@ -6066,11 +5964,6 @@ function applyRouteState(nextRoute, lessonId = activeLessonId) {
   if (nextRoute === "presentation" && (route !== "presentation" || lessonId !== activeLessonId)) {
     activeSlideIndex = 0;
   }
-  if (nextRoute !== "contract" && !(nextRoute === "module-section" && activeModuleSectionId === "contracts") && nextRoute !== "contract-auth") {
-    contractAccessGranted = false;
-    pendingContractTemplateId = "";
-    contractPasswordError = "";
-  }
   route = nextRoute;
   activeLessonId = lessonId;
   quizAnswers = {};
@@ -6130,126 +6023,13 @@ function getLesson(id = activeLessonId) {
   return lessons.find((item) => item.id === id) || lessons[0];
 }
 
-function allContractTemplates() {
-  return lessons.flatMap((item) =>
-    (item.contractTemplates || []).map((template) => ({
-      ...template,
-      lessonId: item.id,
-      lessonIndex: item.index,
-      lessonTitle: item.title
-    }))
-  );
-}
-
-function getContractTemplate(id = activeContractTemplateId) {
-  const templates = allContractTemplates();
-  return templates.find((template) => template.id === id) || templates[0] || null;
-}
-
-function clampContractZoom(value) {
-  const next = Number(value);
-  if (!Number.isFinite(next)) {
-    return 1;
-  }
-  return Math.min(Math.max(next, 1), 2.8);
-}
-
-function contractZoomPercent() {
-  return `${Math.round(contractZoom * 10000) / 100}%`;
-}
-
-function contractZoomLabel() {
-  return `${Math.round(contractZoom * 100)}%`;
-}
-
-function applyContractZoom() {
-  const panel = document.querySelector(".contract-viewer-panel");
-  if (!panel) {
-    return;
-  }
-
-  panel.style.setProperty("--contract-page-width", contractZoomPercent());
-  const zoomValue = panel.querySelector("[data-contract-zoom-value]");
-  if (zoomValue) {
-    zoomValue.textContent = contractZoomLabel();
-  }
-}
-
-function setContractZoom(value) {
-  contractZoom = clampContractZoom(value);
-  applyContractZoom();
-}
-
-function resetContractZoom() {
-  contractPinchStartDistance = 0;
-  contractPinchStartZoom = 1;
-  contractGestureStartZoom = 1;
-  setContractZoom(1);
-}
-
-function touchDistance(touches) {
-  if (!touches || touches.length < 2) {
-    return 0;
-  }
-  const first = touches[0];
-  const second = touches[1];
-  return Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY);
-}
-
-function openContractTemplate(templateId) {
-  const template = getContractTemplate(templateId);
-  if (!template) {
-    return;
-  }
-
-  if (!contractAccessGranted) {
-    pendingContractTemplateId = template.id;
-    activeModuleSectionId = "contracts";
-    contractPasswordError = "";
-    setRoute("contract-auth", template.lessonId || "property");
-    return;
-  }
-
-  activeContractTemplateId = template.id;
-  resetContractZoom();
-  setRoute("contract", template.lessonId || "property");
-
-  window.setTimeout(() => {
-    if (route === "contract" && activeContractTemplateId === template.id) {
-      return;
-    }
-    pendingRoute = "";
-    pendingLessonId = "";
-    body.classList.remove("route-is-changing");
-    screen.classList.remove("screen-transition-out", "screen-transition-in");
-    applyRouteState("contract", template.lessonId || "property");
-  }, 160);
-}
-
 function draftFor(id) {
   return editorDrafts[id] || {};
 }
 
 function render() {
   route = availableRoute(route);
-  const user = currentUser();
   renderSpaceShell();
-  if (!isAuthorizedUser(user)) {
-    body.dataset.route = "registration";
-    if (currentUserId) {
-      loginError = emailAccessDeniedMessage;
-      clearCurrentUser();
-    }
-    body.classList.add("registration-mode");
-    setCompassOpen(false);
-    document.querySelectorAll(".nav-item").forEach((button) => {
-      button.classList.remove("nav-item-active");
-    });
-    renderRegistration();
-    return;
-  }
-
-  body.classList.remove("registration-mode");
   body.dataset.route = route;
   body.classList.toggle("scenario-search-active", activeSpace === "products" && route === "home" && scenarioSearchTerm.trim().length > 0);
   renderCompass();
@@ -6261,11 +6041,6 @@ function render() {
 
   if (route === "module-section") {
     renderModuleSection(getLesson(), activeModuleSectionId);
-    return;
-  }
-
-  if (route === "contract-auth") {
-    renderContractAccess(getLesson());
     return;
   }
 
@@ -6286,11 +6061,6 @@ function render() {
 
   if (route === "presentation") {
     renderPresentation(getLesson());
-    return;
-  }
-
-  if (route === "contract") {
-    renderContractTemplateViewer(getContractTemplate());
     return;
   }
 
@@ -7008,45 +6778,6 @@ function renderClientRecommendation() {
   `;
 }
 
-function renderRegistration() {
-  const localProfiles = authorizedUsers();
-  screen.innerHTML = `
-    <section class="registration-panel">
-      <p class="eyebrow">Вхід</p>
-      <h1>Профіль співробітника</h1>
-      <p class="hero-copy">Вхід доступний лише співробітникам, чиї email внесені до бази Anodos. На телефоні зберігається локальна копія, а після підключення бази прогрес потрапляє в центральний реєстр.</p>
-
-      <form id="registrationForm" class="registration-form">
-        <label>
-          <span>ПІБ</span>
-          <input name="fullName" autocomplete="name" required placeholder="Наприклад, Олена Коваль" />
-        </label>
-        <label>
-          <span>Email</span>
-          <input name="email" type="email" autocomplete="email" autocapitalize="none" spellcheck="false" required placeholder="name@britmark.com" />
-        </label>
-        ${loginError ? `<p class="registration-error">${escapeHtml(loginError)}</p>` : ""}
-        <button class="primary-action primary-action-wide" type="submit">Увійти</button>
-      </form>
-    </section>
-
-    ${localProfiles.length ? `
-      <section class="registration-panel">
-        <p class="eyebrow">Цей телефон</p>
-        <h2>Останні входи</h2>
-        <div class="registered-user-list">
-          ${localProfiles.map((user) => `
-            <button class="registered-user-button" type="button" data-use-user="${escapeHtml(user.id)}">
-              <span>${escapeHtml(user.fullName)}</span>
-              <small>${escapeHtml(user.email || "локальний профіль")}</small>
-            </button>
-          `).join("")}
-        </div>
-      </section>
-    ` : ""}
-  `;
-}
-
 function renderHome() {
   if (activeSpace === "learning") {
     screen.innerHTML = `
@@ -7333,7 +7064,6 @@ function scenarioSearchEntries() {
       item.sourceStatus,
       ...(item.checklist || []),
       ...(item.articles || []).flatMap((article) => [article.title, article.topic, article.why]),
-      ...(item.contractTemplates || []).map((template) => template.label),
       ...(item.regulatoryBase || []).flatMap((source) => [source.title, source.type, source.why]),
       stateCompensationSearchText(item.stateCompensationProgram)
     ].join(" ");
@@ -7719,7 +7449,6 @@ function renderModuleMeta(item) {
       item.checklist?.length,
       item.regulatoryBase?.length,
       item.stateCompensationProgram,
-      item.contractTemplates?.length,
       item.id === "construction" && munichClauses().length
     ].filter(Boolean).length;
     const word = count === 1 ? "розділ" : count >= 2 && count <= 4 ? "розділи" : "розділів";
@@ -7821,15 +7550,6 @@ function moduleSectionDefinitions(item, briefing) {
         title: "Державна програма компенсації",
         meta: item.stateCompensationProgram.meta,
         content: renderStateCompensationProgram(item)
-      });
-    }
-
-    if (item.contractTemplates?.length) {
-      sections.push({
-        id: "contracts",
-        title: "Шаблони договорів",
-        meta: `${item.contractTemplates.length} шаблони`,
-        content: renderContractTemplateCards(item)
       });
     }
 
@@ -8008,7 +7728,7 @@ function renderLessonCards(item) {
 
 function renderRegulatoryBaseCards(item) {
   return filteredRegulatoryBaseSources(item).map((source) => `
-    <a class="article-card contract-template-card regulatory-source-card" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">
+    <a class="article-card regulatory-source-card" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">
       <div>
         <span class="article-topic">${escapeHtml(source.type)}</span>
         <h3>${highlightLawText(source.title, regulatoryBaseTerms())}</h3>
@@ -8717,108 +8437,6 @@ function renderPresentation(item) {
   `;
 }
 
-function renderContractTemplates(item) {
-  if (!item.contractTemplates || item.contractTemplates.length === 0) {
-    return "";
-  }
-
-  return renderPanel(
-    "Шаблони договорів",
-    `${item.contractTemplates.length} шаблони`,
-    renderContractTemplateCards(item)
-  );
-}
-
-function renderContractTemplateCards(item) {
-  return item.contractTemplates
-    .map(
-      (template) => `
-        <button class="article-card contract-template-card" type="button" data-open-template="${escapeHtml(template.id)}">
-          <div>
-            <span class="article-topic">DOCX · ${escapeHtml((template.pages || []).length)} стор.</span>
-            <h3>${escapeHtml(template.label)}</h3>
-            <p>Перегляд у форматі аркушів договору.</p>
-          </div>
-          <span class="article-action">Відкрити</span>
-        </button>
-      `
-    )
-    .join("");
-}
-
-function renderContractAccess(item) {
-  screen.innerHTML = `
-    ${renderModuleContextHead({
-      item,
-      eyebrow: item.title,
-      title: "Шаблони договорів",
-      copy: "Введіть пароль, щоб відкрити внутрішні шаблони договорів.",
-      backAttributes: `data-open-module="${escapeHtml(item.id)}"`
-    })}
-
-    <section class="registration-panel contract-access-panel">
-      <p class="eyebrow">Доступ до документів</p>
-      <form id="contractAccessForm" class="registration-form">
-        <label>
-          <span>Пароль</span>
-          <input
-            name="contractPassword"
-            type="password"
-            inputmode="numeric"
-            autocomplete="off"
-            autocapitalize="none"
-            spellcheck="false"
-            required
-            placeholder="••••"
-          />
-        </label>
-        ${contractPasswordError ? `<p class="registration-error">${escapeHtml(contractPasswordError)}</p>` : ""}
-        <button class="primary-action primary-action-wide" type="submit">Відкрити</button>
-      </form>
-    </section>
-  `;
-}
-
-function renderContractTemplateViewer(template) {
-  if (!template) {
-    renderModule(getLesson("property"));
-    return;
-  }
-
-  const item = getLesson(template.lessonId || "property");
-  const pages = template.pages || [];
-  screen.innerHTML = `
-    ${renderModuleContextHead({
-      item,
-      eyebrow: "Шаблони договорів",
-      title: template.label,
-      copy: `DOCX · ${pages.length} сторінок`,
-      backAttributes: `data-open-module="${escapeHtml(item.id)}"`,
-      className: "contract-viewer-head"
-    })}
-
-    <section class="contract-viewer-panel" style="--contract-page-width: ${contractZoomPercent()};" aria-label="${escapeHtml(template.label)}">
-      <div class="contract-viewer-toolbar">
-        <span>${escapeHtml(item.title)}</span>
-        <div class="contract-viewer-toolbar-meta">
-          <strong>${pages.length} стор.</strong>
-          <button class="contract-zoom-indicator" type="button" data-reset-contract-zoom aria-label="Скинути масштаб до 100%">
-            <span data-contract-zoom-value>${contractZoomLabel()}</span>
-          </button>
-        </div>
-      </div>
-      <div class="contract-paper-stack">
-        ${pages.map((src, index) => `
-          <figure class="contract-paper-page">
-            <img src="${escapeHtml(src)}" alt="${escapeHtml(`${template.label}. Сторінка ${index + 1}`)}" loading="${index < 2 ? "eager" : "lazy"}" decoding="async" />
-            <figcaption>${index + 1}</figcaption>
-          </figure>
-        `).join("")}
-      </div>
-    </section>
-  `;
-}
-
 function renderMunichReShelf(item) {
   const clauses = munichClauses();
   if (item.id !== "construction" || clauses.length === 0) {
@@ -8859,8 +8477,6 @@ function renderVideoPresentation(item) {
         </div>
       </div>
     </section>
-
-    ${renderContractTemplates(item)}
 
     <section class="criteria-panel">
       <div>
@@ -9980,9 +9596,23 @@ function renderAdminRegistry() {
 
 function renderProgress() {
   const user = currentUser();
-  const profileDetails = user?.email || "Локальна реєстрація";
+  const profileDetails = user?.email || "Локальний режим";
   const total = totalProgress();
-  const profileBlock = profileEditMode ? `
+  const profileBlock = !user ? `
+    <section class="progress-profile-compact">
+      ${renderProfileAvatar(null)}
+      <div>
+        <p class="eyebrow">Локальний прогрес</p>
+        <h2>Без входу</h2>
+        <p>Прогрес зберігається на цьому пристрої. Пошта не потрібна.</p>
+      </div>
+      ${accuracyReports.length ? `
+        <div class="progress-profile-actions">
+          <button class="secondary-action" type="button" data-export-accuracy-reports>Експорт неточностей</button>
+        </div>
+      ` : ""}
+    </section>
+  ` : profileEditMode ? `
     <form id="profileEditForm" class="registration-form profile-edit-form progress-profile-edit-card">
       <div class="progress-profile-edit-head">
         ${renderProfileAvatar(user)}
@@ -10066,13 +9696,11 @@ document.addEventListener("click", async (event) => {
   const brandMenuRouteButton = event.target.closest("[data-brand-menu-route]");
   const compassButton = event.target.closest("[data-open-compass]");
   const closeCompassButton = event.target.closest("[data-close-compass]");
-  const useUserButton = event.target.closest("[data-use-user]");
   const deleteUserButton = event.target.closest("[data-delete-user]");
   const exportUsersButton = event.target.closest("[data-export-users]");
   const exportAccuracyReportsButton = event.target.closest("[data-export-accuracy-reports]");
   const syncPushButton = event.target.closest("[data-sync-push]");
   const syncRefreshButton = event.target.closest("[data-sync-refresh]");
-  const registerNewButton = event.target.closest("[data-register-new]");
   const editProfileButton = event.target.closest("[data-edit-profile]");
   const cancelProfileEditButton = event.target.closest("[data-cancel-profile-edit]");
   const moduleButton = event.target.closest("[data-open-module]");
@@ -10082,8 +9710,6 @@ document.addEventListener("click", async (event) => {
   const lawQuizButton = event.target.closest("[data-open-law-quiz]");
   const partnerQuizButton = event.target.closest("[data-open-partner-quiz]");
   const presentationButton = event.target.closest("[data-open-presentation]");
-  const contractTemplateButton = event.target.closest("[data-open-template]");
-  const contractZoomResetButton = event.target.closest("[data-reset-contract-zoom]");
   const munichButton = event.target.closest("[data-open-munich]");
   const editorButton = event.target.closest("[data-editor-lesson]");
   const prevSlideButton = event.target.closest("[data-slide-prev]");
@@ -10421,20 +10047,6 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
-  if (useUserButton) {
-    loginError = "";
-    if (!setCurrentUser(useUserButton.dataset.useUser)) {
-      loginError = emailAccessDeniedMessage;
-      render();
-      window.scrollTo(0, 0);
-      return;
-    }
-    route = "home";
-    render();
-    window.scrollTo(0, 0);
-    return;
-  }
-
   if (deleteUserButton) {
     const deletedId = deleteUserButton.dataset.deleteUser;
     registeredUsers = registeredUsers.filter((user) => user.id !== deletedId);
@@ -10458,18 +10070,6 @@ document.addEventListener("click", async (event) => {
 
   if (exportAccuracyReportsButton) {
     exportAccuracyReports();
-    return;
-  }
-
-  if (registerNewButton) {
-    currentUserId = "";
-    localStorage.removeItem(currentUserKey);
-    progress = {};
-    profileEditMode = false;
-    loginError = "";
-    route = "home";
-    render();
-    window.scrollTo(0, 0);
     return;
   }
 
@@ -10526,16 +10126,6 @@ document.addEventListener("click", async (event) => {
 
   if (presentationButton) {
     setRoute("presentation", presentationButton.dataset.openPresentation);
-    return;
-  }
-
-  if (contractTemplateButton) {
-    openContractTemplate(contractTemplateButton.dataset.openTemplate);
-    return;
-  }
-
-  if (contractZoomResetButton) {
-    resetContractZoom();
     return;
   }
 
@@ -10600,13 +10190,6 @@ document.addEventListener("pointerdown", (event) => {
     event.preventDefault();
     event.stopPropagation();
     setActiveMunichClause(munichClauseButton.dataset.munichClause);
-    return;
-  }
-
-  const contractTemplateButton = event.target.closest("[data-open-template]");
-  if (contractTemplateButton) {
-    event.preventDefault();
-    openContractTemplate(contractTemplateButton.dataset.openTemplate);
     return;
   }
 
@@ -10716,37 +10299,6 @@ document.addEventListener("pointercancel", (event) => {
     lawSearchDragPointerId = null;
   }
 });
-
-document.addEventListener("touchstart", (event) => {
-  if (route !== "contract" || !isContractViewerElement(event.target) || event.touches?.length !== 2) {
-    return;
-  }
-
-  contractPinchStartDistance = touchDistance(event.touches);
-  contractPinchStartZoom = contractZoom;
-}, { passive: false });
-
-document.addEventListener("touchmove", (event) => {
-  if (route !== "contract" || !isContractViewerElement(event.target) || event.touches?.length < 2) {
-    return;
-  }
-
-  const nextDistance = touchDistance(event.touches);
-  if (!contractPinchStartDistance || !nextDistance) {
-    return;
-  }
-
-  event.preventDefault();
-  event.stopPropagation();
-  setContractZoom(contractPinchStartZoom * (nextDistance / contractPinchStartDistance));
-}, { passive: false });
-
-document.addEventListener("touchend", (event) => {
-  if (event.touches?.length < 2) {
-    contractPinchStartDistance = 0;
-    contractPinchStartZoom = contractZoom;
-  }
-}, { passive: false });
 
 document.addEventListener("focusin", (event) => {
   if (event.target.id === "glossarySearch") {
@@ -11040,7 +10592,7 @@ document.addEventListener("submit", async (event) => {
     event.preventDefault();
     const formData = new FormData(event.target);
     const password = String(formData.get("adminPassword") || "").trim();
-    if (password !== contractAccessPassword) {
+    if (password !== adminAccessPassword) {
       adminPasswordError = "Невірний пароль адміністратора.";
       render();
       window.scrollTo(0, 0);
@@ -11051,72 +10603,6 @@ document.addEventListener("submit", async (event) => {
     adminPasswordError = "";
     await refreshCentralParticipants({ renderAfter: true });
     window.scrollTo(0, 0);
-    return;
-  }
-
-  if (event.target.id === "registrationForm") {
-    event.preventDefault();
-    const formData = new FormData(event.target);
-    const fullName = String(formData.get("fullName") || "").trim();
-    const email = normalizeEmail(formData.get("email"));
-
-    if (!isAllowedEmployeeEmail(email)) {
-      loginError = emailAccessDeniedMessage;
-      render();
-      window.scrollTo(0, 0);
-      return;
-    }
-
-    let user = registeredUsers.find((item) => normalizeEmail(item.email) === email);
-    if (user) {
-      user.fullName = fullName || user.fullName;
-      user.email = email;
-      user.lastSeenAt = new Date().toISOString();
-      delete user.organization;
-      delete user.role;
-    } else {
-      user = {
-        id: createUserId(),
-        fullName,
-        email,
-        registeredAt: new Date().toISOString(),
-        lastSeenAt: new Date().toISOString()
-      };
-      registeredUsers.push(user);
-    }
-
-    loginError = "";
-    saveRegisteredUsers();
-    setCurrentUser(user.id);
-    void syncCurrentParticipant("login");
-    route = "home";
-    render();
-    window.scrollTo(0, 0);
-    return;
-  }
-
-  if (event.target.id === "contractAccessForm") {
-    event.preventDefault();
-    const formData = new FormData(event.target);
-    const password = String(formData.get("contractPassword") || "").trim();
-    if (password !== contractAccessPassword) {
-      contractPasswordError = "Невірний пароль.";
-      renderContractAccess(getLesson());
-      return;
-    }
-
-    contractAccessGranted = true;
-    contractPasswordError = "";
-
-    if (pendingContractTemplateId) {
-      const templateId = pendingContractTemplateId;
-      pendingContractTemplateId = "";
-      openContractTemplate(templateId);
-      return;
-    }
-
-    activeModuleSectionId = "contracts";
-    setRoute("module-section", activeLessonId);
     return;
   }
 
