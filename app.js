@@ -6121,18 +6121,13 @@ function bankAccreditationStatusMeta(status) {
   return { symbol: "✓", label: "Публічно підтверджено", className: "bank-accreditation-official" };
 }
 
-function formatBankAccreditationDate(value) {
-  const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return match ? `${match[3]}.${match[2]}.${match[1]}` : value;
-}
-
 function renderBankAccreditationCell(bank, insurer) {
   const record = bank.insurers?.[insurer.id];
   if (!record) {
     return `<td class="bank-accreditation-empty" aria-label="${escapeHtml(`${insurer.name}: немає підтвердження`)}">—</td>`;
   }
   const meta = bankAccreditationStatusMeta(record.status);
-  const label = `${insurer.name} · ${bank.name}: ${meta.label}, підтвердження ${formatBankAccreditationDate(record.date)}`;
+  const label = `${insurer.name} · ${bank.name}: ${meta.label}`;
   return `
     <td class="${meta.className}">
       <button
@@ -6145,7 +6140,6 @@ function renderBankAccreditationCell(bank, insurer) {
         title="${escapeHtml(label)}"
       >
         <span aria-hidden="true">${meta.symbol}</span>
-        <small>${escapeHtml(formatBankAccreditationDate(record.date).slice(3))}</small>
       </button>
     </td>
   `;
@@ -6183,7 +6177,7 @@ function renderBankAccreditation() {
       <section class="bank-accreditation-controls" aria-label="Пошук і пояснення статусів">
         <label for="bankAccreditationSearch">
           <span>Банк</span>
-          <input id="bankAccreditationSearch" type="search" autocomplete="off" placeholder="Наприклад: ПУМБ або Сенс" />
+          <input id="bankAccreditationSearch" type="search" autocomplete="off" placeholder="Наприклад: Кредит Дніпро або Південний" />
         </label>
         <div class="bank-accreditation-legend" aria-label="Умовні позначення">
           <span><b class="bank-accreditation-official">✓</b> є публічне підтвердження</span>
@@ -6198,7 +6192,7 @@ function renderBankAccreditation() {
             <tr>
               <th scope="col">Банк</th>
               ${data.insurers.map((insurer) => `
-                <th scope="col" title="${escapeHtml(insurer.name)}">${escapeHtml(insurer.shortName || insurer.name)}</th>
+                <th scope="col" title="${escapeHtml(insurer.name)}">${escapeHtml(insurer.name)}</th>
               `).join("")}
             </tr>
           </thead>
@@ -6209,7 +6203,6 @@ function renderBankAccreditation() {
                 <tr data-bank-row data-search="${escapeHtml(searchText)}">
                   <th scope="row">
                     <strong>${escapeHtml(bank.name)}</strong>
-                    ${bank.aliases?.length ? `<small>${escapeHtml(bank.aliases.join(" · "))}</small>` : ""}
                   </th>
                   ${data.insurers.map((insurer) => renderBankAccreditationCell(bank, insurer)).join("")}
                 </tr>
@@ -6261,7 +6254,6 @@ function showBankAccreditationEvidence(button) {
     </div>
     <span class="${meta.className}">${escapeHtml(meta.label)}</span>
     <dl>
-      <div><dt>Перевірено</dt><dd>${escapeHtml(formatBankAccreditationDate(record.date))}</dd></div>
       <div><dt>Джерело</dt><dd>${escapeHtml(record.source)}</dd></div>
     </dl>
     <a class="bank-accreditation-source-link" href="${escapeHtml(record.url)}" target="_blank" rel="noopener noreferrer">Відкрити офіційне джерело ↗</a>

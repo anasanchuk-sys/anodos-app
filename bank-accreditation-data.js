@@ -56,24 +56,26 @@
     researchedAt: "2026-08-03",
     sourcePolicy: "official-web-only",
     insurers: [
-      { id: "arx", name: "ARX" },
-      { id: "ingo", name: "ІНГО" },
-      { id: "uniqa", name: "УНІКА" },
-      { id: "universalna", name: "Універсальна" },
-      { id: "pzu", name: "PZU Україна" },
-      { id: "vuso", name: "ВУСО" },
-      { id: "usg", name: "Українська страхова група", shortName: "УСГ" },
-      { id: "arsenal", name: "Арсенал Страхування", shortName: "Арсенал" }
+      { id: "arx", name: "Страхова компанія «АРКС»" },
+      { id: "ingo", name: "Страхова компанія «ІНГО»" },
+      { id: "uniqa", name: "Страхова компанія «УНІКА»" },
+      { id: "universalna", name: "Страхова компанія «Універсальна»" },
+      { id: "pzu", name: "Страхова компанія «ПЗУ Україна»" },
+      { id: "vuso", name: "Страхова компанія «ВУСО»" },
+      { id: "usg", name: "Українська страхова група" },
+      { id: "arsenal", name: "Страхова компанія «Арсенал Страхування»" }
     ],
     banks: [
       {
-        name: "Банк Восток",
+        name: "Публічне акціонерне товариство «Банк Восток»",
+        aliases: ["Банк Восток"],
         insurers: {
           ingo: mark(sources.bankVostokIngo, "Офіційний перелік ІНГО підтверджує співпрацю з Банком Восток. Обсяг акредитації для конкретного заставного договору потрібно погодити з банком.")
         }
       },
       {
-        name: "Банк Львів",
+        name: "Акціонерне товариство Акціонерно-комерційний банк «Львів»",
+        aliases: ["Банк Львів"],
         insurers: {
           arx: mark(sources.bankLviv, "Офіційний PDF банку датований 13.12.2023; перед укладенням договору варто перевірити актуальність у банку."),
           uniqa: mark(sources.bankLviv, "Офіційний PDF банку датований 13.12.2023; перед укладенням договору варто перевірити актуальність у банку."),
@@ -83,7 +85,8 @@
         }
       },
       {
-        name: "Кредит Дніпро",
+        name: "Акціонерне товариство «Банк Кредит Дніпро»",
+        aliases: ["Банк Кредит Дніпро", "Кредит Дніпро"],
         insurers: {
           arx: mark(sources.creditDnipro),
           ingo: mark(sources.creditDnipro),
@@ -92,8 +95,8 @@
         }
       },
       {
-        name: "Креді Агріколь Банк",
-        aliases: ["Credit Agricole"],
+        name: "Акціонерне товариство «Креді Агріколь Банк»",
+        aliases: ["Креді Агріколь Банк", "Credit Agricole"],
         insurers: {
           arx: mark(sources.agricole),
           uniqa: mark(sources.agricole),
@@ -104,8 +107,8 @@
         }
       },
       {
-        name: "ОТП Банк",
-        aliases: ["OTP Bank"],
+        name: "Акціонерне товариство «ОТП Банк»",
+        aliases: ["ОТП Банк", "OTP Bank"],
         insurers: {
           arx: mark(sources.otp),
           ingo: mark(sources.otp),
@@ -118,7 +121,8 @@
         }
       },
       {
-        name: "ПУМБ",
+        name: "Акціонерне товариство «Перший Український Міжнародний Банк»",
+        aliases: ["ПУМБ"],
         insurers: {
           arx: mark(sources.pumb),
           ingo: mark(sources.pumb),
@@ -128,7 +132,8 @@
         }
       },
       {
-        name: "Південний",
+        name: "Публічне акціонерне товариство Акціонерний банк «Південний»",
+        aliases: ["Південний", "Банк Південний"],
         insurers: {
           arx: mark(sources.pivdennyi),
           ingo: mark(sources.pivdennyi),
@@ -141,8 +146,8 @@
         }
       },
       {
-        name: "ПроКредит Банк",
-        aliases: ["ProCredit Bank"],
+        name: "Акціонерне товариство «ПроКредит Банк»",
+        aliases: ["ПроКредит Банк", "ProCredit Bank"],
         insurers: {
           arx: mark(sources.procredit),
           uniqa: mark(sources.procredit),
@@ -152,8 +157,8 @@
         }
       },
       {
-        name: "Укргазбанк",
-        aliases: ["UGB", "УГБ"],
+        name: "Публічне акціонерне товариство Акціонерний банк «Укргазбанк»",
+        aliases: ["Укргазбанк", "UGB", "УГБ"],
         insurers: {
           arx: mark(sources.ukrgasbank),
           ingo: mark(sources.ukrgasbank),
@@ -165,7 +170,8 @@
         }
       },
       {
-        name: "Укрексімбанк",
+        name: "Акціонерне товариство «Державний експортно-імпортний банк України»",
+        aliases: ["Укрексімбанк"],
         insurers: {
           arx: mark(sources.exim, "Офіційна сторінка банку містить перелік акредитованих по системі Банку з 06.07.2023."),
           uniqa: mark(sources.exim, "Офіційна сторінка банку містить перелік акредитованих по системі Банку з 06.07.2023."),
