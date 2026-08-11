@@ -2009,6 +2009,9 @@ function availableRoute(nextRoute) {
   if (nextRoute === "client-recommendation" && !clientRecommendationIsAllowed()) {
     return "home";
   }
+  if (nextRoute === "quotation-writing" && !quotationWritingIsAllowed()) {
+    return "home";
+  }
   return nextRoute;
 }
 
@@ -2021,9 +2024,9 @@ const spaceDefinitions = {
     ]
   },
   products: {
-    label: "Продукти",
+    label: "Страхування",
     navigation: [
-      { route: "home", label: "Продукти" },
+      { route: "home", label: "Страхування" },
       { route: "law", label: "ЗУпС" },
       { route: "glossary", label: "Словник" },
       { route: "bank-accreditation", label: "Банки" },
@@ -2128,6 +2131,7 @@ let munichResultsExpanded = false;
 let activeMunichClauseId = "munich-001";
 let munichSearchTimer = null;
 let brandMenuOpen = false;
+let utilityMenuOpen = false;
 let questionnaireGeneratorInput = "";
 let questionnaireGeneratorResult = null;
 let questionnaireGeneratorError = "";
@@ -2227,6 +2231,11 @@ function renderSpaceShell() {
     clientRecommendationTool.hidden = !clientRecommendationIsAllowed();
   }
 
+  const quotationWritingTool = document.querySelector("[data-private-quotation-writing]");
+  if (quotationWritingTool) {
+    quotationWritingTool.hidden = !quotationWritingIsAllowed();
+  }
+
   if (nav) {
     nav.setAttribute("aria-label", `Навігація простору «${definition.label}»`);
     nav.innerHTML = definition.navigation
@@ -2257,6 +2266,23 @@ function setBrandMenu(open) {
   }
 }
 
+function setUtilityMenu(open) {
+  utilityMenuOpen = Boolean(open);
+  const button = document.querySelector("[data-utility-menu]");
+  const panel = document.querySelector("[data-utility-menu-panel]");
+  if (button) {
+    button.setAttribute("aria-expanded", utilityMenuOpen ? "true" : "false");
+  }
+  if (panel) {
+    panel.hidden = !utilityMenuOpen;
+  }
+  if (utilityMenuOpen) {
+    window.requestAnimationFrame(() => {
+      panel?.querySelector("[role='menuitem']")?.focus();
+    });
+  }
+}
+
 function setActiveSpace(nextSpace, nextRoute = "home") {
   activeSpace = normalizeActiveSpace(nextSpace);
   localStorage.setItem(activeSpaceKey, activeSpace);
@@ -2270,6 +2296,7 @@ function setActiveSpace(nextSpace, nextRoute = "home") {
   body.classList.remove("route-is-changing");
   screen.classList.remove("screen-transition-out", "screen-transition-in");
   setBrandMenu(false);
+  setUtilityMenu(false);
   setCompassOpen(false);
   render();
   window.scrollTo(0, 0);
@@ -2397,6 +2424,10 @@ function clientRecommendationIsAllowed(user = currentUser()) {
   return Boolean(window.AnodosClientRecommendation?.isAllowedUser(user));
 }
 
+function quotationWritingIsAllowed(user = currentUser()) {
+  return normalizeEmail(user?.email) === "onasanchuk@britmark.com";
+}
+
 function isAuthorizedUser(user) {
   return Boolean(user && isAllowedEmployeeEmail(user.email));
 }
@@ -2417,6 +2448,7 @@ function progressForCurrentUser() {
 }
 
 function saveCurrentProgress() {
+  progress.updatedAt = new Date().toISOString();
   if (!currentUserId) {
     writeJson(progressKey, progress);
     return;
@@ -2515,27 +2547,33 @@ function exportRegistrationData(format) {
     "Дата реєстрації",
     "Останній вхід",
     "Модуль",
-    "Прогрес",
+    "Прогрес модуля",
     "Тест",
-    "Пройдено",
+    "Результат",
+    "Складено",
+    "Спроб",
     "Оновлено"
   ]];
 
   exportableUsers.forEach((user) => {
     const userProgress = progressByUser[user.id] || {};
     lessons.forEach((lesson) => {
-      const itemProgress = userProgress[lesson.id] || {};
-      rows.push([
-        user.fullName,
-        user.email,
-        user.registeredAt,
-        user.lastSeenAt || "",
-        lesson.title,
-        itemProgress.done ? "100" : itemProgress.score || "0",
-        itemProgress.score || "",
-        itemProgress.done ? "так" : "ні",
-        itemProgress.updatedAt || ""
-      ]);
+      const stats = lessonTestStats(lesson, userProgress);
+      stats.results.forEach((result) => {
+        rows.push([
+          user.fullName,
+          user.email,
+          user.registeredAt,
+          user.lastSeenAt || "",
+          lesson.title,
+          stats.score,
+          result.label,
+          result.attempted ? result.score : "",
+          result.passed ? "так" : "ні",
+          result.attempts,
+          result.updatedAt
+        ]);
+      });
     });
   });
 
@@ -5691,39 +5729,133 @@ function exportAccuracyReports() {
   downloadTextFile(`anodos-accuracy-reports-${Date.now()}.csv`, csv, "text/csv;charset=utf-8");
 }
 
-function totalProgress() {
-  const scored = lessons.map((item) => moduleProgress(item));
-  return Math.round(scored.reduce((sum, value) => sum + value, 0) / scored.length);
+function quizDefinitionsForLesson(item) {
+  return [
+    item.quiz?.length ? {
+      type: "main",
+      label: item.quizTitle || "Основний тест",
+      scoreKey: "score",
+      lastScoreKey: "lastScore",
+      doneKey: "done",
+      attemptsKey: "attempts",
+      updatedAtKey: "updatedAt",
+      threshold: item.threshold
+    } : null,
+    item.lawTests?.quiz?.length ? {
+      type: "law",
+      label: item.lawTests.title || "Тест із ЗУпС",
+      scoreKey: "lawScore",
+      lastScoreKey: "lawLastScore",
+      doneKey: "lawDone",
+      attemptsKey: "lawAttempts",
+      updatedAtKey: "lawUpdatedAt",
+      threshold: item.lawTests.threshold
+    } : null,
+    item.partnerTests?.quiz?.length ? {
+      type: "partner",
+      label: item.partnerTests.title || "Тест партнерів",
+      scoreKey: "partnerScore",
+      lastScoreKey: "partnerLastScore",
+      doneKey: "partnerDone",
+      attemptsKey: "partnerAttempts",
+      updatedAtKey: "partnerUpdatedAt",
+      threshold: item.partnerTests.threshold
+    } : null
+  ].filter(Boolean);
+}
+
+function normalizedPercent(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    return 0;
+  }
+  return Math.min(100, Math.max(0, Math.round(number)));
+}
+
+function hasStoredQuizResult(stored = {}, definition) {
+  return Object.prototype.hasOwnProperty.call(stored, definition.scoreKey)
+    || Boolean(stored[definition.doneKey])
+    || Boolean(stored[definition.updatedAtKey]);
+}
+
+function quizResultFromStore(stored = {}, definition) {
+  const score = normalizedPercent(stored[definition.scoreKey]);
+  const attempted = hasStoredQuizResult(stored, definition);
+  return {
+    ...definition,
+    score,
+    attempted,
+    passed: attempted && (Boolean(stored[definition.doneKey]) || score >= normalizedPercent(definition.threshold)),
+    attempts: attempted ? Math.max(1, Number.parseInt(stored[definition.attemptsKey], 10) || 1) : 0,
+    updatedAt: stored[definition.updatedAtKey] || ""
+  };
+}
+
+function lessonTestStats(item, storedProgress = {}) {
+  const stored = storedProgress?.[item.id] || {};
+  const results = quizDefinitionsForLesson(item).map((definition) => quizResultFromStore(stored, definition));
+  const total = results.length;
+  return {
+    results,
+    total,
+    attempted: results.filter((result) => result.attempted).length,
+    passed: results.filter((result) => result.passed).length,
+    score: total
+      ? Math.round(results.reduce((sum, result) => sum + result.score, 0) / total)
+      : 0
+  };
 }
 
 function moduleProgress(item) {
-  const stored = progress[item.id];
-  if (currentUser()) {
-    if (!stored) {
-      return 0;
-    }
-    return Math.max(stored.score || 0, stored.done ? 100 : 0);
-  }
-  if (!stored) {
-    return item.progress;
-  }
-  return Math.max(item.progress, stored.score || 0, stored.done ? 100 : 0);
+  return moduleProgressFromStore(item, progress);
 }
 
 function moduleProgressFromStore(item, storedProgress = {}) {
-  const stored = storedProgress[item.id];
-  if (!stored) {
-    return 0;
-  }
-  return Math.max(stored.score || 0, stored.done ? 100 : 0);
+  return lessonTestStats(item, storedProgress).score;
+}
+
+function totalProgress() {
+  return totalProgressFromStore(progress);
+}
+
+function totalTestStatsFromStore(storedProgress = {}) {
+  const results = lessons.flatMap((item) => lessonTestStats(item, storedProgress).results);
+  const total = results.length;
+  return {
+    total,
+    attempted: results.filter((result) => result.attempted).length,
+    passed: results.filter((result) => result.passed).length,
+    score: total
+      ? Math.round(results.reduce((sum, result) => sum + result.score, 0) / total)
+      : 0
+  };
 }
 
 function totalProgressFromStore(storedProgress = {}) {
-  if (!lessons.length) {
-    return 0;
+  return totalTestStatsFromStore(storedProgress).score;
+}
+
+function updatedQuizProgressEntry(item, stored = {}, type, score, updatedAt = new Date().toISOString()) {
+  const definition = quizDefinitionsForLesson(item).find((candidate) => candidate.type === type);
+  if (!definition) {
+    return { ...stored };
   }
-  const scored = lessons.map((item) => moduleProgressFromStore(item, storedProgress));
-  return Math.round(scored.reduce((sum, value) => sum + value, 0) / lessons.length);
+
+  const normalizedScore = normalizedPercent(score);
+  const hadResult = hasStoredQuizResult(stored, definition);
+  const previousBest = normalizedPercent(stored[definition.scoreKey]);
+  const previousAttempts = hadResult
+    ? Math.max(1, Number.parseInt(stored[definition.attemptsKey], 10) || 1)
+    : 0;
+
+  return {
+    ...stored,
+    [definition.scoreKey]: hadResult ? Math.max(previousBest, normalizedScore) : normalizedScore,
+    [definition.lastScoreKey]: normalizedScore,
+    [definition.doneKey]: Boolean(stored[definition.doneKey]) || normalizedScore >= normalizedPercent(definition.threshold),
+    [definition.attemptsKey]: previousAttempts + 1,
+    [definition.updatedAtKey]: updatedAt
+  };
 }
 
 function syncConfigured() {
@@ -5785,6 +5917,7 @@ function progressPayloadForUser(user) {
 
 function normalizeCentralParticipant(row) {
   const storedProgress = row.progress && typeof row.progress === "object" ? row.progress : {};
+  const hasDetailedProgress = lessons.some((lesson) => lessonTestStats(lesson, storedProgress).attempted > 0);
   return {
     id: row.id || normalizeEmail(row.email),
     fullName: row.full_name || row.fullName || "Співробітник",
@@ -5792,7 +5925,9 @@ function normalizeCentralParticipant(row) {
     registeredAt: row.registered_at || row.registeredAt || "",
     lastSeenAt: row.last_seen_at || row.lastSeenAt || "",
     updatedAt: row.updated_at || row.updatedAt || "",
-    totalProgress: Number(row.total_progress ?? row.totalProgress ?? totalProgressFromStore(storedProgress)) || 0,
+    totalProgress: hasDetailedProgress
+      ? totalProgressFromStore(storedProgress)
+      : normalizedPercent(row.total_progress ?? row.totalProgress),
     progress: storedProgress,
     source: "central"
   };
@@ -6111,6 +6246,11 @@ function render() {
 
   if (route === "client-recommendation") {
     renderClientRecommendation();
+    return;
+  }
+
+  if (route === "quotation-writing") {
+    renderQuotationWriting();
     return;
   }
 
@@ -6641,7 +6781,7 @@ function renderClientRecommendation() {
         <header class="contract-review-head">
           <button class="module-back" type="button" data-route="home" aria-label="Назад до продуктів">←</button>
           <div>
-            <p class="eyebrow">Приватний інструмент · Олександр Насанчук</p>
+            <p class="eyebrow">Приватний інструмент</p>
             <h1>Рекомендація Клієнту</h1>
             <p class="hero-copy">Додай попередній договір і пакет поновлення. Anodos одразу проаналізує зміни та сформує робочий брокерський висновок.</p>
           </div>
@@ -6687,7 +6827,7 @@ function renderClientRecommendation() {
       <header class="contract-review-head">
         <button class="module-back" type="button" data-route="home" aria-label="Назад до продуктів">←</button>
         <div>
-          <p class="eyebrow">Приватний інструмент · Олександр Насанчук</p>
+          <p class="eyebrow">Приватний інструмент</p>
           <h1>Рекомендація Клієнту</h1>
           <p class="hero-copy">Сформуй робочий брокерський висновок, питання до страховика та чернетку листа Клієнту на основі порівняння договорів.</p>
         </div>
@@ -6771,6 +6911,29 @@ function renderClientRecommendation() {
   `;
 }
 
+function renderQuotationWriting() {
+  if (!quotationWritingIsAllowed()) {
+    setActiveSpace("products", "home");
+    return;
+  }
+
+  screen.innerHTML = `
+    <section class="client-recommendation-workspace" aria-labelledby="quotationWritingTitle">
+      <header class="contract-review-head">
+        <button class="module-back" type="button" data-route="home" aria-label="Назад до продуктів">←</button>
+        <div>
+          <p class="eyebrow">Приватний інструмент</p>
+          <h1 id="quotationWritingTitle">Написання котирувань</h1>
+        </div>
+      </header>
+
+      <section class="client-recommendation-empty" role="status">
+        <p>Цей інструмент є приватним і не призначений для публічного користування.</p>
+      </section>
+    </section>
+  `;
+}
+
 function renderHome() {
   if (activeSpace === "learning") {
     screen.innerHTML = `
@@ -6778,7 +6941,6 @@ function renderHome() {
         <div>
           <p class="eyebrow">Навчання</p>
           <h1 id="learningSpaceTitle">Навчальні модулі</h1>
-          <p>Відео, короткі конспекти, практичні задачі та тести зібрані в одному просторі.</p>
         </div>
         <span class="space-intro-meta">${lessons.length} тем</span>
       </section>
@@ -6794,10 +6956,10 @@ function renderHome() {
   screen.innerHTML = `
     <section class="scenario-search-panel primary-tab-card primary-tab-action" aria-label="Сценарний пошук">
       <label class="scenario-search-label" for="scenarioSearch">
-        <span>Сценарій пошуку</span>
         <input
           id="scenarioSearch"
           type="search"
+          aria-label="Опишіть ситуацію Клієнта"
           autocomplete="off"
           placeholder="Опишіть ситуацію Клієнта"
           value="${escapeHtml(scenarioSearchTerm)}"
@@ -7435,26 +7597,17 @@ function profileWord(count) {
   return "профілів";
 }
 
-function renderModuleMeta(item) {
-  if (activeSpace === "products") {
-    const count = [
-      item.articles?.length,
-      item.checklist?.length,
-      item.regulatoryBase?.length,
-      item.stateCompensationProgram,
-      item.id === "construction" && munichClauses().length
-    ].filter(Boolean).length;
-    const word = count === 1 ? "розділ" : count >= 2 && count <= 4 ? "розділи" : "розділів";
-    return `${count} ${word}`;
-  }
-
-  return `${moduleProgress(item)}%`;
-}
-
 function renderModuleCard(item) {
   const label = activeSpace === "learning"
     ? `${item.shortTitle}: відкрити навчальний модуль`
     : `${item.shortTitle}: відкрити робочі матеріали`;
+  const progress = activeSpace === "learning"
+    ? `
+        <span class="module-row-end">
+          <span class="module-meta">${moduleProgress(item)}%</span>
+          <span class="module-arrow" aria-hidden="true">→</span>
+        </span>`
+    : "";
   return `
     <article class="module-card module-card-${item.id} module-card-${activeSpace}">
       <button class="module-card-button" type="button" data-open-module="${item.id}" aria-label="${escapeHtml(label)}">
@@ -7463,10 +7616,7 @@ function renderModuleCard(item) {
           <span class="module-title">${escapeHtml(item.title)}</span>
           <span class="module-focus">${escapeHtml(item.focus)}</span>
         </span>
-        <span class="module-row-end">
-          <span class="module-meta">${escapeHtml(renderModuleMeta(item))}</span>
-          <span class="module-arrow" aria-hidden="true">→</span>
-        </span>
+        ${progress}
       </button>
     </article>
   `;
@@ -8538,7 +8688,7 @@ function renderQuiz(item) {
           ${renderQuestionTrustBlock("quiz", item, question, questionIndex)}
           ${question.options.map((option, optionIndex) => `
             <label class="answer-row" data-answer="${questionIndex}-${optionIndex}">
-              <input type="radio" name="q${questionIndex}" value="${optionIndex}" ${quizAnswers[questionIndex] === optionIndex ? "checked" : ""} />
+              <input type="radio" name="q${questionIndex}" value="${optionIndex}" required ${quizAnswers[questionIndex] === optionIndex ? "checked" : ""} />
               <span>${escapeHtml(option)}</span>
             </label>
           `).join("")}
@@ -8606,7 +8756,7 @@ function renderLawQuiz(item) {
           ${renderQuestionTrustBlock("law", item, question, questionIndex)}
           ${question.options.map((option, optionIndex) => `
             <label class="answer-row" data-answer="${questionIndex}-${optionIndex}">
-              <input type="radio" name="q${questionIndex}" value="${optionIndex}" ${quizAnswers[questionIndex] === optionIndex ? "checked" : ""} />
+              <input type="radio" name="q${questionIndex}" value="${optionIndex}" required ${quizAnswers[questionIndex] === optionIndex ? "checked" : ""} />
               <span>${escapeHtml(option)}</span>
             </label>
           `).join("")}
@@ -8675,7 +8825,7 @@ function renderPartnerQuiz(item) {
           ${renderQuestionTrustBlock("partner", item, question, questionIndex)}
           ${question.options.map((option, optionIndex) => `
             <label class="answer-row" data-answer="${questionIndex}-${optionIndex}">
-              <input type="radio" name="q${questionIndex}" value="${optionIndex}" ${quizAnswers[questionIndex] === optionIndex ? "checked" : ""} />
+              <input type="radio" name="q${questionIndex}" value="${optionIndex}" required ${quizAnswers[questionIndex] === optionIndex ? "checked" : ""} />
               <span>${escapeHtml(option)}</span>
             </label>
           `).join("")}
@@ -9590,7 +9740,8 @@ function renderAdminRegistry() {
 function renderProgress() {
   const user = currentUser();
   const profileDetails = user?.email || "Локальний режим";
-  const total = totalProgress();
+  const totalStats = totalTestStatsFromStore(progress);
+  const total = totalStats.score;
   const profileBlock = !user ? `
     <section class="progress-profile-compact">
       ${renderProfileAvatar(null)}
@@ -9653,23 +9804,24 @@ function renderProgress() {
           <div>
             <p class="eyebrow">Прогрес</p>
             <h1>Програма</h1>
-            <p>Оцінка складається з проходження модулів і результатів тестів.</p>
+            <p>Виконано ${totalStats.attempted}/${totalStats.total} тестів · складено ${totalStats.passed}/${totalStats.total}. Враховано найкращу спробу.</p>
           </div>
+          <strong class="progress-total-value" aria-label="Загальний результат ${total} відсотків">${total}%</strong>
         </header>
 
         ${profileBlock}
 
         <section class="progress-module-list" aria-label="Прогрес за продуктами">
           ${lessons.map((item) => {
-          const stored = progress[item.id];
-          const percent = moduleProgress(item);
+          const stats = lessonTestStats(item, progress);
+          const percent = stats.score;
           return `
             <article class="progress-module-row">
               <div class="progress-module-copy">
                 <span class="progress-module-index">${item.index}</span>
                 <div>
                   <h3>${escapeHtml(item.shortTitle)}</h3>
-                  <p>${stored?.score ? `тест ${stored.score}%` : item.focus}</p>
+                  <p>Виконано ${stats.attempted}/${stats.total} · складено ${stats.passed}/${stats.total}</p>
                 </div>
               </div>
               <strong>${percent}%</strong>
@@ -9687,6 +9839,7 @@ document.addEventListener("click", async (event) => {
   const brandMenuButton = event.target.closest("[data-brand-menu]");
   const brandMenuSpaceButton = event.target.closest("[data-brand-menu-space]");
   const brandMenuRouteButton = event.target.closest("[data-brand-menu-route]");
+  const utilityMenuButton = event.target.closest("[data-utility-menu]");
   const compassButton = event.target.closest("[data-open-compass]");
   const closeCompassButton = event.target.closest("[data-close-compass]");
   const deleteUserButton = event.target.closest("[data-delete-user]");
@@ -9736,6 +9889,7 @@ document.addEventListener("click", async (event) => {
   if (compassButton) {
     event.preventDefault();
     setBrandMenu(false);
+    setUtilityMenu(false);
     setCompassOpen(!compassOpen, true);
     return;
   }
@@ -9749,7 +9903,16 @@ document.addEventListener("click", async (event) => {
   if (brandMenuButton) {
     event.preventDefault();
     setCompassOpen(false);
+    setUtilityMenu(false);
     setBrandMenu(!brandMenuOpen);
+    return;
+  }
+
+  if (utilityMenuButton) {
+    event.preventDefault();
+    setCompassOpen(false);
+    setBrandMenu(false);
+    setUtilityMenu(!utilityMenuOpen);
     return;
   }
 
@@ -9766,6 +9929,10 @@ document.addEventListener("click", async (event) => {
 
   if (brandMenuOpen && !event.target.closest(".brand-menu-shell")) {
     setBrandMenu(false);
+  }
+
+  if (utilityMenuOpen && !event.target.closest(".utility-menu-shell")) {
+    setUtilityMenu(false);
   }
 
   if (bankAccreditationCell) {
@@ -10660,12 +10827,12 @@ document.addEventListener("submit", async (event) => {
       score: Math.round((correct / test.quiz.length) * 100)
     };
 
-    progress[item.id] = {
-      ...(progress[item.id] || {}),
-      partnerScore: quizResult.score,
-      partnerDone: quizResult.score >= test.threshold,
-      partnerUpdatedAt: new Date().toISOString()
-    };
+    progress[item.id] = updatedQuizProgressEntry(
+      item,
+      progress[item.id],
+      "partner",
+      quizResult.score
+    );
     saveCurrentProgress();
     renderPartnerQuiz(item);
     return;
@@ -10696,6 +10863,13 @@ document.addEventListener("submit", async (event) => {
       score: Math.round((correct / test.quiz.length) * 100)
     };
 
+    progress[item.id] = updatedQuizProgressEntry(
+      item,
+      progress[item.id],
+      "law",
+      quizResult.score
+    );
+    saveCurrentProgress();
     renderLawQuiz(item);
     return;
   }
@@ -10720,11 +10894,12 @@ document.addEventListener("submit", async (event) => {
       score: Math.round((correct / item.quiz.length) * 100)
     };
 
-    progress[item.id] = {
-      score: quizResult.score,
-      done: quizResult.score >= item.threshold,
-      updatedAt: new Date().toISOString()
-    };
+    progress[item.id] = updatedQuizProgressEntry(
+      item,
+      progress[item.id],
+      "main",
+      quizResult.score
+    );
     saveCurrentProgress();
     renderQuiz(item);
     return;
@@ -10744,6 +10919,11 @@ document.addEventListener("submit", async (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && utilityMenuOpen) {
+    setUtilityMenu(false);
+    document.querySelector("[data-utility-menu]")?.focus();
+    return;
+  }
   if (event.key === "Escape" && compassOpen) {
     setCompassOpen(false);
     return;

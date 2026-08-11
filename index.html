@@ -3,12 +3,15 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#F8FBF7" />
+    <meta name="theme-color" content="#F9FBFF" />
     <title>Άνοδος</title>
     <link rel="manifest" href="./manifest.webmanifest?v=7" />
     <link rel="icon" href="./assets/icon.svg?v=7" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png?v=7" sizes="180x180" />
-    <link rel="stylesheet" href="./styles.css?v=154" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&amp;family=Merriweather:wght@400;700&amp;family=PT+Serif&amp;display=swap" />
+    <link rel="stylesheet" href="./styles.css?v=178" />
   </head>
   <body>
     <div class="splash" id="splash" aria-hidden="true">
@@ -27,13 +30,15 @@
       <header class="topbar">
         <div class="brand-menu-shell">
           <button class="brand-lockup" type="button" data-brand-menu aria-haspopup="menu" aria-expanded="false" aria-label="Обрати простір Anodos">
-            <span class="brand-name">Άνοδος</span>
-            <span class="brand-space">
-              <span data-current-space-label>Навчання</span>
-              <span class="brand-space-chevron" aria-hidden="true">⌄</span>
+            <span class="brand-lockup-copy">
+              <span class="brand-name">Άνοδος</span>
+              <span class="brand-space">
+                <span data-current-space-label>Навчання</span>
+                <span class="brand-space-chevron" aria-hidden="true">⌄</span>
+              </span>
             </span>
           </button>
-          <div class="brand-menu" data-brand-menu-panel role="menu" aria-label="Простори та інструменти Anodos" hidden>
+          <div class="brand-menu" data-brand-menu-panel role="menu" aria-label="Простори Anodos" hidden>
             <p class="brand-menu-title">Оберіть простір</p>
             <button type="button" role="menuitemradio" aria-checked="true" data-brand-menu-space="learning">
               <span>
@@ -44,60 +49,60 @@
             </button>
             <button type="button" role="menuitemradio" aria-checked="false" data-brand-menu-space="products">
               <span>
-                <strong>Продукти</strong>
+                <strong>Страхування</strong>
                 <small>Робочі матеріали, закон і договори</small>
               </span>
               <span class="brand-menu-check" aria-hidden="true"></span>
             </button>
-            <div class="brand-menu-divider" aria-hidden="true"></div>
-            <p class="brand-menu-title brand-menu-tool-title">Робочий інструмент</p>
-            <button class="brand-menu-tool" type="button" role="menuitem" data-brand-menu-route="contract-review">
+          </div>
+        </div>
+
+        <div class="utility-menu-shell">
+          <button class="utility-menu-trigger" type="button" data-utility-menu aria-haspopup="menu" aria-expanded="false" aria-label="Відкрити допоміжне меню">
+            <span class="utility-menu-dots" aria-hidden="true">
+              <span></span><span></span><span></span>
+            </span>
+          </button>
+          <div class="utility-menu" data-utility-menu-panel role="menu" aria-label="Робочі інструменти" hidden>
+            <p class="utility-menu-title">Робочі інструменти</p>
+            <button class="utility-menu-tool" type="button" role="menuitem" data-brand-menu-route="contract-review">
               <span>
                 <strong>Перевірка договорів</strong>
                 <small>Завантажити й порівняти версії</small>
               </span>
-              <span class="brand-menu-arrow" aria-hidden="true">→</span>
+              <span class="utility-menu-arrow" aria-hidden="true">→</span>
             </button>
-            <button class="brand-menu-tool" type="button" role="menuitem" data-brand-menu-route="bank-accreditation">
+            <button class="utility-menu-tool" type="button" role="menuitem" data-brand-menu-route="bank-accreditation">
               <span>
                 <strong>Акредитація в банках</strong>
                 <small>Знайти страховиків для застави</small>
               </span>
-              <span class="brand-menu-arrow" aria-hidden="true">→</span>
+              <span class="utility-menu-arrow" aria-hidden="true">→</span>
             </button>
-            <button class="brand-menu-tool" type="button" role="menuitem" data-brand-menu-route="questionnaire-generator">
+            <button class="utility-menu-tool" type="button" role="menuitem" data-brand-menu-route="questionnaire-generator">
               <span>
                 <strong>Генератор опитувальників</strong>
                 <small>Підготувати опитувальник BritMark</small>
               </span>
-              <span class="brand-menu-arrow" aria-hidden="true">→</span>
+              <span class="utility-menu-arrow" aria-hidden="true">→</span>
             </button>
-            <button class="brand-menu-tool" type="button" role="menuitem" data-brand-menu-route="client-recommendation" data-private-client-recommendation hidden>
+            <button class="utility-menu-tool" type="button" role="menuitem" data-brand-menu-route="client-recommendation" data-private-client-recommendation hidden>
               <span>
                 <strong>Рекомендація Клієнту</strong>
                 <small>Підготувати брокерський висновок</small>
               </span>
-              <span class="brand-menu-arrow" aria-hidden="true">→</span>
+              <span class="utility-menu-arrow" aria-hidden="true">→</span>
+            </button>
+            <button class="utility-menu-tool" type="button" role="menuitem" data-brand-menu-route="quotation-writing" data-private-quotation-writing hidden>
+              <span>
+                <strong>Написання котирувань</strong>
+                <small>Підготувати страхове котирування</small>
+              </span>
+              <span class="utility-menu-arrow" aria-hidden="true">→</span>
             </button>
           </div>
         </div>
-
-        <button class="progress-orb compass-orb" type="button" data-open-compass aria-haspopup="dialog" aria-expanded="false" aria-label="Компас Anodos">
-          <span id="progressValue" class="compass-orb-mark" aria-hidden="true">
-            <svg viewBox="0 0 46 46" focusable="false">
-              <path class="compass-path" d="M14.5 36C16.4 30.2 19.6 27.4 23.8 24.1C29 20 30.7 15.3 30.7 8.2" />
-              <path class="compass-arrow" d="M27.1 11.4L30.7 7.9L34 11.8" />
-              <circle class="compass-dot" cx="30.7" cy="6.7" r="3" />
-            </svg>
-          </span>
-        </button>
-
-        <a class="partner-lockup" href="https://brit-mark.com/" target="_blank" rel="noopener" aria-label="BritMark">
-          <span class="partner-name">BritMark</span>
-        </a>
       </header>
-
-      <section id="compassPanel" class="compass-panel" aria-label="Компас Anodos" hidden></section>
 
       <section id="screen" class="screen" aria-live="polite"></section>
 
@@ -114,6 +119,6 @@
     <script src="./questionnaire-generator.js?v=10"></script>
     <script src="./client-recommendation.js?v=1"></script>
     <script src="./bank-accreditation-data.js?v=7"></script>
-    <script src="./app.js?v=178"></script>
+    <script src="./app.js?v=185"></script>
   </body>
 </html>
