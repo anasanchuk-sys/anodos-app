@@ -3015,13 +3015,25 @@ body[data-route="home"] .module-arrow {
   border-right: 0;
 }
 
-.bank-accreditation-table tbody th strong {
+.bank-accreditation-bank-legal,
+.bank-accreditation-bank-name {
   display: block;
 }
 
-.bank-accreditation-table tbody th strong {
+.bank-accreditation-bank-legal {
+  margin-bottom: 2px;
+  color: rgba(35, 57, 79, 0.42);
+  font-size: 8px;
+  font-weight: 500;
+  line-height: 1.05;
+}
+
+.bank-accreditation-bank-name {
+  color: #132961;
   font-size: 12px;
+  font-weight: 800;
   line-height: 1.2;
+  text-shadow: 0 0 12px rgba(19, 41, 97, 0.14);
 }
 
 .bank-accreditation-table tbody tr:hover > * {
@@ -5839,9 +5851,15 @@ body[data-space="learning"] .bottom-nav {
     padding-left: 10px;
   }
 
-  .bank-accreditation-table tbody th strong {
-    font-size: 9px;
-    line-height: 1.08;
+  .bank-accreditation-bank-legal {
+    margin-bottom: 1px;
+    font-size: 7px;
+    line-height: 1;
+  }
+
+  .bank-accreditation-bank-name {
+    font-size: 9.5px;
+    line-height: 1.04;
   }
 
   .bank-accreditation-cell {

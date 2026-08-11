@@ -6202,7 +6202,8 @@ function renderBankAccreditation() {
               return `
                 <tr data-bank-row data-search="${escapeHtml(searchText)}">
                   <th scope="row">
-                    <strong>${escapeHtml(bank.name)}</strong>
+                    ${bank.legalForm ? `<span class="bank-accreditation-bank-legal">${escapeHtml(bank.legalForm)}</span>` : ""}
+                    <strong class="bank-accreditation-bank-name">${escapeHtml(bank.brandName || bank.name)}</strong>
                   </th>
                   ${data.insurers.map((insurer) => renderBankAccreditationCell(bank, insurer)).join("")}
                 </tr>
