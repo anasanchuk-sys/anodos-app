@@ -22,6 +22,9 @@ const defaultSyncConfig = {
   table: "anodos_participants"
 };
 const syncConfig = { ...defaultSyncConfig, ...(window.ANODOS_SYNC_CONFIG || {}) };
+const contractTests = Array.isArray(window.AnodosContractTests?.tests)
+  ? window.AnodosContractTests.tests
+  : [];
 
 function isEditableElement(target) {
   return Boolean(target?.closest?.("input, textarea, select, [contenteditable='true'], .law-article"));
@@ -2099,6 +2102,11 @@ let activeModuleSectionId = "";
 let activeStateCompensationView = "";
 let quizAnswers = {};
 let quizResult = null;
+let activeContractTestId = contractTests[0]?.id || "";
+let activeContractDocumentId = contractTests[0]?.documents?.[0]?.id || "";
+let contractTestAnswers = {};
+let contractTestResult = null;
+let contractTestPdfRenderId = 0;
 let activeAccuracyReportId = "";
 let accuracyReportDrafts = {};
 let accuracyReportSavedId = "";
@@ -6194,6 +6202,11 @@ function render() {
     return;
   }
 
+  if (route === "contract-quiz") {
+    renderContractQuiz(getLesson());
+    return;
+  }
+
   if (route === "presentation") {
     renderPresentation(getLesson());
     return;
@@ -7754,8 +7767,10 @@ function moduleSectionDefinitions(item, briefing) {
 
   sections.push({
     id: "test",
-    title: item.partnerTests?.quiz?.length ? "Тести" : "Тест",
-    meta: item.partnerTests?.quiz?.length ? "2 тести" : `${item.threshold}% для проходження`,
+    title: item.partnerTests?.quiz?.length || contractTestsForLesson(item).length ? "Тести" : "Тест",
+    meta: item.partnerTests?.quiz?.length || contractTestsForLesson(item).length
+      ? `${1 + (item.partnerTests?.quiz?.length ? 1 : 0) + contractTestsForLesson(item).length} тести`
+      : `${item.threshold}% для проходження`,
     content: renderTestContent(item)
   });
 
@@ -8426,10 +8441,15 @@ function renderLessonShelf(item) {
   );
 }
 
+function contractTestsForLesson(item) {
+  return item.id === "property" ? contractTests : [];
+}
+
 function renderTestShelf(item) {
+  const totalTests = 1 + (item.partnerTests?.quiz?.length ? 1 : 0) + contractTestsForLesson(item).length;
   return renderPanel(
-    item.partnerTests?.quiz?.length ? "Тести" : "Тест",
-    `${item.threshold}% для проходження`,
+    totalTests > 1 ? "Тести" : "Тест",
+    `${totalTests} ${totalTests === 1 ? "тест" : "тести"}`,
     renderTestContent(item)
   );
 }
@@ -8445,6 +8465,7 @@ function renderTestContent(item) {
       <button class="article-action" type="button" data-open-quiz="${item.id}">Почати</button>
     </article>
     ${item.partnerTests?.quiz?.length ? renderPartnerTestsContent(item) : ""}
+    ${renderContractTestsContent(item)}
   `;
 }
 
@@ -8483,6 +8504,24 @@ function renderPartnerTestsContent(item) {
       <button class="article-action" type="button" data-open-partner-quiz="${escapeHtml(item.id)}">Почати</button>
     </article>
   `;
+}
+
+function renderContractTestsContent(item) {
+  const tests = contractTestsForLesson(item);
+  if (!tests.length) {
+    return "";
+  }
+
+  return tests.map((test) => `
+    <article class="article-card article-card-action contract-test-entry">
+      <div>
+        <span class="article-topic">Читання договору · 15 питань</span>
+        <h3>${escapeHtml(test.title)}</h3>
+        <p>${escapeHtml(test.subtitle)}. Договір і всі запитання відкриваються одночасно.</p>
+      </div>
+      <button class="article-action" type="button" data-open-contract-quiz="${escapeHtml(test.id)}">Відкрити</button>
+    </article>
+  `).join("");
 }
 
 function buildPresentationSlides(item) {
@@ -8863,6 +8902,253 @@ function renderPartnerQuizResult(test, item) {
       }).join("")}
     </section>
   `;
+}
+
+function getContractTest(id = activeContractTestId) {
+  return contractTests.find((test) => test.id === id) || contractTests[0] || null;
+}
+
+function getContractTestDocument(test, id = activeContractDocumentId) {
+  return test?.documents?.find((documentItem) => documentItem.id === id) || test?.documents?.[0] || null;
+}
+
+function openContractTest(testId) {
+  const test = getContractTest(testId);
+  if (!test) {
+    return;
+  }
+  activeContractTestId = test.id;
+  activeContractDocumentId = test.documents?.[0]?.id || "";
+  contractTestAnswers = {};
+  contractTestResult = null;
+  if (route === "contract-quiz" && activeLessonId === "property") {
+    renderContractQuiz(getLesson("property"));
+    return;
+  }
+  setRoute("contract-quiz", "property");
+}
+
+function openContractTestDocument(documentId) {
+  const test = getContractTest();
+  const documentItem = getContractTestDocument(test, documentId);
+  if (!test || !documentItem || documentItem.id === activeContractDocumentId) {
+    return;
+  }
+  activeContractDocumentId = documentItem.id;
+  contractTestResult = null;
+  renderContractQuiz(getLesson("property"));
+}
+
+async function renderContractTestPdf(test, documentItem) {
+  const renderId = ++contractTestPdfRenderId;
+  const targetId = `${test.id}:${documentItem.id}`;
+  const target = document.querySelector(`[data-contract-pdf-pages="${targetId}"]`);
+  if (!target) {
+    return;
+  }
+
+  if (documentItem.renderMode === "iframe") {
+    target.classList.add("contract-pdf-pages-external");
+    target.innerHTML = `
+      <iframe
+        class="contract-official-frame"
+        src="${escapeHtml(documentItem.pdfUrl)}"
+        title="${escapeHtml(documentItem.title)}"
+        loading="eager"
+        referrerpolicy="no-referrer"
+      ></iframe>
+    `;
+    return;
+  }
+
+  try {
+    const pdfjs = await contractReviewPdfModule();
+    const pdf = await pdfjs.getDocument(documentItem.pdfUrl).promise;
+    if (renderId !== contractTestPdfRenderId || !target.isConnected) {
+      return;
+    }
+
+    target.innerHTML = "";
+    const availableWidth = Math.max(280, target.clientWidth - 28);
+    const outputScale = Math.min(Math.max(window.devicePixelRatio || 1, 1), 1.6);
+
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+      if (renderId !== contractTestPdfRenderId || !target.isConnected) {
+        return;
+      }
+
+      const page = await pdf.getPage(pageNumber);
+      const naturalViewport = page.getViewport({ scale: 1 });
+      const cssScale = availableWidth / naturalViewport.width;
+      const renderViewport = page.getViewport({ scale: cssScale * outputScale });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.floor(renderViewport.width);
+      canvas.height = Math.floor(renderViewport.height);
+      canvas.style.width = `${Math.floor(renderViewport.width / outputScale)}px`;
+      canvas.style.height = `${Math.floor(renderViewport.height / outputScale)}px`;
+      canvas.setAttribute("role", "img");
+      canvas.setAttribute("aria-label", `Сторінка ${pageNumber} з ${pdf.numPages}`);
+
+      const sheet = document.createElement("div");
+      sheet.className = "contract-pdf-page";
+      sheet.dataset.pageNumber = String(pageNumber);
+      sheet.append(canvas);
+      target.append(sheet);
+
+      const context = canvas.getContext("2d", { alpha: false });
+      await page.render({ canvasContext: context, viewport: renderViewport }).promise;
+    }
+  } catch {
+    if (renderId !== contractTestPdfRenderId || !target.isConnected) {
+      return;
+    }
+    target.innerHTML = `
+      <div class="contract-document-state">
+        <p>Не вдалося показати друковані сторінки в цьому браузері.</p>
+        <a href="${escapeHtml(documentItem.pdfUrl)}" target="_blank" rel="noopener">Відкрити PDF</a>
+      </div>
+    `;
+  }
+}
+
+function contractTestResultMarkup(test) {
+  if (!contractTestResult) {
+    return "";
+  }
+  const passed = contractTestResult.score >= test.threshold;
+  return `
+    <section class="contract-test-result ${passed ? "contract-test-result-pass" : "contract-test-result-review"}" aria-live="polite">
+      <div>
+        <p class="section-kicker">${passed ? "Пройдено" : "Потрібен ще один прохід"}</p>
+        <h2>${contractTestResult.score}%</h2>
+      </div>
+      <p>${contractTestResult.correct} правильних відповідей з ${test.quiz.length}. Пояснення відкрито під кожним питанням.</p>
+    </section>
+  `;
+}
+
+function renderContractQuestion(test, question, questionIndex) {
+  const selected = contractTestAnswers[questionIndex];
+  const isAnswered = selected !== undefined && selected !== null;
+  const isCorrect = contractTestResult && selected === question.answer;
+  const feedbackClass = contractTestResult
+    ? isCorrect ? "contract-question-correct" : "contract-question-missed"
+    : "";
+
+  return `
+    <fieldset class="contract-question ${feedbackClass}">
+      <legend><span>${String(questionIndex + 1).padStart(2, "0")}</span>${escapeHtml(question.question)}</legend>
+      <div class="contract-answer-list">
+        ${question.options.map((option, optionIndex) => `
+          <label class="contract-answer-row ${contractTestResult && optionIndex === question.answer ? "contract-answer-correct" : ""}">
+            <input type="radio" name="cq${questionIndex}" value="${optionIndex}" required ${selected === optionIndex ? "checked" : ""} />
+            <span>${escapeHtml(option)}</span>
+          </label>
+        `).join("")}
+      </div>
+      ${contractTestResult && isAnswered ? `
+        <div class="contract-question-explanation">
+          <strong>${isCorrect ? "Вірно" : "Правильна відповідь: " + escapeHtml(question.options[question.answer])}</strong>
+          <p>${escapeHtml(question.explanation)}</p>
+          <small>${escapeHtml(question.reference)}</small>
+        </div>
+      ` : ""}
+    </fieldset>
+  `;
+}
+
+function renderContractQuiz(item) {
+  const test = getContractTest();
+  if (!test) {
+    renderModule(item);
+    return;
+  }
+  const contractDocument = getContractTestDocument(test);
+  if (!contractDocument) {
+    renderModule(item);
+    return;
+  }
+
+  const answered = Object.values(contractTestAnswers).filter((value) => value !== null && value !== undefined).length;
+  screen.innerHTML = `
+    <section class="contract-quiz-workspace" aria-label="${escapeHtml(test.title)}">
+      <header class="contract-quiz-head">
+        <button class="module-back contract-quiz-back" type="button" data-open-module-section="test" data-module-section-lesson="${escapeHtml(item.id)}" aria-label="Назад до тестів">←</button>
+        <div class="contract-quiz-heading">
+          <p class="eyebrow">Практикум з читання договору</p>
+          <h1>${escapeHtml(test.title)}</h1>
+          <p>${answered}/${test.quiz.length} відповідей · прохідний результат ${test.threshold}%</p>
+        </div>
+        ${contractTests.length > 1 ? `
+          <div class="contract-test-switcher" role="tablist" aria-label="Обрати шаблон договору">
+            ${contractTests.map((candidate) => `
+              <button
+                type="button"
+                role="tab"
+                aria-selected="${candidate.id === test.id}"
+                class="${candidate.id === test.id ? "contract-test-tab-active" : ""}"
+                data-open-contract-quiz="${escapeHtml(candidate.id)}"
+              >${escapeHtml(candidate.insurer)}</button>
+            `).join("")}
+          </div>
+        ` : ""}
+      </header>
+
+      <div class="contract-quiz-layout">
+        <article class="contract-document-pane">
+          <header class="contract-pane-head contract-document-head">
+            <div>
+              <span>${escapeHtml(contractDocument.label)}</span>
+              <h2 title="${escapeHtml(contractDocument.title)}">${escapeHtml(contractDocument.title)}</h2>
+              ${contractDocument.sourceUrl ? `
+                <a class="contract-source-link" href="${escapeHtml(contractDocument.sourceUrl)}" target="_blank" rel="noopener">Офіційне джерело ARX</a>
+              ` : ""}
+              ${test.documents.length > 1 ? `
+                <div class="contract-document-switcher" role="tablist" aria-label="Документи ${escapeHtml(test.insurer)}">
+                  ${test.documents.map((documentItem) => `
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected="${documentItem.id === contractDocument.id}"
+                      class="${documentItem.id === contractDocument.id ? "contract-document-tab-active" : ""}"
+                      data-open-contract-document="${escapeHtml(documentItem.id)}"
+                    >${escapeHtml(documentItem.label)}</button>
+                  `).join("")}
+                </div>
+              ` : ""}
+            </div>
+          </header>
+          <div class="contract-document-scroll" tabindex="0" aria-label="${escapeHtml(contractDocument.label)} ${escapeHtml(test.insurer)} — друковані сторінки">
+            <div class="contract-pdf-pages" data-contract-pdf-pages="${escapeHtml(`${test.id}:${contractDocument.id}`)}" aria-live="polite">
+              <div class="contract-document-state">
+                <span class="contract-document-loader" aria-hidden="true"></span>
+                <p>Готуємо сторінки договору…</p>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <section class="contract-questions-pane">
+          <header class="contract-pane-head contract-questions-head">
+            <div>
+              <span>Тест</span>
+              <h2>Усі 15 запитань</h2>
+            </div>
+            <strong>${answered}/${test.quiz.length}</strong>
+          </header>
+          <div class="contract-questions-scroll">
+            ${contractTestResultMarkup(test)}
+            <form class="contract-quiz-form" id="contractQuizForm">
+              ${test.quiz.map((question, questionIndex) => renderContractQuestion(test, question, questionIndex)).join("")}
+              <button class="primary-action primary-action-wide contract-quiz-submit" type="submit">Завершити тест</button>
+            </form>
+          </div>
+        </section>
+      </div>
+    </section>
+  `;
+
+  void renderContractTestPdf(test, contractDocument);
 }
 
 function renderSources() {
@@ -9855,6 +10141,8 @@ document.addEventListener("click", async (event) => {
   const quizButton = event.target.closest("[data-open-quiz]");
   const lawQuizButton = event.target.closest("[data-open-law-quiz]");
   const partnerQuizButton = event.target.closest("[data-open-partner-quiz]");
+  const contractQuizButton = event.target.closest("[data-open-contract-quiz]");
+  const contractDocumentButton = event.target.closest("[data-open-contract-document]");
   const presentationButton = event.target.closest("[data-open-presentation]");
   const munichButton = event.target.closest("[data-open-munich]");
   const editorButton = event.target.closest("[data-editor-lesson]");
@@ -10284,6 +10572,16 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
+  if (contractQuizButton) {
+    openContractTest(contractQuizButton.dataset.openContractQuiz);
+    return;
+  }
+
+  if (contractDocumentButton) {
+    openContractTestDocument(contractDocumentButton.dataset.openContractDocument);
+    return;
+  }
+
   if (presentationButton) {
     setRoute("presentation", presentationButton.dataset.openPresentation);
     return;
@@ -10596,6 +10894,18 @@ document.addEventListener("change", (event) => {
     return;
   }
 
+  if (event.target.matches(".contract-answer-row input")) {
+    const questionIndex = Number(String(event.target.name || "").replace("cq", ""));
+    contractTestAnswers[questionIndex] = Number(event.target.value);
+    const answered = Object.values(contractTestAnswers).filter((value) => value !== null && value !== undefined).length;
+    document.querySelector(".contract-questions-head > strong")?.replaceChildren(`${answered}/${getContractTest()?.quiz.length || 15}`);
+    const headingMeta = document.querySelector(".contract-quiz-heading > p:last-child");
+    if (headingMeta) {
+      headingMeta.textContent = headingMeta.textContent.replace(/^\d+\/\d+/, `${answered}/${getContractTest()?.quiz.length || 15}`);
+    }
+    return;
+  }
+
   if (!event.target.matches(".answer-row input")) {
     return;
   }
@@ -10687,6 +10997,32 @@ document.addEventListener("drop", (event) => {
 }, true);
 
 document.addEventListener("submit", async (event) => {
+  if (event.target.id === "contractQuizForm") {
+    event.preventDefault();
+    const test = getContractTest();
+    if (!test) {
+      return;
+    }
+
+    const formData = new FormData(event.target);
+    let correct = 0;
+    test.quiz.forEach((question, index) => {
+      const selected = Number(formData.get(`cq${index}`));
+      contractTestAnswers[index] = selected;
+      if (selected === question.answer) {
+        correct += 1;
+      }
+    });
+
+    const score = Math.round((correct / test.quiz.length) * 100);
+    contractTestResult = { correct, score };
+    renderContractQuiz(getLesson("property"));
+    window.requestAnimationFrame(() => {
+      document.querySelector(".contract-questions-scroll")?.scrollTo({ top: 0, behavior: prefersReducedMotion ? "auto" : "smooth" });
+    });
+    return;
+  }
+
   if (event.target.id === "clientRecommendationForm") {
     event.preventDefault();
     if (!clientRecommendationIsAllowed()) {

@@ -7136,6 +7136,561 @@ body[data-route="home"] .module-row-end,
   }
 }
 
+.contract-test-entry .article-topic {
+  color: var(--brand-green);
+}
+
+.contract-quiz-workspace {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.contract-quiz-head,
+.contract-document-pane,
+.contract-questions-pane {
+  border: 1px solid rgba(65, 108, 145, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.contract-quiz-head {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 14px;
+}
+
+.contract-quiz-back {
+  width: 34px;
+  height: 34px;
+}
+
+.contract-quiz-heading {
+  min-width: 0;
+}
+
+.contract-quiz-heading .eyebrow {
+  margin: 0 0 3px;
+  color: var(--brand-green);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.contract-quiz-heading h1 {
+  max-width: none;
+  margin: 0;
+  color: var(--brand-navy);
+  font-family: var(--font);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.12;
+}
+
+.contract-quiz-heading > p:last-child {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.contract-test-switcher {
+  grid-column: 2;
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(72px, 1fr));
+  gap: 4px;
+  width: min(220px, 100%);
+  padding: 4px;
+  border: 1px solid rgba(65, 108, 145, 0.1);
+  border-radius: 999px;
+  background: rgba(245, 249, 250, 0.94);
+}
+
+.contract-test-switcher button {
+  min-height: 34px;
+  padding: 0 13px;
+  border-radius: 999px;
+  color: var(--brand-navy);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.contract-test-switcher .contract-test-tab-active {
+  color: #ffffff;
+  background: var(--brand-navy);
+}
+
+.contract-quiz-layout {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.contract-document-pane,
+.contract-questions-pane {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.contract-pane-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 66px;
+  padding: 11px 14px;
+  border-bottom: 1px solid rgba(65, 108, 145, 0.09);
+}
+
+.contract-pane-head > div {
+  min-width: 0;
+}
+
+.contract-pane-head span {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--brand-green);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.contract-pane-head h2 {
+  overflow: hidden;
+  margin: 0;
+  color: var(--brand-navy);
+  font-size: 15px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contract-source-link {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--brand-green);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.contract-document-head,
+.contract-questions-head {
+  min-height: 88px;
+}
+
+.contract-document-head {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.contract-document-switcher {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  width: min(100%, 360px);
+  margin-top: 8px;
+  padding: 3px;
+  border: 1px solid rgba(65, 108, 145, 0.1);
+  border-radius: 9px;
+  background: rgba(245, 249, 250, 0.94);
+}
+
+.contract-document-switcher button {
+  min-width: 0;
+  min-height: 27px;
+  overflow: hidden;
+  padding: 0 8px;
+  border-radius: 6px;
+  color: var(--brand-navy);
+  background: transparent;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contract-document-switcher .contract-document-tab-active {
+  color: #ffffff;
+  background: var(--brand-navy);
+}
+
+.contract-questions-head > strong {
+  display: grid;
+  place-items: center;
+  min-width: 48px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: var(--brand-navy);
+  background: rgba(195, 221, 212, 0.36);
+  font-family: var(--font-numeric);
+  font-size: 13px;
+}
+
+.contract-document-scroll,
+.contract-questions-scroll {
+  min-height: 0;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+.contract-document-scroll {
+  position: relative;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: #cbd0d6;
+}
+
+.contract-pdf-pages {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 100%;
+  padding: 14px;
+  box-sizing: border-box;
+  background: #cbd0d6;
+}
+
+.contract-pdf-pages-external {
+  display: block;
+  height: 100%;
+  min-height: 100%;
+  padding: 0;
+  background: #cbd0d6;
+}
+
+.contract-official-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  border: 0;
+  background: #ffffff;
+}
+
+.contract-pdf-page {
+  overflow: hidden;
+  max-width: 100%;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(28, 43, 55, 0.28);
+}
+
+.contract-pdf-page canvas {
+  display: block;
+  max-width: none;
+}
+
+.contract-document-state {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  min-height: 280px;
+  padding: 28px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.contract-document-state p {
+  max-width: 34ch;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.contract-document-state a {
+  color: var(--brand-green);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.contract-document-loader {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(65, 108, 145, 0.15);
+  border-top-color: var(--brand-green);
+  border-radius: 50%;
+  animation: contractDocumentSpin 720ms linear infinite;
+}
+
+.contract-questions-scroll {
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 12px;
+  background: rgba(249, 251, 255, 0.64);
+}
+
+.contract-quiz-form {
+  display: grid;
+  gap: 10px;
+}
+
+.contract-question {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid rgba(65, 108, 145, 0.09);
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.contract-question legend {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.38;
+}
+
+.contract-question legend > span {
+  color: var(--brand-green);
+  font-family: var(--font-numeric);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.contract-answer-list {
+  display: grid;
+  gap: 6px;
+}
+
+.contract-answer-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+  padding: 9px 10px;
+  border: 1px solid rgba(65, 108, 145, 0.08);
+  border-radius: 8px;
+  background: rgba(249, 251, 255, 0.66);
+  cursor: pointer;
+}
+
+.contract-answer-row:hover {
+  border-color: rgba(51, 127, 109, 0.24);
+  background: rgba(195, 221, 212, 0.13);
+}
+
+.contract-answer-row input {
+  width: 16px;
+  height: 16px;
+  margin: 1px 0 0;
+  accent-color: var(--brand-green);
+}
+
+.contract-answer-row > span {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.contract-question-correct {
+  border-color: rgba(51, 127, 109, 0.28);
+}
+
+.contract-question-missed {
+  border-color: rgba(190, 112, 79, 0.28);
+}
+
+.contract-question-correct .contract-answer-correct,
+.contract-question-missed .contract-answer-correct {
+  border-color: rgba(51, 127, 109, 0.3);
+  background: rgba(195, 221, 212, 0.2);
+}
+
+.contract-question-explanation {
+  display: grid;
+  gap: 5px;
+  padding: 10px 11px;
+  border-left: 3px solid var(--brand-green);
+  border-radius: 0 8px 8px 0;
+  background: rgba(195, 221, 212, 0.14);
+}
+
+.contract-question-explanation strong {
+  color: var(--brand-navy);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.contract-question-explanation p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.contract-question-explanation small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.contract-test-result {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(65, 108, 145, 0.1);
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.contract-test-result h2 {
+  margin: 1px 0 0;
+  color: var(--brand-navy);
+  font-family: var(--font-numeric);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.contract-test-result .section-kicker {
+  margin: 0;
+  font-size: 9px;
+}
+
+.contract-test-result > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.contract-test-result-pass {
+  border-color: rgba(51, 127, 109, 0.26);
+  background: rgba(243, 250, 247, 0.96);
+}
+
+.contract-test-result-review {
+  border-color: rgba(190, 112, 79, 0.22);
+  background: rgba(255, 249, 246, 0.96);
+}
+
+.contract-quiz-submit {
+  margin-top: 4px;
+}
+
+@media (min-width: 1024px) {
+  body[data-route="contract-quiz"] {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body[data-route="contract-quiz"] .app-shell {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100vh;
+    height: 100dvh;
+    min-height: 100svh;
+    padding-bottom: 22px;
+    overflow: hidden;
+  }
+
+  body[data-route="contract-quiz"] .screen,
+  body[data-route="contract-quiz"] .contract-quiz-workspace,
+  body[data-route="contract-quiz"] .contract-quiz-layout {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .contract-quiz-workspace {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .contract-quiz-head {
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    align-items: center;
+    padding: 10px 14px;
+  }
+
+  .contract-test-switcher {
+    grid-column: 3;
+    width: 196px;
+  }
+
+  .contract-quiz-layout {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  }
+
+  body[data-route="contract-quiz"] .bottom-nav {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .contract-document-pane {
+    max-height: 58vh;
+  }
+
+  .contract-questions-pane {
+    overflow: visible;
+  }
+
+  .contract-questions-scroll {
+    overflow: visible;
+  }
+}
+
+@media (max-width: 600px) {
+  .contract-quiz-head {
+    padding: 12px;
+  }
+
+  .contract-quiz-heading h1 {
+    font-size: 21px;
+  }
+
+  .contract-test-switcher {
+    width: 100%;
+  }
+
+  .contract-pane-head {
+    min-height: 60px;
+    padding: 10px 12px;
+  }
+
+  .contract-questions-scroll {
+    padding: 9px;
+  }
+
+  .contract-question {
+    padding: 12px;
+  }
+
+  .contract-test-result {
+    grid-template-columns: 1fr;
+  }
+}
+
+@keyframes contractDocumentSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
