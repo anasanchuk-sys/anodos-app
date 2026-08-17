@@ -8515,9 +8515,9 @@ function renderContractTestsContent(item) {
   return tests.map((test) => `
     <article class="article-card article-card-action contract-test-entry">
       <div>
-        <span class="article-topic">Читання договору · 15 питань</span>
+        <span class="article-topic">Читання умов · 15 питань</span>
         <h3>${escapeHtml(test.title)}</h3>
-        <p>${escapeHtml(test.subtitle)}. Договір і всі запитання відкриваються одночасно.</p>
+        <p>${escapeHtml(test.subtitle)}. Документ і всі запитання відкриваються одночасно.</p>
       </div>
       <button class="article-action" type="button" data-open-contract-quiz="${escapeHtml(test.id)}">Відкрити</button>
     </article>
@@ -9075,12 +9075,12 @@ function renderContractQuiz(item) {
       <header class="contract-quiz-head">
         <button class="module-back contract-quiz-back" type="button" data-open-module-section="test" data-module-section-lesson="${escapeHtml(item.id)}" aria-label="Назад до тестів">←</button>
         <div class="contract-quiz-heading">
-          <p class="eyebrow">Практикум з читання договору</p>
+          <p class="eyebrow">Практикум з читання умов</p>
           <h1>${escapeHtml(test.title)}</h1>
           <p>${answered}/${test.quiz.length} відповідей · прохідний результат ${test.threshold}%</p>
         </div>
         ${contractTests.length > 1 ? `
-          <div class="contract-test-switcher" role="tablist" aria-label="Обрати шаблон договору">
+          <div class="contract-test-switcher" role="tablist" aria-label="Обрати документ для тесту">
             ${contractTests.map((candidate) => `
               <button
                 type="button"
@@ -9118,11 +9118,11 @@ function renderContractQuiz(item) {
               ` : ""}
             </div>
           </header>
-          <div class="contract-document-scroll" tabindex="0" aria-label="${escapeHtml(contractDocument.label)} ${escapeHtml(test.insurer)} — друковані сторінки">
+          <div class="contract-document-scroll" tabindex="0" aria-label="${escapeHtml(contractDocument.label)} ${escapeHtml(test.insurer)} - друковані сторінки">
             <div class="contract-pdf-pages" data-contract-pdf-pages="${escapeHtml(`${test.id}:${contractDocument.id}`)}" aria-live="polite">
               <div class="contract-document-state">
                 <span class="contract-document-loader" aria-hidden="true"></span>
-                <p>Готуємо сторінки договору…</p>
+                <p>Готуємо сторінки документа…</p>
               </div>
             </div>
           </div>

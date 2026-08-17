@@ -1,4 +1,4 @@
-const CACHE_NAME = "platform-shell-v285";
+const CACHE_NAME = "platform-shell-v286";
 const ASSETS = [
   "./",
   "./index.html",
@@ -14,8 +14,9 @@ const ASSETS = [
   "./questionnaire-generator.js?v=10",
   "./client-recommendation.js?v=1",
   "./bank-accreditation-data.js?v=7",
-  "./contract-tests-data.js?v=4",
-  "./app.js?v=191",
+  "./contract-tests-data.js?v=5",
+  "./app.js?v=192",
+  "./assets/contract-tests/arx-zusp-053.pdf",
   "./manifest.webmanifest?v=7",
   "./assets/icon.svg?v=7",
   "./assets/icon-192.png?v=7",
