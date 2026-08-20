@@ -8,6 +8,7 @@ const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)
 const usesDesktopLaunchSequence = window.matchMedia("(min-width: 760px)").matches;
 const productTapMaximumDuration = 800;
 const productTapMovementTolerance = 12;
+const stateCompensationGuideHash = "#state-compensation-guide";
 
 const revealDelay = prefersReducedMotion ? 120 : usesDesktopLaunchSequence ? 3600 : 2850;
 const exitDelay = prefersReducedMotion ? 220 : usesDesktopLaunchSequence ? 4400 : 3420;
@@ -2100,6 +2101,7 @@ let route = "home";
 let activeLessonId = "property";
 let activeModuleSectionId = "";
 let activeStateCompensationView = "";
+let stateCompensationShareMessage = "";
 let quizAnswers = {};
 let quizResult = null;
 let activeContractTestId = contractTests[0]?.id || "";
@@ -2193,6 +2195,116 @@ function writeJson(key, value) {
 
 function normalizeActiveSpace(value) {
   return value === "products" ? "products" : "learning";
+}
+
+function stateCompensationGuideIsActive() {
+  return (
+    activeSpace === "products"
+    && route === "module-section"
+    && activeLessonId === "war"
+    && activeModuleSectionId === "state-compensation"
+    && activeStateCompensationView === "guide"
+  );
+}
+
+function stateCompensationGuideUrl() {
+  const url = new URL(window.location.href);
+  url.hash = stateCompensationGuideHash.slice(1);
+  return url.href;
+}
+
+function syncStateCompensationGuideLocation() {
+  const url = new URL(window.location.href);
+  const shouldUseGuideHash = stateCompensationGuideIsActive();
+
+  if (shouldUseGuideHash && url.hash !== stateCompensationGuideHash) {
+    url.hash = stateCompensationGuideHash.slice(1);
+    window.history.replaceState(null, "", url);
+    return;
+  }
+
+  if (!shouldUseGuideHash && url.hash === stateCompensationGuideHash) {
+    url.hash = "";
+    window.history.replaceState(null, "", url);
+  }
+}
+
+function applyStateCompensationGuideLocation() {
+  if (window.location.hash !== stateCompensationGuideHash) {
+    return false;
+  }
+
+  activeSpace = "products";
+  route = "module-section";
+  activeLessonId = "war";
+  activeModuleSectionId = "state-compensation";
+  activeStateCompensationView = "guide";
+  stateCompensationShareMessage = "";
+  return true;
+}
+
+async function copyTextWithFallback(value) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(value);
+      return true;
+    } catch {
+      // Continue with the selection-based fallback for older browsers and webviews.
+    }
+  }
+
+  const textArea = document.createElement("textarea");
+  textArea.value = value;
+  textArea.setAttribute("readonly", "");
+  textArea.style.position = "fixed";
+  textArea.style.opacity = "0";
+  document.body.appendChild(textArea);
+  textArea.select();
+
+  let copied = false;
+  try {
+    copied = document.execCommand("copy");
+  } catch {
+    copied = false;
+  }
+  textArea.remove();
+  return copied;
+}
+
+function updateStateCompensationShareStatus(message) {
+  stateCompensationShareMessage = message;
+  const status = document.getElementById("stateCompensationShareStatus");
+  if (status) {
+    status.textContent = message;
+  }
+}
+
+async function shareStateCompensationGuide() {
+  const url = stateCompensationGuideUrl();
+  const shareData = {
+    title: "Покрокова програма компенсації",
+    text: "Покрокова інструкція з державної компенсації страхових премій за воєнними ризиками.",
+    url
+  };
+
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+      updateStateCompensationShareStatus("Посилання передано для поширення.");
+      return;
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        return;
+      }
+    }
+  }
+
+  const copied = await copyTextWithFallback(url);
+  updateStateCompensationShareStatus(
+    copied
+      ? "Посилання скопійовано. Його можна вставити в лист або месенджер."
+      : `Скопіюйте посилання: ${url}`
+  );
 }
 
 function activeNavigationRoute() {
@@ -6172,6 +6284,7 @@ function draftFor(id) {
 
 function render() {
   route = availableRoute(route);
+  syncStateCompensationGuideLocation();
   renderSpaceShell();
   body.dataset.route = route;
   body.classList.toggle("scenario-search-active", activeSpace === "products" && route === "home" && scenarioSearchTerm.trim().length > 0);
@@ -8043,6 +8156,10 @@ function renderStateCompensationGuide(program) {
         <p class="section-kicker">${escapeHtml(program.subtitle)}</p>
         <h2>${escapeHtml(program.title)}</h2>
         <p>${escapeHtml(program.updated)}</p>
+        <div class="state-program-share">
+          <button class="secondary-action" type="button" data-share-state-compensation>Поділитися інструкцією</button>
+          <span id="stateCompensationShareStatus" role="status" aria-live="polite">${escapeHtml(stateCompensationShareMessage)}</span>
+        </div>
       </header>
       ${program.sections.map(renderStateCompensationSection).join("")}
     </article>
@@ -10138,6 +10255,7 @@ document.addEventListener("click", async (event) => {
   const moduleButton = event.target.closest("[data-open-module]");
   const moduleSectionButton = event.target.closest("[data-open-module-section]");
   const stateCompensationViewButton = event.target.closest("[data-state-compensation-view]");
+  const shareStateCompensationButton = event.target.closest("[data-share-state-compensation]");
   const quizButton = event.target.closest("[data-open-quiz]");
   const lawQuizButton = event.target.closest("[data-open-law-quiz]");
   const partnerQuizButton = event.target.closest("[data-open-partner-quiz]");
@@ -10421,9 +10539,16 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
+  if (shareStateCompensationButton) {
+    await shareStateCompensationGuide();
+    return;
+  }
+
   if (stateCompensationViewButton) {
     activeStateCompensationView = stateCompensationViewButton.dataset.stateCompensationView || "";
+    stateCompensationShareMessage = "";
     activeModuleSectionId = "state-compensation";
+    syncStateCompensationGuideLocation();
     renderModuleSection(getLesson(activeLessonId), "state-compensation");
     window.requestAnimationFrame(() => {
       screen.scrollIntoView({
@@ -11280,8 +11405,23 @@ window.addEventListener("load", () => {
     splash?.classList.add("splash-exit");
   }, exitDelay);
 
+  applyStateCompensationGuideLocation();
   render();
   syncExistingParticipantOnStartup();
+});
+
+window.addEventListener("hashchange", () => {
+  if (applyStateCompensationGuideLocation()) {
+    render();
+    window.scrollTo(0, 0);
+    return;
+  }
+
+  if (stateCompensationGuideIsActive()) {
+    activeStateCompensationView = "";
+    stateCompensationShareMessage = "";
+    renderModuleSection(getLesson(activeLessonId), "state-compensation");
+  }
 });
 
 function watchForAppUpdates(registration) {
