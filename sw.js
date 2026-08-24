@@ -1,8 +1,8 @@
-const CACHE_NAME = "platform-shell-v287";
+const CACHE_NAME = "platform-shell-v288";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=186",
+  "./styles.css?v=187",
   "./law-data.js?v=3",
   "./munich-re-clauses.js?v=1",
   "./sync-config.js?v=1",
@@ -13,7 +13,7 @@ const ASSETS = [
   "./assets/britmark-logo.png?v=1",
   "./questionnaire-generator.js?v=10",
   "./client-recommendation.js?v=1",
-  "./bank-accreditation-data.js?v=7",
+  "./bank-accreditation-data.js?v=8",
   "./contract-tests-data.js?v=5",
   "./app.js?v=193",
   "./assets/contract-tests/arx-zusp-053.pdf",

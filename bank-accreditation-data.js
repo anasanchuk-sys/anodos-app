@@ -44,6 +44,10 @@
       url: "https://www.ukrgasbank.com/about/insur/",
       source: "Укргазбанк · Страхування заставного майна — партнери для юридичних осіб"
     },
+    sense: {
+      url: "https://sensebank.ua/strahuvanna-neruhomogo-zastavnogo-majna",
+      source: "Sense Bank · Страхування нерухомого заставного майна"
+    },
     bankVostokIngo: {
       url: "https://ingo.ua/cms/image/uploads/Perelik_strakhovykh_poserednykiv_INGO_f5cee059a2.pdf?v=1743763832306",
       source: "ІНГО · Перелік агентів, з якими співпрацює страховик"
@@ -170,6 +174,17 @@
           universalna: mark(sources.procredit),
           pzu: mark(sources.procredit),
           usg: mark(sources.procredit)
+        }
+      },
+      {
+        name: "Акціонерне товариство «Сенс Банк»",
+        legalForm: "Акціонерне товариство",
+        brandName: "Sense Bank",
+        aliases: ["Сенс Банк", "Sense Bank"],
+        insurers: {
+          arx: mark(sources.sense),
+          universalna: mark(sources.sense),
+          arsenal: mark(sources.sense)
         }
       },
       {

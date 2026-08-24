@@ -7092,6 +7092,10 @@ body[data-route="home"] .module-row-end,
 }
 
 @media (min-width: 1024px) {
+  body[data-route="bank-accreditation"] .bank-accreditation-table-shell {
+    overflow-y: hidden;
+  }
+
   body[data-route="bank-accreditation"] .bank-accreditation-head {
     grid-template-columns: 30px minmax(0, 1fr);
     gap: 10px;
@@ -7128,7 +7132,7 @@ body[data-route="home"] .module-row-end,
 
   body[data-route="bank-accreditation"] .bank-accreditation-table th,
   body[data-route="bank-accreditation"] .bank-accreditation-table td {
-    height: 32px;
+    height: 26px;
     padding-top: 1px;
     padding-bottom: 1px;
   }
@@ -7151,7 +7155,7 @@ body[data-route="home"] .module-row-end,
   }
 
   body[data-route="bank-accreditation"] .bank-accreditation-cell {
-    height: 27px;
+    height: 21px;
   }
 }
 
