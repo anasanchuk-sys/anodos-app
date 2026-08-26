@@ -9,6 +9,7 @@ const usesDesktopLaunchSequence = window.matchMedia("(min-width: 760px)").matche
 const productTapMaximumDuration = 800;
 const productTapMovementTolerance = 12;
 const stateCompensationGuideHash = "#state-compensation-guide";
+const contractReviewHash = "#contract-review";
 
 const revealDelay = prefersReducedMotion ? 120 : usesDesktopLaunchSequence ? 3600 : 2850;
 const exitDelay = prefersReducedMotion ? 220 : usesDesktopLaunchSequence ? 4400 : 3420;
@@ -2040,6 +2041,8 @@ const spaceDefinitions = {
 };
 const adminAccessPassword = "02022004";
 const contractReviewSupportedExtensions = [".doc", ".docx", ".pdf", ".xls", ".xlsx"];
+const contractReviewModeKey = "anodos-contract-review-mode-v1";
+const propertyReviewHistoryKey = "anodos-property-review-history-v1";
 const contractReviewFields = [
   { key: "insured", label: "Юридична особа", control: "Повна назва страхувальника з договору, додаткової угоди або реквізитів." },
   { key: "address", label: "Адреса дії договору", control: "Територія страхування або фактична адреса майна, не юридична адреса." },
@@ -2158,6 +2161,10 @@ let contractReviewResult = null;
 let contractReviewCopyMessage = "";
 let contractReviewBusy = false;
 let contractReviewPdfModulePromise = null;
+let contractReviewMode = localStorage.getItem(contractReviewModeKey) === "compare" ? "compare" : "property";
+let propertyReviewResult = null;
+let propertyReviewBusy = false;
+let propertyReviewHistory = readJson(propertyReviewHistoryKey, []);
 let profileEditMode = false;
 let registeredUsers = readJson(usersKey, []);
 let currentUserId = localStorage.getItem(currentUserKey) || "";
@@ -2240,6 +2247,17 @@ function applyStateCompensationGuideLocation() {
   activeModuleSectionId = "state-compensation";
   activeStateCompensationView = "guide";
   stateCompensationShareMessage = "";
+  return true;
+}
+
+function applyContractReviewLocation() {
+  if (window.location.hash !== contractReviewHash) {
+    return false;
+  }
+
+  activeSpace = "products";
+  route = "contract-review";
+  contractReviewMode = "property";
   return true;
 }
 
@@ -2826,6 +2844,11 @@ async function contractReviewReadDocx(fileRecord) {
   const zip = await window.JSZip.loadAsync(fileRecord.file);
   const xmlNames = Object.keys(zip.files).filter((name) => /^word\/document\.xml$/i.test(name));
   const xmlParts = await Promise.all(xmlNames.map((name) => zip.files[name].async("string")));
+  const settingsName = Object.keys(zip.files).find((name) => /^word\/settings\.xml$/i.test(name));
+  const settingsXml = settingsName ? await zip.files[settingsName].async("string") : "";
+  fileRecord.hasUnresolvedRevisions = xmlParts.some((xml) => /<w:(?:ins|del|moveFrom|moveTo)\b/i.test(xml))
+    || /<w:trackRevisions\b/i.test(settingsXml);
+  fileRecord.hasComments = Object.keys(zip.files).some((name) => /^word\/comments(?:Extended)?\.xml$/i.test(name));
   return contractReviewNormalizeText(xmlParts.map(contractReviewXmlToText).filter(Boolean).join("\n\n"));
 }
 
@@ -5250,6 +5273,7 @@ function addContractReviewFiles(files) {
     }
   });
   contractReviewResult = null;
+  propertyReviewResult = null;
   clientRecommendationResult = null;
   contractReviewCopyMessage = "";
   renderContractReviewCurrentSurface();
@@ -5268,6 +5292,7 @@ function updateContractReviewFileAssignment(fileId, assignmentType, value) {
     fileRecord.documentRoleTouched = true;
   }
   contractReviewResult = null;
+  propertyReviewResult = null;
   clientRecommendationResult = null;
   contractReviewCopyMessage = "";
   renderContractReviewCurrentSurface();
@@ -5285,6 +5310,7 @@ function removeContractReviewFile(fileId) {
     }
   }
   contractReviewResult = null;
+  propertyReviewResult = null;
   clientRecommendationResult = null;
   contractReviewCopyMessage = "";
   renderContractReviewCurrentSurface();
@@ -5293,8 +5319,201 @@ function removeContractReviewFile(fileId) {
 function resetContractReviewFiles() {
   contractReviewFiles = [];
   contractReviewResult = null;
+  propertyReviewResult = null;
   clientRecommendationResult = null;
   contractReviewCopyMessage = "";
+  renderContractReviewCurrentSurface();
+}
+
+function setContractReviewMode(mode) {
+  const nextMode = mode === "compare" ? "compare" : "property";
+  if (contractReviewMode === nextMode) {
+    return;
+  }
+  contractReviewMode = nextMode;
+  localStorage.setItem(contractReviewModeKey, contractReviewMode);
+  contractReviewCopyMessage = "";
+  renderContractReviewCurrentSurface();
+}
+
+async function buildPropertyReviewResult() {
+  if (!window.AnodosPropertyReview) {
+    contractReviewCopyMessage = "Модуль перевірки майнового договору не завантажився. Онови сторінку і спробуй ще раз.";
+    renderContractReviewCurrentSurface();
+    return;
+  }
+  if (!contractReviewFiles.length) {
+    contractReviewCopyMessage = "Додай договір страхування майна.";
+    renderContractReviewCurrentSurface();
+    return;
+  }
+
+  propertyReviewBusy = true;
+  contractReviewCopyMessage = "Читаю документи і перевіряю умови...";
+  renderContractReviewCurrentSurface();
+
+  try {
+    const enriched = await Promise.all(contractReviewFiles.map(async (fileRecord) => {
+      try {
+        const extracted = await contractReviewReadText(fileRecord);
+        return {
+          ...fileRecord,
+          text: extracted.text,
+          readStatus: extracted.status,
+          hasUnresolvedRevisions: Boolean(fileRecord.hasUnresolvedRevisions),
+          hasComments: Boolean(fileRecord.hasComments)
+        };
+      } catch (error) {
+        return {
+          ...fileRecord,
+          text: "",
+          readStatus: error?.message || "Файл не вдалося прочитати"
+        };
+      }
+    }));
+    contractReviewFiles = enriched;
+    const readable = enriched.filter((file) => file.text);
+    const combinedText = readable.map((file) => file.text).join("\n\n");
+    const extracted = combinedText ? contractReviewAnalyzeValues(combinedText) : { values: {}, fields: {} };
+    propertyReviewResult = window.AnodosPropertyReview.analyze({
+      documents: readable.map((file) => ({
+        name: file.name,
+        text: file.text,
+        hasUnresolvedRevisions: Boolean(file.hasUnresolvedRevisions),
+        hasComments: Boolean(file.hasComments)
+      })),
+      fields: extracted.values
+    });
+    propertyReviewResult.statuses = enriched.map((file) => `${file.name}: ${file.readStatus}`);
+    propertyReviewResult.sourceFiles = enriched.map((file) => file.name);
+    propertyReviewResult.fieldEvidence = extracted.fields;
+    contractReviewCopyMessage = propertyReviewResult.blocked
+      ? propertyReviewResult.diagnosticExplanation
+      : propertyReviewResult.issues.length
+        ? `Перевірку завершено: ${propertyReviewResult.issues.length} пунктів потребують уваги.`
+        : "Автоматичні перевірки не виявили пунктів для виправлення. Ручні пункти все одно потрібно пройти фахівцю.";
+  } catch (error) {
+    propertyReviewResult = null;
+    contractReviewCopyMessage = `Не вдалося завершити перевірку: ${error?.message || "невідома помилка"}`;
+  } finally {
+    propertyReviewBusy = false;
+  }
+  renderContractReviewCurrentSurface();
+}
+
+function propertyReviewResultText(result = propertyReviewResult) {
+  if (!result) {
+    return "";
+  }
+  const date = new Date(result.createdAt || Date.now()).toLocaleString("uk-UA");
+  const lines = [
+    "ANODOS - ПЕРЕВІРКА ДОГОВОРУ СТРАХУВАННЯ МАЙНА",
+    `Чекліст: ${result.version || "Майно"}`,
+    `Дата: ${date}`,
+    `Файли: ${(result.sourceFiles || result.documents?.map((item) => item.name) || []).join("; ")}`,
+    ""
+  ];
+  if (result.blocked) {
+    lines.push(result.diagnosticTitle || "Перевірку не завершено", result.diagnosticExplanation || "", "");
+  } else {
+    lines.push(
+      `Критичні: ${result.summary?.critical || 0}`,
+      `Високі: ${result.summary?.high || 0}`,
+      `Середні: ${result.summary?.medium || 0}`,
+      `Автоматизовано: ${result.summary?.automated || 0} з ${result.summary?.total || 0}`,
+      ""
+    );
+    result.issues.forEach((issue, index) => {
+      const source = [
+        issue.evidence?.fileName || "",
+        issue.evidence?.page ? `сторінка ${issue.evidence.page}` : "",
+        issue.evidence?.clause ? `пункт ${issue.evidence.clause}` : ""
+      ].filter(Boolean).join(", ");
+      lines.push(
+        `${index + 1}. ${issue.title}`,
+        `Ризик: ${issue.risk}`,
+        `Що виправити: ${issue.recommendation}`,
+        source ? `Джерело: ${source}` : "Джерело: потребує ручного пошуку",
+        issue.evidence?.snippet ? `Фрагмент: ${issue.evidence.snippet}` : "",
+        ""
+      );
+    });
+  }
+  lines.push("Результат є інструментом попередньої перевірки, а не юридичним висновком.");
+  return lines.filter((line, index, all) => line || all[index - 1]).join("\n").trim();
+}
+
+async function copyPropertyReviewResult() {
+  if (!propertyReviewResult) {
+    contractReviewCopyMessage = "Спочатку перевір договір.";
+    renderContractReviewCurrentSurface();
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(propertyReviewResultText());
+    contractReviewCopyMessage = "Результат перевірки скопійовано.";
+  } catch {
+    contractReviewCopyMessage = "Не вдалося скопіювати автоматично. Завантаж результат як TXT.";
+  }
+  renderContractReviewCurrentSurface();
+}
+
+function propertyReviewSafeFileName(value) {
+  return String(value || "договір")
+    .replace(/\.[^.]+$/, "")
+    .replace(/[^A-Za-zА-Яа-яІіЇїЄєҐґ0-9_-]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 72) || "договір";
+}
+
+function downloadPropertyReviewResult() {
+  if (!propertyReviewResult) {
+    contractReviewCopyMessage = "Спочатку перевір договір.";
+    renderContractReviewCurrentSurface();
+    return;
+  }
+  const primaryName = propertyReviewResult.sourceFiles?.[0] || propertyReviewResult.documents?.[0]?.name || "договір";
+  const blob = new Blob([propertyReviewResultText()], { type: "text/plain;charset=utf-8" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `Anodos_перевірка_${propertyReviewSafeFileName(primaryName)}.txt`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  contractReviewCopyMessage = `Завантажено: ${link.download}`;
+  renderContractReviewCurrentSurface();
+}
+
+function savePropertyReviewResult() {
+  if (!propertyReviewResult || propertyReviewResult.blocked) {
+    contractReviewCopyMessage = "Зберегти можна лише завершену перевірку.";
+    renderContractReviewCurrentSurface();
+    return;
+  }
+  const snapshot = JSON.parse(JSON.stringify(propertyReviewResult));
+  snapshot.id = `property-review-${Date.now()}`;
+  snapshot.savedAt = new Date().toISOString();
+  propertyReviewHistory = [snapshot, ...propertyReviewHistory].slice(0, 20);
+  localStorage.setItem(propertyReviewHistoryKey, JSON.stringify(propertyReviewHistory));
+  contractReviewCopyMessage = "Результат збережено у цьому браузері.";
+  renderContractReviewCurrentSurface();
+}
+
+function openSavedPropertyReview(resultId) {
+  const saved = propertyReviewHistory.find((item) => item.id === resultId);
+  if (!saved) {
+    return;
+  }
+  propertyReviewResult = JSON.parse(JSON.stringify(saved));
+  contractReviewCopyMessage = "Відкрито збережений результат.";
+  renderContractReviewCurrentSurface();
+}
+
+function removeSavedPropertyReview(resultId) {
+  propertyReviewHistory = propertyReviewHistory.filter((item) => item.id !== resultId);
+  localStorage.setItem(propertyReviewHistoryKey, JSON.stringify(propertyReviewHistory));
+  contractReviewCopyMessage = "Збережений результат видалено з цього браузера.";
   renderContractReviewCurrentSurface();
 }
 
@@ -6565,6 +6784,227 @@ function renderContractReviewFile(file, index) {
   `;
 }
 
+function renderContractReviewModeSwitch() {
+  return `
+    <nav class="contract-review-mode-switch" aria-label="Режим роботи з договорами">
+      <button type="button" data-contract-review-mode="property" aria-pressed="${contractReviewMode === "property"}">
+        Перевірити договір
+      </button>
+      <button type="button" data-contract-review-mode="compare" aria-pressed="${contractReviewMode === "compare"}">
+        Порівняти договори
+      </button>
+    </nav>
+  `;
+}
+
+function renderPropertyReviewFile(file) {
+  const canRead = contractReviewCanAutoReadFile(file);
+  const signals = [
+    file.hasUnresolvedRevisions ? "є Track Changes" : "",
+    file.hasComments ? "є коментарі" : ""
+  ].filter(Boolean).join(", ");
+  return `
+    <li class="contract-review-file ${canRead ? "contract-review-file-ready" : "contract-review-file-blocked"}">
+      <span>
+        <strong>${escapeHtml(file.name)}</strong>
+        <small>${escapeHtml(contractReviewFormatSize(file.size))}${file.readStatus ? ` · ${escapeHtml(file.readStatus)}` : ""}${signals ? ` · ${escapeHtml(signals)}` : ""}</small>
+      </span>
+      <button type="button" data-remove-contract-review-file="${escapeHtml(file.id)}" aria-label="Прибрати файл ${escapeHtml(file.name)}">×</button>
+    </li>
+  `;
+}
+
+function propertyReviewEvidenceLabel(evidence) {
+  if (!evidence) {
+    return "";
+  }
+  return [
+    evidence.fileName || "",
+    evidence.page ? `сторінка ${evidence.page}` : "",
+    evidence.clause ? `пункт ${evidence.clause}` : ""
+  ].filter(Boolean).join(" · ");
+}
+
+function renderPropertyReviewResult() {
+  const result = propertyReviewResult;
+  if (!result) {
+    return "";
+  }
+  if (result.blocked) {
+    return `
+      <section class="contract-review-result contract-review-diagnostic">
+        <header class="contract-review-result-head">
+          <div>
+            <p class="eyebrow">Діагностика</p>
+            <h2>${escapeHtml(result.diagnosticTitle || "Перевірку не завершено")}</h2>
+          </div>
+        </header>
+        <p class="contract-review-note">${escapeHtml(result.diagnosticExplanation || "Перевір формат і зміст документа.")}</p>
+        ${result.statuses?.length ? `
+          <ul class="contract-review-diagnostic-list">
+            ${result.statuses.map((status) => `<li>${escapeHtml(status)}</li>`).join("")}
+          </ul>
+        ` : ""}
+      </section>
+    `;
+  }
+
+  const manualChecks = result.checks?.filter((check) => check.status === "manual") || [];
+  return `
+    <section class="contract-review-result property-review-result" aria-live="polite">
+      <header class="contract-review-result-head">
+        <div>
+          <p class="eyebrow">Результат · ${escapeHtml(result.version || "Майно")}</p>
+          <h2>Що потрібно виправити</h2>
+        </div>
+        <div class="contract-review-result-actions">
+          <button class="primary-action" type="button" data-copy-property-review>Копіювати</button>
+          <button class="secondary-action" type="button" data-download-property-review>Завантажити TXT</button>
+          <button class="secondary-action" type="button" data-save-property-review>Зберегти</button>
+        </div>
+      </header>
+
+      <div class="contract-review-quality-summary property-review-summary" aria-label="Підсумок перевірки">
+        <article class="property-review-summary-critical">
+          <strong>${result.summary?.critical || 0}</strong>
+          <span>критичні</span>
+        </article>
+        <article class="property-review-summary-high">
+          <strong>${result.summary?.high || 0}</strong>
+          <span>високі</span>
+        </article>
+        <article>
+          <strong>${result.summary?.medium || 0}</strong>
+          <span>середні</span>
+        </article>
+        <article>
+          <strong>${result.summary?.manual || 0}</strong>
+          <span>ручні перевірки</span>
+        </article>
+      </div>
+
+      ${result.issues?.length ? `
+        <ol class="property-review-issues">
+          ${result.issues.map((issue) => `
+            <li class="property-review-issue property-review-issue-${escapeHtml(issue.severity)}">
+              <h3>${escapeHtml(issue.title)}</h3>
+              <dl>
+                <div><dt>Чому це ризик</dt><dd>${escapeHtml(issue.risk)}</dd></div>
+                <div><dt>Що виправити</dt><dd>${escapeHtml(issue.recommendation)}</dd></div>
+              </dl>
+              ${issue.evidence ? `
+                <details class="property-review-evidence">
+                  <summary>Показати джерело${propertyReviewEvidenceLabel(issue.evidence) ? ` · ${escapeHtml(propertyReviewEvidenceLabel(issue.evidence))}` : ""}</summary>
+                  <blockquote>${escapeHtml(issue.evidence.snippet || "Фрагмент визначено за структурою файла.")}</blockquote>
+                </details>
+              ` : `<p class="property-review-manual-source">Потрібно знайти і підтвердити пункт у договорі вручну.</p>`}
+            </li>
+          `).join("")}
+        </ol>
+      ` : `<p class="property-review-clear">Автоматичні перевірки не виявили пунктів для виправлення.</p>`}
+
+      ${manualChecks.length ? `
+        <details class="property-review-manual-checks">
+          <summary>${manualChecks.length} пунктів, які потребують перевірки фахівцем</summary>
+          <ul>${manualChecks.map((check) => `<li><strong>${escapeHtml(check.id)}</strong> ${escapeHtml(check.title)}</li>`).join("")}</ul>
+        </details>
+      ` : ""}
+      <p class="contract-review-note">Це попередня автоматизована перевірка, а не юридичний висновок. Пункти без однозначного текстового доказу позначені для ручної перевірки.</p>
+    </section>
+  `;
+}
+
+function renderPropertyReviewHistory() {
+  if (!propertyReviewHistory.length) {
+    return "";
+  }
+  return `
+    <section class="property-review-history">
+      <header>
+        <div>
+          <p class="eyebrow">Локальне збереження</p>
+          <h2>Збережені перевірки</h2>
+        </div>
+        <span>${propertyReviewHistory.length}</span>
+      </header>
+      <ul>
+        ${propertyReviewHistory.map((item) => {
+          const name = item.sourceFiles?.[0] || item.documents?.[0]?.name || "Договір";
+          const savedAt = new Date(item.savedAt || item.createdAt || Date.now()).toLocaleString("uk-UA");
+          return `
+            <li>
+              <div>
+                <strong>${escapeHtml(name)}</strong>
+                <small>${escapeHtml(savedAt)} · ${item.issues?.length || 0} пунктів</small>
+              </div>
+              <span>
+                <button type="button" data-open-property-review="${escapeHtml(item.id)}">Відкрити</button>
+                <button type="button" data-remove-property-review="${escapeHtml(item.id)}">Видалити</button>
+              </span>
+            </li>
+          `;
+        }).join("")}
+      </ul>
+      <p>Зберігається лише результат перевірки у цьому браузері. Текст завантаженого договору не зберігається.</p>
+    </section>
+  `;
+}
+
+function renderPropertyReview() {
+  const readyFilesCount = contractReviewFiles.filter(contractReviewCanAutoReadFile).length;
+  const canRun = readyFilesCount >= 1 && !propertyReviewBusy;
+  const runButtonText = propertyReviewBusy
+    ? "Перевіряю..."
+    : readyFilesCount
+      ? "Перевірити договір"
+      : "Додай читабельний договір";
+  screen.innerHTML = `
+    <section class="contract-review-workspace">
+      <header class="contract-review-head property-review-head">
+        <button class="module-back" type="button" data-route="home" aria-label="Назад до продуктів">←</button>
+        <div>
+          <p class="eyebrow">Anodos · договори</p>
+          <h1>Перевірка договору страхування майна</h1>
+          <p class="hero-copy">Завантаж договір і супровідні документи. Anodos знайде ризикові умови та сформує список конкретних правок із посиланнями на текст.</p>
+        </div>
+      </header>
+
+      ${renderContractReviewModeSwitch()}
+
+      <section class="contract-review-dropzone" data-contract-review-dropzone aria-label="Додати договір страхування майна">
+        <input id="contractReviewInput" type="file" multiple accept=".doc,.docx,.pdf,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+        <label for="contractReviewInput">
+          <span>Додай договір</span>
+          <strong>Перетягни або вибери файли</strong>
+          <b class="contract-review-browse-button">Вибрати договір</b>
+          <small>Основний договір можна доповнити додатками й додатковими угодами. Автоматично читаються DOC, DOCX і PDF з текстовим шаром.</small>
+        </label>
+      </section>
+
+      ${contractReviewFiles.length ? `
+        <section class="contract-review-files-panel">
+          <div class="contract-review-panel-head">
+            <p>${contractReviewFiles.length} ${contractReviewFiles.length === 1 ? "файл" : "файли"}</p>
+            <button type="button" data-clear-contract-review-files>Очистити</button>
+          </div>
+          <ol class="contract-review-files">
+            ${contractReviewFiles.map(renderPropertyReviewFile).join("")}
+          </ol>
+          <p class="${readyFilesCount ? "contract-review-readiness" : "contract-review-readiness contract-review-readiness-warning"}">
+            ${readyFilesCount ? `Готові до аналізу: ${readyFilesCount} з ${contractReviewFiles.length}.` : "Потрібен DOC, DOCX або PDF з текстовим шаром."}
+          </p>
+          <button class="primary-action primary-action-wide" type="button" data-run-property-review ${canRun ? "" : "disabled"}>${runButtonText}</button>
+          ${contractReviewCopyMessage ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>` : ""}
+        </section>
+      ` : contractReviewCopyMessage ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>` : ""}
+
+      <p class="property-review-privacy">Документи аналізуються локально у вашому браузері й не передаються на сервер. Результат зберігається лише після натискання «Зберегти», без тексту договору.</p>
+      ${renderPropertyReviewResult()}
+      ${renderPropertyReviewHistory()}
+    </section>
+  `;
+}
+
 function contractReviewConfidenceLabel(confidence) {
   return {
     high: "Підтверджено джерелом",
@@ -6718,6 +7158,11 @@ function renderContractReviewTable() {
 }
 
 function renderContractReview() {
+  const renderer = contractReviewMode === "property" ? renderPropertyReview : renderContractReviewComparison;
+  renderer();
+}
+
+function renderContractReviewComparison() {
   const packageStatus = contractReviewPackageAssignmentStatus(contractReviewFiles);
   const activeFilesCount = packageStatus.activeFiles.length;
   const readyFilesCount = packageStatus.activeFiles.filter(contractReviewCanAutoReadFile).length;
@@ -6750,6 +7195,8 @@ function renderContractReview() {
           <p class="hero-copy">Завантаж два або більше пакетів документів, перевір їхні ролі та сформуй порівняльну таблицю. Сумнівні або конфліктні дані система позначить окремо.</p>
         </div>
       </header>
+
+      ${renderContractReviewModeSwitch()}
 
       <section class="contract-review-dropzone" data-contract-review-dropzone aria-label="Додати договори">
         <input id="contractReviewInput" type="file" multiple accept=".doc,.docx,.pdf,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
@@ -10283,10 +10730,17 @@ document.addEventListener("click", async (event) => {
   const scenarioExampleButton = event.target.closest("[data-scenario-example]");
   const scenarioAction = event.target.closest("[data-scenario-action]");
   const bankAccreditationCell = event.target.closest("[data-accreditation-cell]");
+  const contractReviewModeButton = event.target.closest("[data-contract-review-mode]");
   const removeContractReviewFileButton = event.target.closest("[data-remove-contract-review-file]");
   const clearContractReviewFilesButton = event.target.closest("[data-clear-contract-review-files]");
   const runContractReviewButton = event.target.closest("[data-run-contract-review]");
   const copyContractReviewButton = event.target.closest("[data-copy-contract-review]");
+  const runPropertyReviewButton = event.target.closest("[data-run-property-review]");
+  const copyPropertyReviewButton = event.target.closest("[data-copy-property-review]");
+  const downloadPropertyReviewButton = event.target.closest("[data-download-property-review]");
+  const savePropertyReviewButton = event.target.closest("[data-save-property-review]");
+  const openPropertyReviewButton = event.target.closest("[data-open-property-review]");
+  const removePropertyReviewButton = event.target.closest("[data-remove-property-review]");
   const downloadQuestionnaireButton = event.target.closest("[data-download-questionnaire]");
   const openClientRecommendationButton = event.target.closest("[data-open-client-recommendation]");
   const downloadClientRecommendationButton = event.target.closest("[data-download-client-recommendation]");
@@ -10348,6 +10802,41 @@ document.addEventListener("click", async (event) => {
 
   if (compassOpen && !event.target.closest(".compass-panel") && !event.target.closest("[data-open-compass]")) {
     setCompassOpen(false);
+  }
+
+  if (contractReviewModeButton) {
+    setContractReviewMode(contractReviewModeButton.dataset.contractReviewMode);
+    return;
+  }
+
+  if (runPropertyReviewButton) {
+    await buildPropertyReviewResult();
+    return;
+  }
+
+  if (copyPropertyReviewButton) {
+    await copyPropertyReviewResult();
+    return;
+  }
+
+  if (downloadPropertyReviewButton) {
+    downloadPropertyReviewResult();
+    return;
+  }
+
+  if (savePropertyReviewButton) {
+    savePropertyReviewResult();
+    return;
+  }
+
+  if (openPropertyReviewButton) {
+    openSavedPropertyReview(openPropertyReviewButton.dataset.openPropertyReview);
+    return;
+  }
+
+  if (removePropertyReviewButton) {
+    removeSavedPropertyReview(removePropertyReviewButton.dataset.removePropertyReview);
+    return;
   }
 
   if (removeContractReviewFileButton) {
@@ -11405,13 +11894,21 @@ window.addEventListener("load", () => {
     splash?.classList.add("splash-exit");
   }, exitDelay);
 
-  applyStateCompensationGuideLocation();
+  if (!applyStateCompensationGuideLocation()) {
+    applyContractReviewLocation();
+  }
   render();
   syncExistingParticipantOnStartup();
 });
 
 window.addEventListener("hashchange", () => {
   if (applyStateCompensationGuideLocation()) {
+    render();
+    window.scrollTo(0, 0);
+    return;
+  }
+
+  if (applyContractReviewLocation()) {
     render();
     window.scrollTo(0, 0);
     return;
