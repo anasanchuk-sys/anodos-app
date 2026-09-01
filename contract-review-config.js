@@ -3,7 +3,7 @@
 
   const supplied = globalScope.ANODOS_CONTRACT_REVIEW_CONFIG || {};
   globalScope.ANODOS_CONTRACT_REVIEW_CONFIG = Object.freeze({
-    endpoint: "/api/contract-review",
+    endpoint: "https://anodos-contract-review.mesquite-wishbone.workers.dev",
     timeoutMs: 180000,
     ...supplied
   });
