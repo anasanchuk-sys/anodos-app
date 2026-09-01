@@ -238,11 +238,12 @@
   async function parseResponse(response) {
     const contentType = response.headers?.get?.("content-type") || "";
     if (!contentType.includes("application/json")) {
+      const endpointMissing = response.status === 404 || response.status === 405;
       throw new SemanticReviewError(
-        response.status === 404
-          ? "Сервер семантичної перевірки ще не підключено до цього домену."
+        endpointMissing
+          ? "Сервер семантичної перевірки ще не підключено. Завантаження документа працює, але аналіз неможливий до розгортання API."
           : "Сервер повернув відповідь у невідомому форматі.",
-        response.status === 404 ? "endpoint_not_configured" : "invalid_response",
+        endpointMissing ? "endpoint_not_configured" : "invalid_response",
         { status: response.status, retryable: response.status >= 500 }
       );
     }
