@@ -2040,7 +2040,12 @@ const spaceDefinitions = {
   }
 };
 const adminAccessPassword = "02022004";
-const contractReviewSupportedExtensions = [".doc", ".docx", ".pdf", ".xls", ".xlsx"];
+const contractReviewSupportedExtensions = [
+  ".doc",
+  ".docx",
+  ".pdf",
+  ...(window.AnodosContractFileReader?.extensions || [])
+];
 const contractReviewModeKey = "anodos-contract-review-mode-v1";
 const propertyReviewHistoryKey = "anodos-property-review-history-v1";
 const contractReviewFields = [
@@ -2164,6 +2169,7 @@ let contractReviewPdfModulePromise = null;
 let contractReviewMode = localStorage.getItem(contractReviewModeKey) === "compare" ? "compare" : "property";
 let propertyReviewResult = null;
 let propertyReviewBusy = false;
+let propertyReviewExternalConsent = false;
 let propertyReviewHistory = readJson(propertyReviewHistoryKey, []);
 let profileEditMode = false;
 let registeredUsers = readJson(usersKey, []);
@@ -2752,7 +2758,7 @@ function contractReviewCanAutoReadFile(fileRecord) {
   if (extension === ".pdf") {
     return window.location.protocol !== "file:";
   }
-  return false;
+  return Boolean(window.AnodosContractFileReader?.canRead(fileRecord?.name));
 }
 
 function contractReviewInitialStatus(fileRecord) {
@@ -2763,13 +2769,13 @@ function contractReviewInitialStatus(fileRecord) {
   if (extension === ".pdf") {
     return window.location.protocol === "file:"
       ? "PDF додано, але режим file:// не може його прочитати. Відкрий Anodos через локальну адресу http://127.0.0.1 або збережи договір як DOCX"
-      : "готовий до аналізу, якщо PDF має текстовий шар";
+      : "готовий до аналізу; скановані сторінки буде розпізнано OCR";
   }
   if (extension === ".doc") {
     return "готовий до аналізу як старий Word DOC";
   }
-  if (extension === ".xls" || extension === ".xlsx") {
-    return "Excel можна додати як супровідний файл, але договір треба завантажити у DOC або DOCX";
+  if (window.AnodosContractFileReader?.canRead(fileRecord?.name)) {
+    return window.AnodosContractFileReader.initialStatus(fileRecord?.name);
   }
   return "формат не читається автоматично";
 }
@@ -2842,7 +2848,13 @@ async function contractReviewReadDocx(fileRecord) {
   }
 
   const zip = await window.JSZip.loadAsync(fileRecord.file);
-  const xmlNames = Object.keys(zip.files).filter((name) => /^word\/document\.xml$/i.test(name));
+  const xmlNames = Object.keys(zip.files)
+    .filter((name) => /^word\/(?:document|footnotes|endnotes)\.xml$/i.test(name))
+    .sort((left, right) => {
+      if (/word\/document\.xml$/i.test(left)) return -1;
+      if (/word\/document\.xml$/i.test(right)) return 1;
+      return left.localeCompare(right);
+    });
   const xmlParts = await Promise.all(xmlNames.map((name) => zip.files[name].async("string")));
   const settingsName = Object.keys(zip.files).find((name) => /^word\/settings\.xml$/i.test(name));
   const settingsXml = settingsName ? await zip.files[settingsName].async("string") : "";
@@ -2916,14 +2928,42 @@ async function contractReviewReadPdf(fileRecord) {
   const data = new Uint8Array(await fileRecord.file.arrayBuffer());
   const pdf = await pdfjs.getDocument({ data, disableWorker: true }).promise;
   const pageTexts = [];
+  const ocrConfidences = [];
+  let ocrPages = 0;
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
     const page = await pdf.getPage(pageNumber);
     const content = await page.getTextContent();
-    const text = contractReviewPdfPageText(content);
+    let text = contractReviewPdfPageText(content);
+    const visibleCharacters = (text.match(/[A-Za-zА-Яа-яІіЇїЄєҐґ0-9]/g) || []).length;
+    if (visibleCharacters < 32 && window.AnodosContractFileReader?.recognize) {
+      const baseViewport = page.getViewport({ scale: 1 });
+      const scale = Math.max(1.6, Math.min(2.5, 2200 / Math.max(baseViewport.width, baseViewport.height)));
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.ceil(viewport.width));
+      canvas.height = Math.max(1, Math.ceil(viewport.height));
+      const context = canvas.getContext("2d", { alpha: false });
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: context, viewport }).promise;
+      const recognized = await window.AnodosContractFileReader.recognize(canvas);
+      if (recognized.text && recognized.text.length > text.trim().length) {
+        text = recognized.text;
+        ocrPages += 1;
+        ocrConfidences.push(recognized.confidence);
+      }
+      canvas.width = 1;
+      canvas.height = 1;
+    }
     if (text.trim()) {
       pageTexts.push(`[Сторінка ${pageNumber}]\n${text.trim()}`);
     }
+    page.cleanup?.();
   }
+  fileRecord.ocrPages = ocrPages;
+  fileRecord.ocrConfidence = ocrConfidences.length
+    ? ocrConfidences.reduce((sum, value) => sum + value, 0) / ocrConfidences.length
+    : 0;
   return contractReviewNormalizeText(pageTexts.join("\n\n"));
 }
 
@@ -3291,10 +3331,12 @@ async function contractReviewReadText(fileRecord) {
     return {
       text,
       status: text
-        ? "PDF прочитано"
+        ? fileRecord.ocrPages
+          ? `PDF прочитано; OCR: ${fileRecord.ocrPages} стор., впевненість ${Math.round(fileRecord.ocrConfidence || 0)}%`
+          : "PDF прочитано з текстового шару"
         : window.location.protocol === "file:"
           ? "PDF у локальному file-режимі не читається. Для аналізу збережи як DOC/DOCX або відкрий HTTPS-версію"
-          : "PDF не містить текстового шару"
+          : "PDF не містить текстового шару, а OCR не знайшов читабельного тексту"
     };
   }
 
@@ -3313,9 +3355,13 @@ async function contractReviewReadText(fileRecord) {
     };
   }
 
+  if (window.AnodosContractFileReader?.canRead(fileRecord.name)) {
+    return window.AnodosContractFileReader.read(fileRecord);
+  }
+
   return {
     text: "",
-    status: `${extension.toUpperCase().replace(".", "") || "Файл"} додано, але автозчитування зараз працює для DOC, DOCX і текстових PDF`
+    status: `${extension.toUpperCase().replace(".", "") || "Файл"} додано, але цей формат не вдалося прочитати`
   };
 }
 
@@ -5253,7 +5299,7 @@ function addContractReviewFiles(files) {
     .filter((file) => !existingIds.has(file.id));
 
   if (!nextFiles.length) {
-    contractReviewCopyMessage = incoming.length ? "Ці файли вже додано." : "Підтримуються DOC, DOCX, PDF, XLS, XLSX.";
+    contractReviewCopyMessage = incoming.length ? "Ці файли вже додано." : "Підтримуються PDF, Word, OpenDocument, RTF, текстові файли, таблиці та зображення.";
     renderContractReviewCurrentSurface();
     return;
   }
@@ -5337,13 +5383,18 @@ function setContractReviewMode(mode) {
 }
 
 async function buildPropertyReviewResult() {
-  if (!window.AnodosPropertyReview) {
-    contractReviewCopyMessage = "Модуль перевірки майнового договору не завантажився. Онови сторінку і спробуй ще раз.";
+  if (!window.AnodosPropertyReviewSemantic || !window.AnodosPropertyReview?.checks?.length) {
+    contractReviewCopyMessage = "Модуль семантичної перевірки майнового договору не завантажився. Онови сторінку і спробуй ще раз.";
     renderContractReviewCurrentSurface();
     return;
   }
   if (!contractReviewFiles.length) {
     contractReviewCopyMessage = "Додай договір страхування майна.";
+    renderContractReviewCurrentSurface();
+    return;
+  }
+  if (!propertyReviewExternalConsent) {
+    contractReviewCopyMessage = "Підтвердь передачу розпізнаного тексту серверу Anodos і зовнішній AI-моделі.";
     renderContractReviewCurrentSurface();
     return;
   }
@@ -5373,28 +5424,47 @@ async function buildPropertyReviewResult() {
     }));
     contractReviewFiles = enriched;
     const readable = enriched.filter((file) => file.text);
-    const combinedText = readable.map((file) => file.text).join("\n\n");
-    const extracted = combinedText ? contractReviewAnalyzeValues(combinedText) : { values: {}, fields: {} };
-    propertyReviewResult = window.AnodosPropertyReview.analyze({
+    contractReviewCopyMessage = readable.length
+      ? `Прочитано ${readable.length} ${readable.length === 1 ? "документ" : "документи"}. Аналізую всі умови за чеклістом...`
+      : "У документах не знайдено читабельного тексту.";
+    renderContractReviewCurrentSurface();
+    propertyReviewResult = await window.AnodosPropertyReviewSemantic.analyze({
+      version: window.AnodosPropertyReview.version,
+      checklist: window.AnodosPropertyReview.checks,
       documents: readable.map((file) => ({
         name: file.name,
         text: file.text,
         hasUnresolvedRevisions: Boolean(file.hasUnresolvedRevisions),
-        hasComments: Boolean(file.hasComments)
-      })),
-      fields: extracted.values
+        hasComments: Boolean(file.hasComments),
+        ocrPages: Number(file.ocrPages) || 0,
+        ocrConfidence: Number(file.ocrConfidence) || 0
+      }))
     });
     propertyReviewResult.statuses = enriched.map((file) => `${file.name}: ${file.readStatus}`);
     propertyReviewResult.sourceFiles = enriched.map((file) => file.name);
-    propertyReviewResult.fieldEvidence = extracted.fields;
     contractReviewCopyMessage = propertyReviewResult.blocked
       ? propertyReviewResult.diagnosticExplanation
       : propertyReviewResult.issues.length
-        ? `Перевірку завершено: ${propertyReviewResult.issues.length} пунктів потребують уваги.`
-        : "Автоматичні перевірки не виявили пунктів для виправлення. Ручні пункти все одно потрібно пройти фахівцю.";
+        ? `Прочитано весь доступний текст. ${propertyReviewResult.issues.length} пунктів потребують уваги.`
+        : `Прочитано весь доступний текст. Усі ${propertyReviewResult.summary?.reviewed || 0} критерії оцінено без зауважень.`;
   } catch (error) {
-    propertyReviewResult = null;
-    contractReviewCopyMessage = `Не вдалося завершити перевірку: ${error?.message || "невідома помилка"}`;
+    propertyReviewResult = {
+      version: window.AnodosPropertyReview?.version || "Майно",
+      analysisMode: "semantic",
+      blocked: true,
+      diagnosticTitle: error?.code === "endpoint_not_configured" || error?.code === "service_not_configured"
+        ? "Семантичний аналіз ще не підключено"
+        : "Семантичну перевірку не завершено",
+      diagnosticExplanation: error?.message || "Невідома помилка сервера семантичної перевірки.",
+      errorCode: error?.code || "semantic_review_failed",
+      statuses: contractReviewFiles.map((file) => `${file.name}: ${file.readStatus || "статус читання невідомий"}`),
+      sourceFiles: contractReviewFiles.map((file) => file.name),
+      issues: [],
+      checks: [],
+      parameters: [],
+      summary: { critical: 0, high: 0, medium: 0, acceptable: 0, missing: 0, unclear: 0, reviewed: 0, total: window.AnodosPropertyReview?.checks?.length || 0 }
+    };
+    contractReviewCopyMessage = propertyReviewResult.diagnosticExplanation;
   } finally {
     propertyReviewBusy = false;
   }
@@ -5420,9 +5490,20 @@ function propertyReviewResultText(result = propertyReviewResult) {
       `Критичні: ${result.summary?.critical || 0}`,
       `Високі: ${result.summary?.high || 0}`,
       `Середні: ${result.summary?.medium || 0}`,
-      `Автоматизовано: ${result.summary?.automated || 0} з ${result.summary?.total || 0}`,
+      `Прийнятні: ${result.summary?.acceptable || 0}`,
+      `Перевірено: ${result.summary?.reviewed || 0} з ${result.summary?.total || 0}`,
       ""
     );
+    if (result.overallAssessment) {
+      lines.push("ЗАГАЛЬНА ОЦІНКА", result.overallAssessment, "");
+    }
+    if (result.parameters?.length) {
+      lines.push("ЗНАЙДЕНІ ПАРАМЕТРИ");
+      result.parameters.forEach((parameter) => {
+        lines.push(`${parameter.label}: ${parameter.value || (parameter.status === "missing" ? "не знайдено" : "потрібно уточнити")}`);
+      });
+      lines.push("");
+    }
     result.issues.forEach((issue, index) => {
       const source = [
         issue.evidence?.fileName || "",
@@ -5431,9 +5512,11 @@ function propertyReviewResultText(result = propertyReviewResult) {
       ].filter(Boolean).join(", ");
       lines.push(
         `${index + 1}. ${issue.title}`,
+        `Оцінка: ${issue.statusLabel || issue.status || "потребує уваги"}`,
         `Ризик: ${issue.risk}`,
         `Що виправити: ${issue.recommendation}`,
-        source ? `Джерело: ${source}` : "Джерело: потребує ручного пошуку",
+        issue.proposedWording ? `Запропонована редакція: ${issue.proposedWording}` : "",
+        source ? `Джерело: ${source}` : issue.status === "missing" ? "Джерело: умову не знайдено в усьому тексті" : "Джерело: не підтверджено",
         issue.evidence?.snippet ? `Фрагмент: ${issue.evidence.snippet}` : "",
         ""
       );
@@ -5453,7 +5536,7 @@ async function copyPropertyReviewResult() {
     await navigator.clipboard.writeText(propertyReviewResultText());
     contractReviewCopyMessage = "Результат перевірки скопійовано.";
   } catch {
-    contractReviewCopyMessage = "Не вдалося скопіювати автоматично. Завантаж результат як TXT.";
+    contractReviewCopyMessage = "Не вдалося скопіювати автоматично. Завантаж результат як PDF.";
   }
   renderContractReviewCurrentSurface();
 }
@@ -5466,22 +5549,25 @@ function propertyReviewSafeFileName(value) {
     .slice(0, 72) || "договір";
 }
 
-function downloadPropertyReviewResult() {
+async function downloadPropertyReviewResult() {
   if (!propertyReviewResult) {
     contractReviewCopyMessage = "Спочатку перевір договір.";
     renderContractReviewCurrentSurface();
     return;
   }
-  const primaryName = propertyReviewResult.sourceFiles?.[0] || propertyReviewResult.documents?.[0]?.name || "договір";
-  const blob = new Blob([propertyReviewResultText()], { type: "text/plain;charset=utf-8" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = `Anodos_перевірка_${propertyReviewSafeFileName(primaryName)}.txt`;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-  contractReviewCopyMessage = `Завантажено: ${link.download}`;
+  if (!window.AnodosPropertyReviewReport?.download) {
+    contractReviewCopyMessage = "Модуль PDF не завантажився. Онови сторінку і спробуй ще раз.";
+    renderContractReviewCurrentSurface();
+    return;
+  }
+  contractReviewCopyMessage = "Формую PDF-звіт з логотипом BRITMARK...";
+  renderContractReviewCurrentSurface();
+  try {
+    const { filename } = await window.AnodosPropertyReviewReport.download(propertyReviewResult);
+    contractReviewCopyMessage = `Завантажено: ${filename}`;
+  } catch (error) {
+    contractReviewCopyMessage = `Не вдалося сформувати PDF: ${error?.message || "невідома помилка"}`;
+  }
   renderContractReviewCurrentSurface();
 }
 
@@ -5679,8 +5765,8 @@ async function buildContractReviewResult() {
         createdAt: new Date().toISOString()
       };
       contractReviewCopyMessage = readableFiles.length
-        ? "Порівняння не запущено: прочитано лише один договір. Додай другий DOC, DOCX або текстовий PDF."
-        : "Порівняння не запущено: Anodos не зміг прочитати текст договорів. Для автоматичного аналізу потрібні два DOC, DOCX або текстові PDF.";
+        ? "Порівняння не запущено: прочитано лише один договір. Додай другий читабельний файл."
+        : "Порівняння не запущено: Anodos не зміг прочитати текст договорів. Перевір якість файлів або OCR.";
       contractReviewBusy = false;
       renderContractReviewCurrentSurface();
       return;
@@ -5713,7 +5799,7 @@ async function buildContractReviewResult() {
         statuses: enriched.map((file) => `${file.name}: ${file.readStatus}`),
         createdAt: new Date().toISOString()
       };
-      contractReviewCopyMessage = "Один із призначених основних договорів не вдалося прочитати. Обери читабельні DOC, DOCX або текстові PDF.";
+      contractReviewCopyMessage = "Один із призначених основних договорів не вдалося прочитати. Перевір статус файла або якість OCR.";
       contractReviewBusy = false;
       renderContractReviewCurrentSurface();
       return;
@@ -5867,7 +5953,7 @@ async function buildContractReviewResult() {
       ? `Порівняння сформовано: ${verifiedCount} надійних, ${attentionCount} потребують ручної перевірки.${packageOrderCorrected ? " Пакети автоматично впорядковано за періодом дії." : ""}`
       : readableCount
         ? "Документи прочитано, але параметри не знайдені автоматично. Перевір формат договору."
-        : "Не вдалося прочитати текст договорів. Для автоматичного аналізу завантаж DOC, DOCX або текстовий PDF.";
+        : "Не вдалося прочитати текст договорів. Перевір якість файлів або результати OCR.";
   } finally {
     contractReviewBusy = false;
   }
@@ -6849,17 +6935,18 @@ function renderPropertyReviewResult() {
     `;
   }
 
-  const manualChecks = result.checks?.filter((check) => check.status === "manual") || [];
+  const parameters = result.parameters || [];
+  const allChecks = result.checks || [];
   return `
     <section class="contract-review-result property-review-result" aria-live="polite">
       <header class="contract-review-result-head">
         <div>
-          <p class="eyebrow">Результат · ${escapeHtml(result.version || "Майно")}</p>
-          <h2>Що потрібно виправити</h2>
+          <p class="eyebrow">Семантичний аналіз · ${escapeHtml(result.version || "Майно")}</p>
+          <h2>Що Anodos знайшов у договорі</h2>
         </div>
         <div class="contract-review-result-actions">
           <button class="primary-action" type="button" data-copy-property-review>Копіювати</button>
-          <button class="secondary-action" type="button" data-download-property-review>Завантажити TXT</button>
+          <button class="secondary-action" type="button" data-download-property-review>Завантажити PDF</button>
           <button class="secondary-action" type="button" data-save-property-review>Зберегти</button>
         </div>
       </header>
@@ -6878,38 +6965,100 @@ function renderPropertyReviewResult() {
           <span>середні</span>
         </article>
         <article>
-          <strong>${result.summary?.manual || 0}</strong>
-          <span>ручні перевірки</span>
+          <strong>${result.summary?.acceptable || 0}</strong>
+          <span>прийнятні</span>
         </article>
       </div>
+
+      ${result.overallAssessment ? `
+        <section class="property-review-overall">
+          <p class="eyebrow">Загальна оцінка</p>
+          <p>${escapeHtml(result.overallAssessment)}</p>
+        </section>
+      ` : ""}
+
+      ${parameters.length ? `
+        <section class="property-review-parameters">
+          <header>
+            <div>
+              <p class="eyebrow">Параметри договору</p>
+              <h3>Знайдено безпосередньо в тексті</h3>
+            </div>
+            <span>${parameters.filter((parameter) => parameter.status === "found").length} з ${parameters.length}</span>
+          </header>
+          <dl>
+            ${parameters.map((parameter) => `
+              <div class="property-review-parameter property-review-parameter-${escapeHtml(parameter.status)}">
+                <dt>${escapeHtml(parameter.label)}</dt>
+                <dd>${escapeHtml(parameter.value || (parameter.status === "missing" ? "Не знайдено" : "Потрібно уточнити"))}</dd>
+                ${parameter.evidence?.snippet ? `
+                  <details>
+                    <summary>Джерело${propertyReviewEvidenceLabel(parameter.evidence) ? ` · ${escapeHtml(propertyReviewEvidenceLabel(parameter.evidence))}` : ""}</summary>
+                    <blockquote>${escapeHtml(parameter.evidence.snippet)}</blockquote>
+                  </details>
+                ` : parameter.explanation ? `<small>${escapeHtml(parameter.explanation)}</small>` : ""}
+              </div>
+            `).join("")}
+          </dl>
+        </section>
+      ` : ""}
+
+      <header class="property-review-findings-head">
+        <div>
+          <p class="eyebrow">Рекомендації</p>
+          <h3>Що потрібно виправити</h3>
+        </div>
+        <span>${result.issues?.length || 0}</span>
+      </header>
 
       ${result.issues?.length ? `
         <ol class="property-review-issues">
           ${result.issues.map((issue) => `
             <li class="property-review-issue property-review-issue-${escapeHtml(issue.severity)}">
+              <div class="property-review-issue-status">${escapeHtml(issue.statusLabel || "Потребує уваги")}</div>
               <h3>${escapeHtml(issue.title)}</h3>
               <dl>
+                <div><dt>Оцінка умови</dt><dd>${escapeHtml(issue.assessment || issue.risk)}</dd></div>
                 <div><dt>Чому це ризик</dt><dd>${escapeHtml(issue.risk)}</dd></div>
                 <div><dt>Що виправити</dt><dd>${escapeHtml(issue.recommendation)}</dd></div>
+                ${issue.proposedWording ? `<div class="property-review-wording"><dt>Запропонована редакція</dt><dd>${escapeHtml(issue.proposedWording)}</dd></div>` : ""}
               </dl>
               ${issue.evidence ? `
                 <details class="property-review-evidence">
                   <summary>Показати джерело${propertyReviewEvidenceLabel(issue.evidence) ? ` · ${escapeHtml(propertyReviewEvidenceLabel(issue.evidence))}` : ""}</summary>
                   <blockquote>${escapeHtml(issue.evidence.snippet || "Фрагмент визначено за структурою файла.")}</blockquote>
                 </details>
-              ` : `<p class="property-review-manual-source">Потрібно знайти і підтвердити пункт у договорі вручну.</p>`}
+              ` : issue.status === "missing"
+                ? `<p class="property-review-manual-source">Anodos перевірив увесь прочитаний текст і не знайшов цієї умови.</p>`
+                : `<p class="property-review-manual-source">Дослівного доказового фрагмента не підтверджено.</p>`}
             </li>
           `).join("")}
         </ol>
-      ` : `<p class="property-review-clear">Автоматичні перевірки не виявили пунктів для виправлення.</p>`}
+      ` : `<p class="property-review-clear">Усі ${result.summary?.reviewed || allChecks.length} критерії прочитані й оцінені без зауважень.</p>`}
 
-      ${manualChecks.length ? `
-        <details class="property-review-manual-checks">
-          <summary>${manualChecks.length} пунктів, які потребують перевірки фахівцем</summary>
-          <ul>${manualChecks.map((check) => `<li><strong>${escapeHtml(check.id)}</strong> ${escapeHtml(check.title)}</li>`).join("")}</ul>
+      ${allChecks.length ? `
+        <details class="property-review-all-checks">
+          <summary>Показати оцінку всіх ${allChecks.length} критеріїв</summary>
+          <ol>
+            ${allChecks.map((check) => `
+              <li class="property-review-check property-review-check-${escapeHtml(check.status)}">
+                <div>
+                  <strong>${escapeHtml(check.title)}</strong>
+                  <span>${escapeHtml(check.statusLabel || check.status)}</span>
+                </div>
+                <p>${escapeHtml(check.assessment)}</p>
+                ${check.evidence?.snippet ? `
+                  <details>
+                    <summary>Дослівний фрагмент${propertyReviewEvidenceLabel(check.evidence) ? ` · ${escapeHtml(propertyReviewEvidenceLabel(check.evidence))}` : ""}</summary>
+                    <blockquote>${escapeHtml(check.evidence.snippet)}</blockquote>
+                  </details>
+                ` : ""}
+              </li>
+            `).join("")}
+          </ol>
         </details>
       ` : ""}
-      <p class="contract-review-note">Це попередня автоматизована перевірка, а не юридичний висновок. Пункти без однозначного текстового доказу позначені для ручної перевірки.</p>
+      <p class="contract-review-note">Anodos семантично аналізує весь прочитаний текст. Знайдений висновок приймається лише з дослівною цитатою, яку система повторно звіряє з документом. Це інструмент попередньої фахової перевірки, а не юридичний висновок.</p>
     </section>
   `;
 }
@@ -6952,10 +7101,12 @@ function renderPropertyReviewHistory() {
 
 function renderPropertyReview() {
   const readyFilesCount = contractReviewFiles.filter(contractReviewCanAutoReadFile).length;
-  const canRun = readyFilesCount >= 1 && !propertyReviewBusy;
+  const canRun = readyFilesCount >= 1 && propertyReviewExternalConsent && !propertyReviewBusy;
   const runButtonText = propertyReviewBusy
     ? "Перевіряю..."
-    : readyFilesCount
+    : readyFilesCount && !propertyReviewExternalConsent
+      ? "Підтвердь передачу тексту"
+      : readyFilesCount
       ? "Перевірити договір"
       : "Додай читабельний договір";
   screen.innerHTML = `
@@ -6972,12 +7123,12 @@ function renderPropertyReview() {
       ${renderContractReviewModeSwitch()}
 
       <section class="contract-review-dropzone" data-contract-review-dropzone aria-label="Додати договір страхування майна">
-        <input id="contractReviewInput" type="file" multiple accept=".doc,.docx,.pdf,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+        <input id="contractReviewInput" type="file" multiple accept=".doc,.docx,.pdf,.xls,.xlsx,.xlsb,.ods,.numbers,.odt,.rtf,.txt,.md,.csv,.tsv,.html,.htm,.xml,.json,.pptx,.png,.jpg,.jpeg,.webp,.bmp,.gif,.tif,.tiff,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,application/rtf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/*,image/*" />
         <label for="contractReviewInput">
           <span>Додай договір</span>
           <strong>Перетягни або вибери файли</strong>
           <b class="contract-review-browse-button">Вибрати договір</b>
-          <small>Основний договір можна доповнити додатками й додатковими угодами. Автоматично читаються DOC, DOCX і PDF з текстовим шаром.</small>
+          <small>Читаються PDF, Word, ODT, RTF, текстові файли, таблиці та зображення. Скановані PDF і фото розпізнаються OCR українською та англійською.</small>
         </label>
       </section>
 
@@ -6991,14 +7142,21 @@ function renderPropertyReview() {
             ${contractReviewFiles.map(renderPropertyReviewFile).join("")}
           </ol>
           <p class="${readyFilesCount ? "contract-review-readiness" : "contract-review-readiness contract-review-readiness-warning"}">
-            ${readyFilesCount ? `Готові до аналізу: ${readyFilesCount} з ${contractReviewFiles.length}.` : "Потрібен DOC, DOCX або PDF з текстовим шаром."}
+            ${readyFilesCount ? `Готові до аналізу: ${readyFilesCount} з ${contractReviewFiles.length}.` : "Додай читабельний документ або зображення договору."}
           </p>
           <button class="primary-action primary-action-wide" type="button" data-run-property-review ${canRun ? "" : "disabled"}>${runButtonText}</button>
           ${contractReviewCopyMessage ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>` : ""}
         </section>
       ` : contractReviewCopyMessage ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>` : ""}
 
-      <p class="property-review-privacy">Документи аналізуються локально у вашому браузері й не передаються на сервер. Результат зберігається лише після натискання «Зберегти», без тексту договору.</p>
+      <section class="property-review-privacy">
+        <p>Файл читається й розпізнається у браузері, після чого текст захищеним з'єднанням передається серверу Anodos, який виконує семантичний аналіз через зовнішню AI-модель. API-ключ зберігається лише на сервері. Результат зберігається у браузері тільки після натискання «Зберегти», без тексту договору.</p>
+        <label>
+          <input type="checkbox" data-property-review-consent ${propertyReviewExternalConsent ? "checked" : ""} />
+          <span>Розумію і погоджуюся на передачу розпізнаного тексту для цієї перевірки.</span>
+        </label>
+        <small>За стандартними правилами зовнішнього провайдера вміст API може зберігатися в журналах контролю зловживань до 30 днів. <a href="https://platform.openai.com/docs/models/default-usage-policies-by-endpoint" target="_blank" rel="noopener noreferrer">Докладніше про обробку даних</a>.</small>
+      </section>
       ${renderPropertyReviewResult()}
       ${renderPropertyReviewHistory()}
     </section>
@@ -7039,8 +7197,8 @@ function renderContractReviewTable() {
       || (contractReviewResult.blocked ? "Порівняння не запущено" : "Дані не витягнулися");
     const explanation = contractReviewResult.diagnosticExplanation
       || (contractReviewResult.blocked
-        ? "Anodos не формує порожню таблицю, якщо прочитано менше двох договорів. Додай два договори у DOC, DOCX або PDF з текстовим шаром."
-        : "Anodos не буде показувати порожню таблицю як результат. Перевір формат файлів і завантаж заповнені договори у форматі DOC, DOCX або PDF з текстовим шаром.");
+        ? "Anodos не формує порожню таблицю, якщо прочитано менше двох договорів. Додай два читабельні договори."
+        : "Anodos не буде показувати порожню таблицю як результат. Перевір статус читання кожного файла та якість OCR.");
     return `
       <section class="contract-review-result contract-review-diagnostic">
         <header class="contract-review-result-head">
@@ -7053,7 +7211,7 @@ function renderContractReviewTable() {
         <ul class="contract-review-diagnostic-list">
           ${contractReviewResult.statuses.map((status) => `<li>${escapeHtml(status)}</li>`).join("")}
         </ul>
-        <p class="contract-review-note">Якщо PDF є сканом, його треба спочатку розпізнати OCR. Для старих DOC Anodos читає текст напряму, але якість залежить від структури файлу.</p>
+        <p class="contract-review-note">Скановані сторінки та зображення Anodos розпізнає локальним OCR. Низьку впевненість розпізнавання потрібно перевірити за оригіналом.</p>
       </section>
     `;
   }
@@ -7199,7 +7357,7 @@ function renderContractReviewComparison() {
       ${renderContractReviewModeSwitch()}
 
       <section class="contract-review-dropzone" data-contract-review-dropzone aria-label="Додати договори">
-        <input id="contractReviewInput" type="file" multiple accept=".doc,.docx,.pdf,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+        <input id="contractReviewInput" type="file" multiple accept=".doc,.docx,.pdf,.xls,.xlsx,.xlsb,.ods,.numbers,.odt,.rtf,.txt,.md,.csv,.tsv,.html,.htm,.xml,.json,.pptx,.png,.jpg,.jpeg,.webp,.bmp,.gif,.tif,.tiff,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,application/rtf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/*,image/*" />
         <label for="contractReviewInput">
           <span>Додай договори</span>
           <strong>Перетягни або вибери файли</strong>
@@ -7361,7 +7519,7 @@ function renderClientRecommendation() {
         </header>
 
         <section class="contract-review-dropzone" data-contract-review-dropzone aria-label="Додати договори для рекомендації">
-          <input id="contractReviewInput" type="file" multiple accept=".doc,.docx,.pdf,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+          <input id="contractReviewInput" type="file" multiple accept=".doc,.docx,.pdf,.xls,.xlsx,.xlsb,.ods,.numbers,.odt,.rtf,.txt,.md,.csv,.tsv,.html,.htm,.xml,.json,.pptx,.png,.jpg,.jpeg,.webp,.bmp,.gif,.tif,.tiff,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,application/rtf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/*,image/*" />
           <label for="contractReviewInput">
             <span>Документи Клієнта</span>
             <strong>Перетягни або вибери файли</strong>
@@ -10820,7 +10978,7 @@ document.addEventListener("click", async (event) => {
   }
 
   if (downloadPropertyReviewButton) {
-    downloadPropertyReviewResult();
+    await downloadPropertyReviewResult();
     return;
   }
 
@@ -11453,6 +11611,13 @@ document.addEventListener("input", (event) => {
 });
 
 document.addEventListener("change", (event) => {
+  if (event.target.matches("[data-property-review-consent]")) {
+    propertyReviewExternalConsent = Boolean(event.target.checked);
+    contractReviewCopyMessage = "";
+    renderContractReviewCurrentSurface();
+    return;
+  }
+
   if (event.target.id === "contractReviewInput") {
     addContractReviewFiles(event.target.files);
     event.target.value = "";

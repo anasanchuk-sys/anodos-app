@@ -7754,6 +7754,42 @@ body[data-route="home"] .module-row-end,
   line-height: 1.45;
 }
 
+.property-review-privacy p {
+  margin: 0;
+}
+
+.property-review-privacy label {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 9px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.property-review-privacy input {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  margin: 0;
+  accent-color: var(--green);
+}
+
+.property-review-privacy small {
+  display: block;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 9.5px;
+  font-weight: 650;
+}
+
+.property-review-privacy a {
+  color: var(--green);
+  font-weight: 850;
+}
+
 .property-review-summary {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -7774,6 +7810,210 @@ body[data-route="home"] .module-row-end,
 
 .property-review-summary .property-review-summary-high strong {
   color: #a65c23;
+}
+
+.property-review-overall,
+.property-review-parameters,
+.property-review-all-checks {
+  border: 1px solid rgba(65, 108, 145, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.property-review-overall {
+  padding: 15px 16px;
+  border-left: 4px solid var(--green);
+  background: linear-gradient(135deg, rgba(224, 241, 235, 0.72), rgba(255, 255, 255, 0.94));
+}
+
+.property-review-overall > p:last-child {
+  margin: 5px 0 0;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 680;
+  line-height: 1.55;
+}
+
+.property-review-parameters {
+  overflow: hidden;
+}
+
+.property-review-parameters > header,
+.property-review-findings-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.property-review-parameters > header {
+  padding: 14px 15px;
+  border-bottom: 1px solid rgba(65, 108, 145, 0.08);
+  background: rgba(245, 249, 250, 0.76);
+}
+
+.property-review-parameters h3,
+.property-review-findings-head h3 {
+  margin: 3px 0 0;
+  color: var(--navy);
+  font-size: 17px;
+}
+
+.property-review-parameters > header > span,
+.property-review-findings-head > span {
+  display: grid;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--green);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.property-review-parameters > dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.property-review-parameter {
+  min-width: 0;
+  padding: 11px 13px;
+  border-bottom: 1px solid rgba(65, 108, 145, 0.07);
+}
+
+.property-review-parameter:nth-child(odd) {
+  border-right: 1px solid rgba(65, 108, 145, 0.07);
+}
+
+.property-review-parameter dt {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.property-review-parameter dd {
+  margin: 4px 0 0;
+  color: var(--navy);
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.property-review-parameter-missing dd,
+.property-review-parameter-unclear dd {
+  color: #9a6a16;
+}
+
+.property-review-parameter details,
+.property-review-parameter small {
+  display: block;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 9.5px;
+  line-height: 1.4;
+}
+
+.property-review-parameter summary,
+.property-review-all-checks summary {
+  color: var(--green);
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.property-review-parameter blockquote,
+.property-review-check blockquote {
+  margin: 7px 0 0;
+  padding: 8px 9px;
+  border-left: 2px solid rgba(51, 127, 109, 0.3);
+  background: rgba(245, 249, 250, 0.84);
+  line-height: 1.45;
+}
+
+.property-review-findings-head {
+  margin-top: 4px;
+}
+
+.property-review-issue-status {
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #7b4f12;
+  background: rgba(244, 213, 143, 0.3);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.property-review-wording {
+  padding: 10px;
+  border-radius: 7px;
+  background: rgba(224, 241, 235, 0.55);
+}
+
+.property-review-all-checks {
+  padding: 13px 14px;
+}
+
+.property-review-all-checks > summary {
+  font-size: 12px;
+}
+
+.property-review-all-checks > ol {
+  display: grid;
+  gap: 7px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.property-review-check {
+  padding: 10px 11px;
+  border: 1px solid rgba(65, 108, 145, 0.08);
+  border-left: 3px solid #416c91;
+  border-radius: 7px;
+  background: rgba(245, 249, 250, 0.62);
+}
+
+.property-review-check-acceptable {
+  border-left-color: var(--green);
+}
+
+.property-review-check-needs_change,
+.property-review-check-missing {
+  border-left-color: #a65c23;
+}
+
+.property-review-check > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.property-review-check strong {
+  color: var(--navy);
+  font-size: 11px;
+}
+
+.property-review-check span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.property-review-check > p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
 }
 
 .property-review-issues {
@@ -7994,6 +8234,19 @@ body[data-route="home"] .module-row-end,
   .property-review-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     overflow: visible;
+  }
+
+  .property-review-parameters > dl {
+    grid-template-columns: 1fr;
+  }
+
+  .property-review-parameter:nth-child(odd) {
+    border-right: 0;
+  }
+
+  .property-review-check > div {
+    display: grid;
+    gap: 4px;
   }
 
   .property-review-issue dl > div {
