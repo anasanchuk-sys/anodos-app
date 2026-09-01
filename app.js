@@ -7000,12 +7000,12 @@ function renderPropertyReview() {
       ` : contractReviewCopyMessage ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>` : ""}
 
       <section class="property-review-privacy">
-        <p>Файл читається й розпізнається у браузері, після чого текст захищеним з'єднанням передається серверу Anodos, який виконує семантичний аналіз через зовнішню AI-модель. API-ключ зберігається лише на сервері. Текст і результат перевірки не зберігаються у браузері; PDF завантажується лише на пристрій користувача.</p>
+        <p>Файл читається й розпізнається у браузері, після чого текст захищеним з'єднанням передається серверу Anodos у Cloudflare Workers AI. Worker Anodos не зберігає текст або результат перевірки; PDF завантажується лише на пристрій користувача.</p>
         <label>
           <input type="checkbox" data-property-review-consent ${propertyReviewExternalConsent ? "checked" : ""} />
           <span>Розумію і погоджуюся на передачу розпізнаного тексту для цієї перевірки.</span>
         </label>
-        <small>За стандартними правилами зовнішнього провайдера вміст API може зберігатися в журналах контролю зловживань до 30 днів. <a href="https://platform.openai.com/docs/models/default-usage-policies-by-endpoint" target="_blank" rel="noopener noreferrer">Докладніше про обробку даних</a>.</small>
+        <small>Cloudflare не використовує переданий текст для навчання моделей або поліпшення своїх чи сторонніх сервісів. Сервіси зберігання Cloudflare для цієї перевірки не підключені. <a href="https://developers.cloudflare.com/workers-ai/platform/data-usage/" target="_blank" rel="noopener noreferrer">Докладніше про обробку даних</a>.</small>
       </section>
       ${renderPropertyReviewResult()}
     </section>
