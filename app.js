@@ -2047,7 +2047,6 @@ const contractReviewSupportedExtensions = [
   ...(window.AnodosContractFileReader?.extensions || [])
 ];
 const contractReviewModeKey = "anodos-contract-review-mode-v1";
-const propertyReviewHistoryKey = "anodos-property-review-history-v1";
 const contractReviewFields = [
   { key: "insured", label: "Юридична особа", control: "Повна назва страхувальника з договору, додаткової угоди або реквізитів." },
   { key: "address", label: "Адреса дії договору", control: "Територія страхування або фактична адреса майна, не юридична адреса." },
@@ -2170,7 +2169,6 @@ let contractReviewMode = localStorage.getItem(contractReviewModeKey) === "compar
 let propertyReviewResult = null;
 let propertyReviewBusy = false;
 let propertyReviewExternalConsent = false;
-let propertyReviewHistory = readJson(propertyReviewHistoryKey, []);
 let profileEditMode = false;
 let registeredUsers = readJson(usersKey, []);
 let currentUserId = localStorage.getItem(currentUserKey) || "";
@@ -5471,84 +5469,6 @@ async function buildPropertyReviewResult() {
   renderContractReviewCurrentSurface();
 }
 
-function propertyReviewResultText(result = propertyReviewResult) {
-  if (!result) {
-    return "";
-  }
-  const date = new Date(result.createdAt || Date.now()).toLocaleString("uk-UA");
-  const lines = [
-    "ANODOS - ПЕРЕВІРКА ДОГОВОРУ СТРАХУВАННЯ МАЙНА",
-    `Чекліст: ${result.version || "Майно"}`,
-    `Дата: ${date}`,
-    `Файли: ${(result.sourceFiles || result.documents?.map((item) => item.name) || []).join("; ")}`,
-    ""
-  ];
-  if (result.blocked) {
-    lines.push(result.diagnosticTitle || "Перевірку не завершено", result.diagnosticExplanation || "", "");
-  } else {
-    lines.push(
-      `Критичні: ${result.summary?.critical || 0}`,
-      `Високі: ${result.summary?.high || 0}`,
-      `Середні: ${result.summary?.medium || 0}`,
-      `Прийнятні: ${result.summary?.acceptable || 0}`,
-      `Перевірено: ${result.summary?.reviewed || 0} з ${result.summary?.total || 0}`,
-      ""
-    );
-    if (result.overallAssessment) {
-      lines.push("ЗАГАЛЬНА ОЦІНКА", result.overallAssessment, "");
-    }
-    if (result.parameters?.length) {
-      lines.push("ЗНАЙДЕНІ ПАРАМЕТРИ");
-      result.parameters.forEach((parameter) => {
-        lines.push(`${parameter.label}: ${parameter.value || (parameter.status === "missing" ? "не знайдено" : "потрібно уточнити")}`);
-      });
-      lines.push("");
-    }
-    result.issues.forEach((issue, index) => {
-      const source = [
-        issue.evidence?.fileName || "",
-        issue.evidence?.page ? `сторінка ${issue.evidence.page}` : "",
-        issue.evidence?.clause ? `пункт ${issue.evidence.clause}` : ""
-      ].filter(Boolean).join(", ");
-      lines.push(
-        `${index + 1}. ${issue.title}`,
-        `Оцінка: ${issue.statusLabel || issue.status || "потребує уваги"}`,
-        `Ризик: ${issue.risk}`,
-        `Що виправити: ${issue.recommendation}`,
-        issue.proposedWording ? `Запропонована редакція: ${issue.proposedWording}` : "",
-        source ? `Джерело: ${source}` : issue.status === "missing" ? "Джерело: умову не знайдено в усьому тексті" : "Джерело: не підтверджено",
-        issue.evidence?.snippet ? `Фрагмент: ${issue.evidence.snippet}` : "",
-        ""
-      );
-    });
-  }
-  lines.push("Результат є інструментом попередньої перевірки, а не юридичним висновком.");
-  return lines.filter((line, index, all) => line || all[index - 1]).join("\n").trim();
-}
-
-async function copyPropertyReviewResult() {
-  if (!propertyReviewResult) {
-    contractReviewCopyMessage = "Спочатку перевір договір.";
-    renderContractReviewCurrentSurface();
-    return;
-  }
-  try {
-    await navigator.clipboard.writeText(propertyReviewResultText());
-    contractReviewCopyMessage = "Результат перевірки скопійовано.";
-  } catch {
-    contractReviewCopyMessage = "Не вдалося скопіювати автоматично. Завантаж результат як PDF.";
-  }
-  renderContractReviewCurrentSurface();
-}
-
-function propertyReviewSafeFileName(value) {
-  return String(value || "договір")
-    .replace(/\.[^.]+$/, "")
-    .replace(/[^A-Za-zА-Яа-яІіЇїЄєҐґ0-9_-]+/g, "_")
-    .replace(/^_+|_+$/g, "")
-    .slice(0, 72) || "договір";
-}
-
 async function downloadPropertyReviewResult() {
   if (!propertyReviewResult) {
     contractReviewCopyMessage = "Спочатку перевір договір.";
@@ -5568,38 +5488,6 @@ async function downloadPropertyReviewResult() {
   } catch (error) {
     contractReviewCopyMessage = `Не вдалося сформувати PDF: ${error?.message || "невідома помилка"}`;
   }
-  renderContractReviewCurrentSurface();
-}
-
-function savePropertyReviewResult() {
-  if (!propertyReviewResult || propertyReviewResult.blocked) {
-    contractReviewCopyMessage = "Зберегти можна лише завершену перевірку.";
-    renderContractReviewCurrentSurface();
-    return;
-  }
-  const snapshot = JSON.parse(JSON.stringify(propertyReviewResult));
-  snapshot.id = `property-review-${Date.now()}`;
-  snapshot.savedAt = new Date().toISOString();
-  propertyReviewHistory = [snapshot, ...propertyReviewHistory].slice(0, 20);
-  localStorage.setItem(propertyReviewHistoryKey, JSON.stringify(propertyReviewHistory));
-  contractReviewCopyMessage = "Результат збережено у цьому браузері.";
-  renderContractReviewCurrentSurface();
-}
-
-function openSavedPropertyReview(resultId) {
-  const saved = propertyReviewHistory.find((item) => item.id === resultId);
-  if (!saved) {
-    return;
-  }
-  propertyReviewResult = JSON.parse(JSON.stringify(saved));
-  contractReviewCopyMessage = "Відкрито збережений результат.";
-  renderContractReviewCurrentSurface();
-}
-
-function removeSavedPropertyReview(resultId) {
-  propertyReviewHistory = propertyReviewHistory.filter((item) => item.id !== resultId);
-  localStorage.setItem(propertyReviewHistoryKey, JSON.stringify(propertyReviewHistory));
-  contractReviewCopyMessage = "Збережений результат видалено з цього браузера.";
   renderContractReviewCurrentSurface();
 }
 
@@ -6945,9 +6833,7 @@ function renderPropertyReviewResult() {
           <h2>Що Anodos знайшов у договорі</h2>
         </div>
         <div class="contract-review-result-actions">
-          <button class="primary-action" type="button" data-copy-property-review>Копіювати</button>
-          <button class="secondary-action" type="button" data-download-property-review>Завантажити PDF</button>
-          <button class="secondary-action" type="button" data-save-property-review>Зберегти</button>
+          <button class="primary-action" type="button" data-download-property-review>Завантажити PDF</button>
         </div>
       </header>
 
@@ -7063,42 +6949,6 @@ function renderPropertyReviewResult() {
   `;
 }
 
-function renderPropertyReviewHistory() {
-  if (!propertyReviewHistory.length) {
-    return "";
-  }
-  return `
-    <section class="property-review-history">
-      <header>
-        <div>
-          <p class="eyebrow">Локальне збереження</p>
-          <h2>Збережені перевірки</h2>
-        </div>
-        <span>${propertyReviewHistory.length}</span>
-      </header>
-      <ul>
-        ${propertyReviewHistory.map((item) => {
-          const name = item.sourceFiles?.[0] || item.documents?.[0]?.name || "Договір";
-          const savedAt = new Date(item.savedAt || item.createdAt || Date.now()).toLocaleString("uk-UA");
-          return `
-            <li>
-              <div>
-                <strong>${escapeHtml(name)}</strong>
-                <small>${escapeHtml(savedAt)} · ${item.issues?.length || 0} пунктів</small>
-              </div>
-              <span>
-                <button type="button" data-open-property-review="${escapeHtml(item.id)}">Відкрити</button>
-                <button type="button" data-remove-property-review="${escapeHtml(item.id)}">Видалити</button>
-              </span>
-            </li>
-          `;
-        }).join("")}
-      </ul>
-      <p>Зберігається лише результат перевірки у цьому браузері. Текст завантаженого договору не зберігається.</p>
-    </section>
-  `;
-}
-
 function renderPropertyReview() {
   const readyFilesCount = contractReviewFiles.filter(contractReviewCanAutoReadFile).length;
   const canRun = readyFilesCount >= 1 && propertyReviewExternalConsent && !propertyReviewBusy;
@@ -7150,7 +7000,7 @@ function renderPropertyReview() {
       ` : contractReviewCopyMessage ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>` : ""}
 
       <section class="property-review-privacy">
-        <p>Файл читається й розпізнається у браузері, після чого текст захищеним з'єднанням передається серверу Anodos, який виконує семантичний аналіз через зовнішню AI-модель. API-ключ зберігається лише на сервері. Результат зберігається у браузері тільки після натискання «Зберегти», без тексту договору.</p>
+        <p>Файл читається й розпізнається у браузері, після чого текст захищеним з'єднанням передається серверу Anodos, який виконує семантичний аналіз через зовнішню AI-модель. API-ключ зберігається лише на сервері. Текст і результат перевірки не зберігаються у браузері; PDF завантажується лише на пристрій користувача.</p>
         <label>
           <input type="checkbox" data-property-review-consent ${propertyReviewExternalConsent ? "checked" : ""} />
           <span>Розумію і погоджуюся на передачу розпізнаного тексту для цієї перевірки.</span>
@@ -7158,7 +7008,6 @@ function renderPropertyReview() {
         <small>За стандартними правилами зовнішнього провайдера вміст API може зберігатися в журналах контролю зловживань до 30 днів. <a href="https://platform.openai.com/docs/models/default-usage-policies-by-endpoint" target="_blank" rel="noopener noreferrer">Докладніше про обробку даних</a>.</small>
       </section>
       ${renderPropertyReviewResult()}
-      ${renderPropertyReviewHistory()}
     </section>
   `;
 }
@@ -10894,11 +10743,7 @@ document.addEventListener("click", async (event) => {
   const runContractReviewButton = event.target.closest("[data-run-contract-review]");
   const copyContractReviewButton = event.target.closest("[data-copy-contract-review]");
   const runPropertyReviewButton = event.target.closest("[data-run-property-review]");
-  const copyPropertyReviewButton = event.target.closest("[data-copy-property-review]");
   const downloadPropertyReviewButton = event.target.closest("[data-download-property-review]");
-  const savePropertyReviewButton = event.target.closest("[data-save-property-review]");
-  const openPropertyReviewButton = event.target.closest("[data-open-property-review]");
-  const removePropertyReviewButton = event.target.closest("[data-remove-property-review]");
   const downloadQuestionnaireButton = event.target.closest("[data-download-questionnaire]");
   const openClientRecommendationButton = event.target.closest("[data-open-client-recommendation]");
   const downloadClientRecommendationButton = event.target.closest("[data-download-client-recommendation]");
@@ -10972,28 +10817,8 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
-  if (copyPropertyReviewButton) {
-    await copyPropertyReviewResult();
-    return;
-  }
-
   if (downloadPropertyReviewButton) {
     await downloadPropertyReviewResult();
-    return;
-  }
-
-  if (savePropertyReviewButton) {
-    savePropertyReviewResult();
-    return;
-  }
-
-  if (openPropertyReviewButton) {
-    openSavedPropertyReview(openPropertyReviewButton.dataset.openPropertyReview);
-    return;
-  }
-
-  if (removePropertyReviewButton) {
-    removeSavedPropertyReview(removePropertyReviewButton.dataset.removePropertyReview);
     return;
   }
 
