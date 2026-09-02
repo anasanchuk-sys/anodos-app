@@ -5450,9 +5450,11 @@ async function buildPropertyReviewResult() {
       version: window.AnodosPropertyReview?.version || "Майно",
       analysisMode: "semantic",
       blocked: true,
-      diagnosticTitle: error?.code === "endpoint_not_configured" || error?.code === "service_not_configured"
-        ? "Семантичний аналіз ще не підключено"
-        : "Семантичну перевірку не завершено",
+      diagnosticTitle: error?.code === "ai_quota_exhausted"
+        ? "Ліміт AI-сервісу Anodos вичерпано"
+        : error?.code === "endpoint_not_configured" || error?.code === "service_not_configured"
+          ? "Семантичний аналіз ще не підключено"
+          : "Семантичну перевірку не завершено",
       diagnosticExplanation: error?.message || "Невідома помилка сервера семантичної перевірки.",
       errorCode: error?.code || "semantic_review_failed",
       statuses: contractReviewFiles.map((file) => `${file.name}: ${file.readStatus || "статус читання невідомий"}`),
