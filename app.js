@@ -11947,8 +11947,17 @@ function watchForAppUpdates(registration) {
 }
 
 if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
+  let reloadingForServiceWorkerUpdate = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (reloadingForServiceWorkerUpdate) {
+      return;
+    }
+    reloadingForServiceWorkerUpdate = true;
+    window.location.reload();
+  });
+
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js")
+    navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" })
       .then(watchForAppUpdates)
       .catch(() => {});
   });
