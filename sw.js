@@ -1,4 +1,4 @@
-const CACHE_NAME = "platform-shell-v303";
+const CACHE_NAME = "platform-shell-v305";
 const ASSETS = [
   "./",
   "./index.html",
