@@ -212,6 +212,8 @@
     // Alternative VAT totals and formal party metadata are not mandatory fields.
     const coreParameterIds = new Set(["sum_insured", "vat_basis", "tariff", "premium_and_payment", "deductibles", "insured_property", "territory", "valuation_basis", "coverage_model", "coverage_period", "claim_notification"]);
     const unresolvedParameters = parameters.filter((parameter) => coreParameterIds.has(parameter.id) && parameter.status !== "found");
+    const absentParameters = [...coreParameterIds].filter(id => !parameters.some(parameter => parameter.id === id));
+    if (absentParameters.length) reviewWarnings.push("Модель не повернула всі основні параметри договору. Повну перевірку не завершено.");
     if (unresolvedParameters.length) {
       reviewWarnings.push(`Параметри для уточнення: ${unresolvedParameters.map((parameter) => parameter.label).join(", ")}.`);
     } else if (!parameters.length) {
