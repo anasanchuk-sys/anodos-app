@@ -7834,8 +7834,61 @@ body[data-route="home"] .module-row-end,
   line-height: 1.55;
 }
 
+.property-review-overall-incomplete {
+  border-left-color: #a67023;
+  background: #fffaf0;
+}
+
 .property-review-parameters {
   overflow: hidden;
+}
+
+.property-review-parameters > summary,
+.property-review-coverage > summary {
+  padding: 14px 16px;
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.property-review-coverage {
+  border: 1px solid rgba(166, 112, 35, 0.2);
+  border-radius: 10px;
+  background: #fffaf0;
+}
+
+.property-review-coverage > p,
+.property-review-coverage > ul {
+  margin: 0 16px 14px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.property-review-proposed-wording {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-radius: 7px;
+  background: rgba(224, 241, 235, 0.55);
+}
+
+.property-review-proposed-wording > summary {
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.property-review-proposed-wording > p,
+.property-review-source-label {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.property-review-source-label {
+  color: var(--muted);
 }
 
 .property-review-parameters > header,

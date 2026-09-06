@@ -2917,6 +2917,22 @@ function contractReviewPdfPageText(content) {
     .join("\n");
 }
 
+function contractReviewPdfCanvasIsBlank(context, width, height) {
+  const pixels = context.getImageData(0, 0, width, height).data;
+  if (!pixels.length) return false;
+  let minimum = 255;
+  let maximum = 0;
+  for (let offset = 0; offset < pixels.length; offset += 4) {
+    const luminance = Math.round(0.2126 * pixels[offset] + 0.7152 * pixels[offset + 1] + 0.0722 * pixels[offset + 2]);
+    minimum = Math.min(minimum, luminance);
+    maximum = Math.max(maximum, luminance);
+    // Only a nearly uniform light page can be skipped as blank. A drawing,
+    // signature or unreadable scan is content, even when OCR returns no words.
+    if (minimum < 235 || maximum - minimum > 6) return false;
+  }
+  return true;
+}
+
 async function contractReviewReadPdf(fileRecord) {
   if (window.location.protocol === "file:") {
     return "";
@@ -2927,41 +2943,74 @@ async function contractReviewReadPdf(fileRecord) {
   const pdf = await pdfjs.getDocument({ data, disableWorker: true }).promise;
   const pageTexts = [];
   const ocrConfidences = [];
+  fileRecord.pdfPageCount = pdf.numPages;
+  fileRecord.pdfReadPages = [];
+  fileRecord.pdfBlankPages = [];
+  fileRecord.pdfUnreadablePages = [];
+  fileRecord.pdfExtractionComplete = false;
   let ocrPages = 0;
-  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
-    const page = await pdf.getPage(pageNumber);
-    const content = await page.getTextContent();
-    let text = contractReviewPdfPageText(content);
-    const visibleCharacters = (text.match(/[A-Za-zА-Яа-яІіЇїЄєҐґ0-9]/g) || []).length;
-    if (visibleCharacters < 32 && window.AnodosContractFileReader?.recognize) {
-      const baseViewport = page.getViewport({ scale: 1 });
-      const scale = Math.max(1.6, Math.min(2.5, 2200 / Math.max(baseViewport.width, baseViewport.height)));
-      const viewport = page.getViewport({ scale });
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, Math.ceil(viewport.width));
-      canvas.height = Math.max(1, Math.ceil(viewport.height));
-      const context = canvas.getContext("2d", { alpha: false });
-      context.fillStyle = "#ffffff";
-      context.fillRect(0, 0, canvas.width, canvas.height);
-      await page.render({ canvasContext: context, viewport }).promise;
-      const recognized = await window.AnodosContractFileReader.recognize(canvas);
-      if (recognized.text && recognized.text.length > text.trim().length) {
-        text = recognized.text;
-        ocrPages += 1;
-        ocrConfidences.push(recognized.confidence);
+  try {
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+      const page = await pdf.getPage(pageNumber);
+      let canvas = null;
+      try {
+        const content = await page.getTextContent();
+        let text = contractReviewPdfPageText(content);
+        const visibleCharacters = (text.match(/[A-Za-zА-Яа-яІіЇїЄєҐґ0-9]/g) || []).length;
+        let blank = false;
+        if (visibleCharacters < 32) {
+          const baseViewport = page.getViewport({ scale: 1 });
+          const scale = Math.max(1.6, Math.min(2.5, 2200 / Math.max(baseViewport.width, baseViewport.height)));
+          const viewport = page.getViewport({ scale });
+          canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.ceil(viewport.width));
+          canvas.height = Math.max(1, Math.ceil(viewport.height));
+          const context = canvas.getContext("2d", { alpha: false });
+          if (!context) throw new Error("Не вдалося відобразити сторінку PDF для розпізнавання.");
+          context.fillStyle = "#ffffff";
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          await page.render({ canvasContext: context, viewport }).promise;
+          blank = contractReviewPdfCanvasIsBlank(context, canvas.width, canvas.height);
+          if (!blank && window.AnodosContractFileReader?.recognize) {
+            const recognized = await window.AnodosContractFileReader.recognize(canvas);
+            if (recognized.text && recognized.text.length > text.trim().length) {
+              text = recognized.text;
+              ocrPages += 1;
+              ocrConfidences.push(Number(recognized.confidence) || 0);
+            }
+          }
+        }
+        if (/[A-Za-zА-Яа-яІіЇїЄєҐґ0-9]/.test(text)) {
+          pageTexts.push(`[Сторінка ${pageNumber}]\n${text.trim()}`);
+          fileRecord.pdfReadPages.push(pageNumber);
+        } else if (blank) {
+          fileRecord.pdfBlankPages.push(pageNumber);
+        } else {
+          fileRecord.pdfUnreadablePages.push(pageNumber);
+        }
+      } catch {
+        fileRecord.pdfUnreadablePages.push(pageNumber);
+      } finally {
+        if (canvas) {
+          canvas.width = 1;
+          canvas.height = 1;
+        }
+        page.cleanup?.();
       }
-      canvas.width = 1;
-      canvas.height = 1;
     }
-    if (text.trim()) {
-      pageTexts.push(`[Сторінка ${pageNumber}]\n${text.trim()}`);
-    }
-    page.cleanup?.();
+  } finally {
+    await pdf.destroy?.();
   }
   fileRecord.ocrPages = ocrPages;
   fileRecord.ocrConfidence = ocrConfidences.length
     ? ocrConfidences.reduce((sum, value) => sum + value, 0) / ocrConfidences.length
     : 0;
+  if (fileRecord.pdfUnreadablePages.length) {
+    const error = new Error(`У PDF «${fileRecord.name}» не вдалося прочитати вміст сторінок: ${fileRecord.pdfUnreadablePages.join(", ")}. Вони не порожні або їх не вдалося відобразити. Завантажте чіткіший PDF чи версію Word. Перевірку зупинено, щоб не пропустити умови договору.`);
+    error.code = "incomplete_document_reading";
+    throw error;
+  }
+  fileRecord.pdfExtractionComplete = true;
   return contractReviewNormalizeText(pageTexts.join("\n\n"));
 }
 
@@ -5421,13 +5470,21 @@ async function buildPropertyReviewResult() {
       }
     }));
     contractReviewFiles = enriched;
-    const readable = enriched.filter((file) => file.text);
+    const unreadable = enriched.filter((file) => !String(file.text || "").trim());
+    if (unreadable.length) {
+      throw new window.AnodosPropertyReviewSemantic.SemanticReviewError(
+        `Не вдалося прочитати ${unreadable.map((file) => file.name).join(", ")}. Завантаж читабельні копії або прибери ці файли й повтори перевірку. Для висновку потрібен текст усього доданого пакета.`,
+        "incomplete_document_reading"
+      );
+    }
+    const readable = enriched;
     contractReviewCopyMessage = readable.length
-      ? `Прочитано ${readable.length} ${readable.length === 1 ? "документ" : "документи"}. Аналізую всі умови за чеклістом...`
+      ? `Прочитано файлів: ${readable.length}. Зіставляю умови та шукаю слабкі місця...`
       : "У документах не знайдено читабельного тексту.";
     renderContractReviewCurrentSurface();
     propertyReviewResult = await window.AnodosPropertyReviewSemantic.analyze({
       version: window.AnodosPropertyReview.version,
+      privacyVersion: propertyReviewExternalConsent ? window.ANODOS_CONTRACT_REVIEW_CONFIG?.privacyVersion : "",
       checklist: window.AnodosPropertyReview.checks,
       documents: readable.map((file) => ({
         name: file.name,
@@ -5442,9 +5499,7 @@ async function buildPropertyReviewResult() {
     propertyReviewResult.sourceFiles = enriched.map((file) => file.name);
     contractReviewCopyMessage = propertyReviewResult.blocked
       ? propertyReviewResult.diagnosticExplanation
-      : propertyReviewResult.issues.length
-        ? `Прочитано весь доступний текст. ${propertyReviewResult.issues.length} пунктів потребують уваги.`
-        : `Прочитано весь доступний текст. Усі ${propertyReviewResult.summary?.reviewed || 0} критерії оцінено без зауважень.`;
+      : propertyReviewResult.overallAssessment;
   } catch (error) {
     propertyReviewResult = {
       version: window.AnodosPropertyReview?.version || "Майно",
@@ -5452,9 +5507,11 @@ async function buildPropertyReviewResult() {
       blocked: true,
       diagnosticTitle: error?.code === "ai_quota_exhausted"
         ? "Ліміт AI-сервісу Anodos вичерпано"
+        : error?.code === "incomplete_document_reading"
+          ? "Не всі документи прочитано"
         : error?.code === "endpoint_not_configured" || error?.code === "service_not_configured"
-          ? "Семантичний аналіз ще не підключено"
-          : "Семантичну перевірку не завершено",
+          ? "Сервіс перевірки тимчасово недоступний"
+          : "Перевірку не завершено",
       diagnosticExplanation: error?.message || "Невідома помилка сервера семантичної перевірки.",
       errorCode: error?.code || "semantic_review_failed",
       statuses: contractReviewFiles.map((file) => `${file.name}: ${file.readStatus || "статус читання невідомий"}`),
@@ -6801,6 +6858,20 @@ function propertyReviewEvidenceLabel(evidence) {
   ].filter(Boolean).join(" · ");
 }
 
+function renderPropertyReviewEvidence(evidence) {
+  if (!evidence?.verified) return "";
+  const fragments = evidence.fragments?.length ? evidence.fragments : [evidence];
+  return `
+    <details class="property-review-evidence">
+      <summary>Показати умови договору</summary>
+      ${fragments.map((fragment) => `
+        <p class="property-review-source-label">${escapeHtml(propertyReviewEvidenceLabel(fragment))}</p>
+        <blockquote>${escapeHtml(fragment.snippet || "")}</blockquote>
+      `).join("")}
+    </details>
+  `;
+}
+
 function renderPropertyReviewResult() {
   const result = propertyReviewResult;
   if (!result) {
@@ -6825,133 +6896,80 @@ function renderPropertyReviewResult() {
     `;
   }
 
-  const parameters = result.parameters || [];
-  const allChecks = result.checks || [];
+  const parameters = (result.parameters || []).filter((parameter) => parameter.status === "found" && parameter.evidence?.verified);
+  const issues = (result.issues || []).filter((issue) => issue.status === "needs_change" && issue.evidenceVerified && issue.evidence?.verified);
+  const reviewWarnings = result.reviewWarnings || [];
   return `
     <section class="contract-review-result property-review-result" aria-live="polite">
       <header class="contract-review-result-head">
         <div>
-          <p class="eyebrow">Семантичний аналіз · ${escapeHtml(result.version || "Майно")}</p>
-          <h2>Що Anodos знайшов у договорі</h2>
+          <p class="eyebrow">Anodos · страхування майна</p>
+          <h2>Що варто виправити в договорі</h2>
         </div>
         <div class="contract-review-result-actions">
           <button class="primary-action" type="button" data-download-property-review>Завантажити PDF</button>
         </div>
       </header>
 
-      <div class="contract-review-quality-summary property-review-summary" aria-label="Підсумок перевірки">
-        <article class="property-review-summary-critical">
-          <strong>${result.summary?.critical || 0}</strong>
-          <span>критичні</span>
-        </article>
-        <article class="property-review-summary-high">
-          <strong>${result.summary?.high || 0}</strong>
-          <span>високі</span>
-        </article>
-        <article>
-          <strong>${result.summary?.medium || 0}</strong>
-          <span>середні</span>
-        </article>
-        <article>
-          <strong>${result.summary?.acceptable || 0}</strong>
-          <span>прийнятні</span>
-        </article>
-      </div>
-
       ${result.overallAssessment ? `
-        <section class="property-review-overall">
-          <p class="eyebrow">Загальна оцінка</p>
+        <section class="property-review-overall${result.complete ? "" : " property-review-overall-incomplete"}">
+          <p class="eyebrow">${result.complete ? "Результат перевірки" : "Попередній результат - є умови для уточнення"}</p>
           <p>${escapeHtml(result.overallAssessment)}</p>
         </section>
       ` : ""}
 
-      ${parameters.length ? `
-        <section class="property-review-parameters">
-          <header>
-            <div>
-              <p class="eyebrow">Параметри договору</p>
-              <h3>Знайдено безпосередньо в тексті</h3>
-            </div>
-            <span>${parameters.filter((parameter) => parameter.status === "found").length} з ${parameters.length}</span>
-          </header>
-          <dl>
-            ${parameters.map((parameter) => `
-              <div class="property-review-parameter property-review-parameter-${escapeHtml(parameter.status)}">
-                <dt>${escapeHtml(parameter.label)}</dt>
-                <dd>${escapeHtml(parameter.value || (parameter.status === "missing" ? "Не знайдено" : "Потрібно уточнити"))}</dd>
-                ${parameter.evidence?.snippet ? `
-                  <details>
-                    <summary>Джерело${propertyReviewEvidenceLabel(parameter.evidence) ? ` · ${escapeHtml(propertyReviewEvidenceLabel(parameter.evidence))}` : ""}</summary>
-                    <blockquote>${escapeHtml(parameter.evidence.snippet)}</blockquote>
-                  </details>
-                ` : parameter.explanation ? `<small>${escapeHtml(parameter.explanation)}</small>` : ""}
-              </div>
-            `).join("")}
-          </dl>
-        </section>
-      ` : ""}
-
-      <header class="property-review-findings-head">
-        <div>
-          <p class="eyebrow">Рекомендації</p>
-          <h3>Що потрібно виправити</h3>
-        </div>
-        <span>${result.issues?.length || 0}</span>
-      </header>
-
-      ${result.issues?.length ? `
+      ${issues.length ? `
         <ol class="property-review-issues">
-          ${result.issues.map((issue) => `
+          ${issues.map((issue) => `
             <li class="property-review-issue property-review-issue-${escapeHtml(issue.severity)}">
-              <div class="property-review-issue-status">${escapeHtml(issue.statusLabel || "Потребує уваги")}</div>
+              <div class="property-review-issue-status">${escapeHtml(issue.severity === "critical" || issue.severity === "high" ? "Варто виправити насамперед" : "Рекомендована правка")}</div>
               <h3>${escapeHtml(issue.title)}</h3>
               <dl>
-                <div><dt>Оцінка умови</dt><dd>${escapeHtml(issue.assessment || issue.risk)}</dd></div>
-                <div><dt>Чому це ризик</dt><dd>${escapeHtml(issue.risk)}</dd></div>
+                <div><dt>Що в договорі</dt><dd>${escapeHtml(issue.assessment || issue.risk)}</dd></div>
+                ${issue.risk && issue.risk !== issue.assessment ? `<div><dt>Чим це загрожує</dt><dd>${escapeHtml(issue.risk)}</dd></div>` : ""}
                 <div><dt>Що виправити</dt><dd>${escapeHtml(issue.recommendation)}</dd></div>
-                ${issue.proposedWording ? `<div class="property-review-wording"><dt>Запропонована редакція</dt><dd>${escapeHtml(issue.proposedWording)}</dd></div>` : ""}
               </dl>
-              ${issue.evidence ? `
-                <details class="property-review-evidence">
-                  <summary>Показати джерело${propertyReviewEvidenceLabel(issue.evidence) ? ` · ${escapeHtml(propertyReviewEvidenceLabel(issue.evidence))}` : ""}</summary>
-                  <blockquote>${escapeHtml(issue.evidence.snippet || "Фрагмент визначено за структурою файла.")}</blockquote>
+              ${issue.proposedWording ? `
+                <details class="property-review-proposed-wording">
+                  <summary>Редакція для погодження зі страховиком</summary>
+                  <p>${escapeHtml(issue.proposedWording)}</p>
                 </details>
-              ` : issue.status === "missing"
-                ? `<p class="property-review-manual-source">Anodos перевірив увесь прочитаний текст і не знайшов цієї умови.</p>`
-                : `<p class="property-review-manual-source">Дослівного доказового фрагмента не підтверджено.</p>`}
+              ` : ""}
+              ${renderPropertyReviewEvidence(issue.evidence)}
             </li>
           `).join("")}
         </ol>
-      ` : `<p class="property-review-clear">Усі ${result.summary?.reviewed || allChecks.length} критерії прочитані й оцінені без зауважень.</p>`}
+      ` : ""}
 
-      ${allChecks.length ? `
-        <details class="property-review-all-checks">
-          <summary>Показати оцінку всіх ${allChecks.length} критеріїв</summary>
-          <ol>
-            ${allChecks.map((check) => `
-              <li class="property-review-check property-review-check-${escapeHtml(check.status)}">
-                <div>
-                  <strong>${escapeHtml(check.title)}</strong>
-                  <span>${escapeHtml(check.statusLabel || check.status)}</span>
-                </div>
-                <p>${escapeHtml(check.assessment)}</p>
-                ${check.evidence?.snippet ? `
-                  <details>
-                    <summary>Дослівний фрагмент${propertyReviewEvidenceLabel(check.evidence) ? ` · ${escapeHtml(propertyReviewEvidenceLabel(check.evidence))}` : ""}</summary>
-                    <blockquote>${escapeHtml(check.evidence.snippet)}</blockquote>
-                  </details>
-                ` : ""}
-              </li>
-            `).join("")}
-          </ol>
+      ${reviewWarnings.length ? `
+        <details class="property-review-coverage">
+          <summary>Потрібно уточнити: ${reviewWarnings.length}</summary>
+          <p>Ці умови поки не вдалося надійно оцінити. Вони не включені до списку помилок договору.</p>
+          <ul>${reviewWarnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join("")}</ul>
         </details>
       ` : ""}
-      <p class="contract-review-note">Anodos семантично аналізує весь прочитаний текст. Знайдений висновок приймається лише з дослівною цитатою, яку система повторно звіряє з документом. Це інструмент попередньої фахової перевірки, а не юридичний висновок.</p>
+
+      ${parameters.length ? `
+        <details class="property-review-parameters">
+          <summary>Знайдені параметри договору: ${parameters.length}</summary>
+          <dl>
+            ${parameters.map((parameter) => `
+              <div class="property-review-parameter property-review-parameter-found">
+                <dt>${escapeHtml(parameter.label)}</dt>
+                <dd>${escapeHtml(parameter.value)}</dd>
+                ${renderPropertyReviewEvidence(parameter.evidence)}
+              </div>
+            `).join("")}
+          </dl>
+        </details>
+      ` : ""}
+      <p class="contract-review-note">Тестовий аналіз, не остаточний висновок. Можливі помилки й пропуски. Звір рекомендації з оригіналом договору та фахівцем перед погодженням змін зі страховиком.</p>
     </section>
   `;
 }
 
 function renderPropertyReview() {
+  const groqFree = window.ANODOS_CONTRACT_REVIEW_CONFIG?.provider === "groq-free";
   const readyFilesCount = contractReviewFiles.filter(contractReviewCanAutoReadFile).length;
   const canRun = readyFilesCount >= 1 && propertyReviewExternalConsent && !propertyReviewBusy;
   const runButtonText = propertyReviewBusy
@@ -6973,6 +6991,8 @@ function renderPropertyReview() {
       </header>
 
       ${renderContractReviewModeSwitch()}
+
+      ${groqFree ? `<p class="contract-review-note"><strong>Тестовий аналіз, не остаточний висновок.</strong> Безкоштовний пілот може помилятися або пропускати умови й не замінює консультацію фахівця. Перевірка може тривати до 6 хвилин. Обсяг пакета обмежений квотою, тому довгі договори можуть не вміститися. Не вилучай важливі умови або додатки заради ліміту.</p>` : ""}
 
       <section class="contract-review-dropzone" data-contract-review-dropzone aria-label="Додати договір страхування майна">
         <input id="contractReviewInput" type="file" multiple accept=".doc,.docx,.pdf,.xls,.xlsx,.xlsb,.ods,.numbers,.odt,.rtf,.txt,.md,.csv,.tsv,.html,.htm,.xml,.json,.pptx,.png,.jpg,.jpeg,.webp,.bmp,.gif,.tif,.tiff,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,application/rtf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/*,image/*" />
@@ -7002,12 +7022,16 @@ function renderPropertyReview() {
       ` : contractReviewCopyMessage ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>` : ""}
 
       <section class="property-review-privacy">
-        <p>Файл читається й розпізнається у браузері, після чого текст захищеним з'єднанням передається серверу Anodos у Cloudflare Workers AI. Worker Anodos не зберігає текст або результат перевірки; PDF завантажується лише на пристрій користувача.</p>
+        <p>${groqFree
+          ? "Файл читається й розпізнається у браузері. Розпізнаний текст через сервер Anodos у Cloudflare передається зовнішньому сервісу Groq для аналізу. Anodos не зберігає договір або результат на сервері; PDF завантажується на ваш пристрій."
+          : "Файл читається й розпізнається у браузері, після чого текст захищеним з'єднанням передається серверу Anodos у Cloudflare Workers AI. Worker Anodos не зберігає текст або результат перевірки; PDF завантажується лише на пристрій користувача."}</p>
         <label>
           <input type="checkbox" data-property-review-consent ${propertyReviewExternalConsent ? "checked" : ""} />
-          <span>Розумію і погоджуюся на передачу розпізнаного тексту для цієї перевірки.</span>
+          <span>${groqFree ? "Погоджуюся на передачу тексту договору сервісам Anodos і Groq для цієї перевірки." : "Розумію і погоджуюся на передачу розпізнаного тексту для цієї перевірки."}</span>
         </label>
-        <small>Cloudflare не використовує переданий текст для навчання моделей або поліпшення своїх чи сторонніх сервісів. Сервіси зберігання Cloudflare для цієї перевірки не підключені. <a href="https://developers.cloudflare.com/workers-ai/platform/data-usage/" target="_blank" rel="noopener noreferrer">Докладніше про обробку даних</a>.</small>
+        ${groqFree
+          ? `<small>Передача до Groq дозволена лише після підтвердження адміністратором режиму Zero Data Retention: без зберігання текстів запитів і відповідей у Groq. Це зовнішня обробка, не обробка лише на вашому пристрої. <a href="https://console.groq.com/docs/your-data" target="_blank" rel="noopener noreferrer">Умови обробки даних Groq</a>. Безкоштовна перевірка має спільний ліміт і може тривати кілька хвилин; завеликі пакети відхиляються без обрізання тексту.</small>`
+          : `<small>Cloudflare не використовує переданий текст для навчання моделей або поліпшення своїх чи сторонніх сервісів. Сервіси зберігання Cloudflare для цієї перевірки не підключені. <a href="https://developers.cloudflare.com/workers-ai/platform/data-usage/" target="_blank" rel="noopener noreferrer">Докладніше про обробку даних</a>.</small>`}
       </section>
       ${renderPropertyReviewResult()}
     </section>

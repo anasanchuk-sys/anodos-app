@@ -5,7 +5,8 @@
     acceptable: "Умова прийнятна",
     needs_change: "Потрібна правка",
     missing: "Умову не знайдено",
-    unclear: "Потрібно уточнити"
+    unclear: "Потрібно уточнити",
+    not_applicable: "Не застосовується"
   });
   const SEVERITY_LABELS = Object.freeze({
     critical: "Критичний",
@@ -13,7 +14,6 @@
     medium: "Середній",
     info: "Інформаційний"
   });
-  const ISSUE_STATUSES = new Set(["needs_change", "missing", "unclear"]);
   const QUOTE_REQUIRED_STATUSES = new Set(["acceptable", "needs_change"]);
 
   class SemanticReviewError extends Error {
@@ -40,24 +40,18 @@
   }
 
   function comparable(value) {
-    return clean(value)
-      .replace(/[«»“”„‟'’`]/g, '"')
+    return String(value ?? "")
+      .normalize("NFC")
+      .replace(/\u00ad/g, "")
       .replace(/\s+/g, " ")
-      .toLocaleLowerCase("uk-UA");
+      .trim();
   }
 
   function quoteExists(documents, quote, preferredFileName = "") {
     const needle = comparable(quote);
-    if (!needle) return false;
-    const preferred = documents.filter((document) => document.name === preferredFileName);
-    const candidates = preferred.length ? [...preferred, ...documents.filter((document) => document.name !== preferredFileName)] : documents;
-    return candidates.some((document) => comparable(document.text).includes(needle));
-  }
-
-  function structureEvidenceExists(documents, preferredFileName = "") {
-    const preferred = documents.filter((document) => document.name === preferredFileName);
-    const candidates = preferred.length ? preferred : documents;
-    return candidates.some((document) => document.hasUnresolvedRevisions || document.hasComments);
+    if (!needle || !preferredFileName) return false;
+    const candidates = documents.filter((document) => document.name === preferredFileName);
+    return candidates.length === 1 && comparable(candidates[0].text).includes(needle);
   }
 
   function prepareDocuments(documents) {
@@ -69,12 +63,11 @@
         hasComments: Boolean(document?.hasComments),
         ocrPages: Math.max(0, Number(document?.ocrPages) || 0),
         ocrConfidence: Math.max(0, Math.min(100, Number(document?.ocrConfidence) || 0))
-      }))
-      .filter((document) => document.text);
-    if (!prepared.length) {
+      }));
+    if (!prepared.length || prepared.some((document) => !document.text)) {
       throw new SemanticReviewError(
-        "Anodos не отримав читабельного тексту договору. Перевір файл або якість скану.",
-        "no_readable_text"
+        "Не всі додані файли вдалося прочитати. Завантаж читабельні копії або прибери непрочитані файли й повтори перевірку.",
+        "incomplete_document_reading"
       );
     }
     return prepared;
@@ -94,22 +87,31 @@
     const sourceType = ["document_text", "file_structure", "none"].includes(evidence?.source_type)
       ? evidence.source_type
       : "document_text";
-    const quote = clean(evidence?.quote || evidence?.snippet, 1600);
-    const fileName = clean(evidence?.file_name || evidence?.fileName, 240);
-    const pageValue = evidence?.page;
-    const page = Number.isFinite(Number(pageValue)) && Number(pageValue) > 0 ? Number(pageValue) : null;
-    const clause = clean(evidence?.clause, 80);
-    const verified = sourceType === "file_structure"
-      ? structureEvidenceExists(documents, fileName)
-      : quote
-        ? quoteExists(documents, quote, fileName)
-        : false;
+    // Check the full, untruncated quotation and its exact file provenance.
+    const normalizeFragment = (fragment) => {
+      const quote = clean(fragment?.quote || fragment?.snippet);
+      const fileName = clean(fragment?.file_name || fragment?.fileName, 240);
+      const pageValue = fragment?.page;
+      return {
+        fileName,
+        page: Number.isFinite(Number(pageValue)) && Number(pageValue) > 0 ? Number(pageValue) : null,
+        clause: clean(fragment?.clause, 80),
+        snippet: quote,
+        verified: sourceType === "document_text" && quoteExists(documents, quote, fileName)
+      };
+    };
+    const fragments = Array.isArray(evidence?.fragments) && evidence.fragments.length
+      ? evidence.fragments.map(normalizeFragment)
+      : [normalizeFragment(evidence)];
+    const primary = fragments[0];
+    const verified = sourceType === "document_text" && fragments.every((fragment) => fragment.verified);
     return {
       sourceType,
-      fileName,
-      page,
-      clause,
-      snippet: quote,
+      fileName: primary.fileName,
+      page: primary.page,
+      clause: primary.clause,
+      snippet: primary.snippet,
+      fragments,
       verified,
       required: QUOTE_REQUIRED_STATUSES.has(status)
     };
@@ -126,14 +128,12 @@
     let proposedWording = clean(rawCheck?.proposed_wording || rawCheck?.proposedWording, 2400);
     let evidence = normalizeEvidence(rawCheck?.evidence, documents, status);
 
-    if (evidence.required && !evidence.verified) {
+    if (evidence.required && (!evidence.verified || rawCheck?.evidence_verified !== true)) {
       status = "unclear";
-      severity = severity === "info" ? "medium" : severity;
-      assessment = evidence.snippet
-        ? "Наведений моделлю фрагмент не вдалося дослівно підтвердити у прочитаному тексті договору."
-        : "Для цього висновку модель не надала дослівного фрагмента договору.";
-      risk = "Висновок без підтвердженої цитати не можна використовувати як підставу для погодження або правки договору.";
-      recommendation = "Знайти відповідну умову в оригіналі та повторити аналіз після перевірки якості розпізнавання.";
+      severity = "info";
+      assessment = "Потрібно уточнити відповідну умову в оригіналі договору.";
+      risk = "";
+      recommendation = "";
       proposedWording = "";
       evidence = { ...evidence, verified: false };
     }
@@ -149,6 +149,7 @@
       risk: risk || assessment || "Ризик потребує уточнення.",
       recommendation: recommendation || "Уточнити умову за текстом договору.",
       proposedWording,
+      evidenceVerified: evidence.verified && rawCheck?.evidence_verified === true,
       evidence: evidence.snippet || evidence.fileName || evidence.page || evidence.clause ? evidence : null
     };
   }
@@ -156,7 +157,7 @@
   function normalizeParameter(parameter, documents) {
     const status = ["found", "missing", "unclear"].includes(parameter?.status) ? parameter.status : "unclear";
     const evidence = normalizeEvidence(parameter?.evidence, documents, status === "found" ? "acceptable" : status);
-    const verified = status !== "found" || evidence.verified;
+    const verified = status !== "found" || (evidence.verified && parameter?.evidence_verified === true);
     return {
       id: clean(parameter?.id, 80),
       label: clean(parameter?.label, 180),
@@ -164,7 +165,7 @@
       status: verified ? status : "unclear",
       explanation: verified
         ? clean(parameter?.explanation, 900)
-        : "Значення не підтверджене дослівною цитатою з прочитаного тексту.",
+        : "Потрібно уточнити значення в оригіналі договору.",
       evidence: evidence.snippet || evidence.fileName || evidence.page || evidence.clause ? evidence : null
     };
   }
@@ -181,16 +182,10 @@
       if (id && !returned.has(id)) returned.set(id, check);
     });
     const missingIds = checklist.filter((check) => !returned.has(check.id)).map((check) => check.id);
-    if (missingIds.length) {
-      throw new SemanticReviewError(
-        `Сервер не оцінив усі пункти чекліста: ${missingIds.join(", ")}.`,
-        "incomplete_checklist",
-        { retryable: true }
-      );
-    }
-
     const checks = checklist.map((expected) => normalizeCheck(returned.get(expected.id), expected, documents));
-    const issues = checks.filter((check) => ISSUE_STATUSES.has(check.status));
+    const severityOrder = { critical: 0, high: 1, medium: 2, info: 3 };
+    const issues = checks.filter((check) => check.status === "needs_change" && check.evidenceVerified)
+      .sort((left, right) => severityOrder[left.severity] - severityOrder[right.severity]);
     const parameters = Array.isArray(raw.parameters)
       ? raw.parameters.map((parameter) => normalizeParameter(parameter, documents)).filter((parameter) => parameter.id && parameter.label)
       : [];
@@ -202,19 +197,39 @@
       acceptable: checks.filter((check) => check.status === "acceptable").length,
       missing: checks.filter((check) => check.status === "missing").length,
       unclear: checks.filter((check) => check.status === "unclear").length,
-      reviewed: checks.length,
+      reviewed: checks.filter((check) => ["acceptable", "needs_change", "not_applicable"].includes(check.status)).length,
       total: checklist.length,
       manual: 0,
-      automated: checks.length
+      automated: checks.filter((check) => ["acceptable", "needs_change", "not_applicable"].includes(check.status)).length
     };
 
-    const isPropertyContract = Boolean(raw?.classification?.is_property_contract);
+    const isPropertyContract = raw?.classification?.is_property_contract === true;
+    const classificationUnknown = typeof raw?.classification?.is_property_contract !== "boolean"
+      || raw?.classification?.confidence === "low";
+    const reviewWarnings = checks
+      .filter((check) => ["missing", "unclear"].includes(check.status))
+      .map((check) => `${check.title}: потрібно уточнити умову в оригіналі договору.`);
+    // Alternative VAT totals and formal party metadata are not mandatory fields.
+    const coreParameterIds = new Set(["sum_insured", "vat_basis", "tariff", "premium_and_payment", "deductibles", "insured_property", "territory", "valuation_basis", "coverage_model", "coverage_period", "claim_notification"]);
+    const unresolvedParameters = parameters.filter((parameter) => coreParameterIds.has(parameter.id) && parameter.status !== "found");
+    if (unresolvedParameters.length) {
+      reviewWarnings.push(`Параметри для уточнення: ${unresolvedParameters.map((parameter) => parameter.label).join(", ")}.`);
+    } else if (!parameters.length) {
+      reviewWarnings.push("Не вдалося надійно визначити основні параметри договору.");
+    }
+    if (classificationUnknown) reviewWarnings.unshift("Не вдалося впевнено визначити вид страхування за прочитаним текстом.");
+    const complete = isPropertyContract && !classificationUnknown && !reviewWarnings.length && !missingIds.length;
+    const overallAssessment = issues.length
+      ? `Знайдено ${issues.length} ${issues.length === 1 ? "умову, яку варто змінити" : "умов, які варто змінити"}. Нижче наведено ризики та конкретні правки.${complete ? "" : " Частина умов потребує уточнення; перевірку не можна вважати повною."}`
+      : complete
+        ? "За перевіреними умовами підтверджених слабких місць не виявлено."
+        : "Підтверджених слабких місць поки не виявлено. Частина умов потребує уточнення, тому це ще не висновок про відсутність ризиків.";
     return {
       version: clean(raw.checklist_version, 100) || "Майно - семантична перевірка",
       analysisMode: "semantic",
-      blocked: !isPropertyContract,
-      diagnosticTitle: !isPropertyContract ? "Документ не визначено як договір страхування майна" : "",
-      diagnosticExplanation: !isPropertyContract
+      blocked: !isPropertyContract && !classificationUnknown,
+      diagnosticTitle: !isPropertyContract && !classificationUnknown ? "Документ не визначено як договір страхування майна" : "",
+      diagnosticExplanation: !isPropertyContract && !classificationUnknown
         ? clean(raw?.classification?.explanation, 1000) || "Для цього чекліста потрібен договір страхування майна."
         : "",
       classification: {
@@ -222,7 +237,9 @@
         confidence: clean(raw?.classification?.confidence, 40),
         explanation: clean(raw?.classification?.explanation, 1000)
       },
-      overallAssessment: clean(raw?.overall_assessment, 2200),
+      overallAssessment,
+      complete,
+      reviewWarnings,
       documents: documents.map((document) => ({ name: document.name })),
       sourceFiles: documents.map((document) => document.name),
       parameters,
@@ -247,7 +264,12 @@
         { status: response.status, retryable: response.status >= 500 }
       );
     }
-    const payload = await response.json();
+    let payload;
+    try {
+      payload = await response.json();
+    } catch (_error) {
+      throw new SemanticReviewError("Сервер повернув пошкоджену відповідь. Повтори перевірку.", "invalid_response", { status: response.status, retryable: true });
+    }
     if (!response.ok) {
       throw new SemanticReviewError(
         clean(payload?.error?.message || payload?.message, 600) || `Помилка сервера (${response.status}).`,
@@ -278,7 +300,8 @@
         method: "POST",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify({
-          checklist_version: input.version || "Майно v1.0",
+          checklist_version: input.version || globalScope.AnodosPropertyReview?.version || "Майно v2.0",
+          privacy_version: clean(input.privacyVersion, 80),
           checklist,
           documents
         }),

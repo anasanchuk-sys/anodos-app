@@ -1,8 +1,8 @@
-const CACHE_NAME = "platform-shell-v305";
+const CACHE_NAME = "platform-shell-v308";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=191",
+  "./styles.css?v=192",
   "./law-data.js?v=3",
   "./munich-re-clauses.js?v=1",
   "./sync-config.js?v=1",
@@ -20,11 +20,11 @@ const ASSETS = [
   "./bank-accreditation-data.js?v=8",
   "./contract-tests-data.js?v=5",
   "./contract-file-reader.js?v=2",
-  "./property-review.js?v=2",
-  "./contract-review-config.js?v=3",
-  "./property-review-semantic.js?v=2",
-  "./property-review-report.js?v=2",
-  "./app.js?v=204",
+  "./property-review.js?v=3",
+  "./contract-review-config.js?v=5",
+  "./property-review-semantic.js?v=4",
+  "./property-review-report.js?v=4",
+  "./app.js?v=207",
   "./assets/contract-tests/arx-zusp-053.pdf",
   "./manifest.webmanifest?v=7",
   "./assets/icon.svg?v=7",
