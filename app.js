@@ -2167,6 +2167,7 @@ let contractReviewBusy = false;
 let contractReviewPdfModulePromise = null;
 let contractReviewMode = localStorage.getItem(contractReviewModeKey) === "compare" ? "compare" : "property";
 let propertyReviewResult = null;
+let propertyReviewMacSession = null;
 let propertyReviewBusy = false;
 let propertyReviewExternalConsent = false;
 let profileEditMode = false;
@@ -2854,6 +2855,31 @@ async function contractReviewReadDocx(fileRecord) {
       return left.localeCompare(right);
     });
   const xmlParts = await Promise.all(xmlNames.map((name) => zip.files[name].async("string")));
+  if (fileRecord.requireCompleteReading) {
+    fileRecord.extractionWarnings = [];
+    const warn = (message) => fileRecord.extractionWarnings.push(message);
+    const attribute = (tag, name) => contractReviewDecodeEntities(tag.match(new RegExp('(?:^|\\s)' + name + '=["\x27]([^"\x27]*)["\x27]'))?.[1] || "");
+    const mainXml = xmlParts[xmlNames.findIndex((name) => /^word\/document\.xml$/i.test(name))] || "";
+    const references = [...mainXml.matchAll(/<w:(?:headerReference|footerReference)\b[^>]*>/g)];
+    const relations = zip.file("word/_rels/document.xml.rels");
+    const relationshipXml = relations ? await relations.async("string") : "";
+    const relationshipTags = [...relationshipXml.matchAll(/<Relationship\b[^>]*>/g)].map((match) => match[0]);
+    const added = new Set();
+    for (const [reference] of references) {
+      const id = attribute(reference, "r:id");
+      const relation = relationshipTags.find((tag) => attribute(tag, "Id") === id);
+      const target = relation && attribute(relation, "Target");
+      const name = target && new URL(target, "https://local.invalid/word/").pathname.replace(/^\//, "");
+      if (!id || !relation || attribute(relation, "TargetMode") === "External" || !/^word\/(?:header|footer)[^/]*\.xml$/i.test(name || "") || !zip.file(name)) {
+        warn("Не вдалося прочитати підключений колонтитул Word. Звірте його з оригіналом або додайте PDF.");
+        continue;
+      }
+      if (!added.has(name)) { xmlParts.push(await zip.file(name).async("string")); added.add(name); }
+    }
+    if (xmlParts.some((xml) => /<(?:w:(?:drawing|pict|object|altChunk)|a:blip)\b/i.test(xml)) || Object.keys(zip.files).some((name) => /^word\/embeddings\//i.test(name) && !zip.files[name].dir)) {
+      warn("Word містить зображення або вбудовані об’єкти. Їхній вміст не прочитано; це можуть бути не лише логотипи, а й умови договору. Додайте PDF або окремі файли цих об’єктів.");
+    }
+  }
   const settingsName = Object.keys(zip.files).find((name) => /^word\/settings\.xml$/i.test(name));
   const settingsXml = settingsName ? await zip.files[settingsName].async("string") : "";
   fileRecord.hasUnresolvedRevisions = xmlParts.some((xml) => /<w:(?:ins|del|moveFrom|moveTo)\b/i.test(xml))
@@ -2957,8 +2983,16 @@ async function contractReviewReadPdf(fileRecord) {
         const content = await page.getTextContent();
         let text = contractReviewPdfPageText(content);
         const visibleCharacters = (text.match(/[A-Za-zА-Яа-яІіЇїЄєҐґ0-9]/g) || []).length;
+        let imageOcr = false;
+        if (fileRecord.requireCompleteReading) {
+          // A selectable heading does not prove that the rest of the page is
+          // selectable. Even mixed text/scan pages must reach local OCR.
+          const imageOps = new Set(Object.entries(pdfjs.OPS).filter(([name]) => /paint.*Image|paintXObject/.test(name)).map(([, value]) => value));
+          const operators = await page.getOperatorList();
+          imageOcr = operators.fnArray.some((operation) => imageOps.has(operation));
+        }
         let blank = false;
-        if (visibleCharacters < 32) {
+        if (visibleCharacters < 32 || imageOcr) {
           const baseViewport = page.getViewport({ scale: 1 });
           const scale = Math.max(1.6, Math.min(2.5, 2200 / Math.max(baseViewport.width, baseViewport.height)));
           const viewport = page.getViewport({ scale });
@@ -2971,9 +3005,17 @@ async function contractReviewReadPdf(fileRecord) {
           context.fillRect(0, 0, canvas.width, canvas.height);
           await page.render({ canvasContext: context, viewport }).promise;
           blank = contractReviewPdfCanvasIsBlank(context, canvas.width, canvas.height);
+          if (!blank && fileRecord.requireCompleteReading && !window.AnodosContractFileReader?.recognize) throw new Error("Локальний OCR недоступний.");
           if (!blank && window.AnodosContractFileReader?.recognize) {
             const recognized = await window.AnodosContractFileReader.recognize(canvas);
-            if (recognized.text && recognized.text.length > text.trim().length) {
+            if (fileRecord.requireCompleteReading) {
+              if (!/[A-Za-zА-Яа-яІіЇїЄєҐґ0-9]/.test(recognized.text || "")) throw new Error("OCR не зміг прочитати вміст сторінки.");
+              text = text.trim()
+                ? `[Текстовий шар PDF]\n${text.trim()}\n[OCR тієї самої сторінки - звірити зі сканом]\n${recognized.text.trim()}`
+                : recognized.text;
+              ocrPages += 1;
+              ocrConfidences.push(Number(recognized.confidence) || 0);
+            } else if (recognized.text && recognized.text.length > text.trim().length) {
               text = recognized.text;
               ocrPages += 1;
               ocrConfidences.push(Number(recognized.confidence) || 0);
@@ -5327,6 +5369,7 @@ function renderContractReviewCurrentSurface() {
 }
 
 function addContractReviewFiles(files) {
+  if (propertyReviewBusy) return;
   const incoming = Array.from(files || []).filter(isContractReviewFile);
   const existingIds = new Set(contractReviewFiles.map((file) => file.id));
   const nextFiles = incoming
@@ -5373,6 +5416,7 @@ function addContractReviewFiles(files) {
 }
 
 function updateContractReviewFileAssignment(fileId, assignmentType, value) {
+  if (propertyReviewBusy) return;
   const fileRecord = contractReviewFiles.find((file) => file.id === fileId);
   if (!fileRecord) {
     return;
@@ -5392,6 +5436,7 @@ function updateContractReviewFileAssignment(fileId, assignmentType, value) {
 }
 
 function removeContractReviewFile(fileId) {
+  if (propertyReviewBusy) return;
   contractReviewFiles = contractReviewFiles.filter((file) => file.id !== fileId);
   if (!contractReviewFiles.some((file) => file.versionAssignment === "previous") && contractReviewFiles.length) {
     contractReviewFiles[0].versionAssignment = "previous";
@@ -5410,6 +5455,7 @@ function removeContractReviewFile(fileId) {
 }
 
 function resetContractReviewFiles() {
+  if (propertyReviewBusy) return;
   contractReviewFiles = [];
   contractReviewResult = null;
   propertyReviewResult = null;
@@ -5419,6 +5465,7 @@ function resetContractReviewFiles() {
 }
 
 function setContractReviewMode(mode) {
+  if (propertyReviewBusy) return;
   const nextMode = mode === "compare" ? "compare" : "property";
   if (contractReviewMode === nextMode) {
     return;
@@ -5430,6 +5477,7 @@ function setContractReviewMode(mode) {
 }
 
 async function buildPropertyReviewResult() {
+  if (propertyReviewBusy) return;
   if (!window.AnodosPropertyReviewSemantic || !window.AnodosPropertyReview?.checks?.length) {
     contractReviewCopyMessage = "Модуль семантичної перевірки майнового договору не завантажився. Онови сторінку і спробуй ще раз.";
     renderContractReviewCurrentSurface();
@@ -5441,7 +5489,7 @@ async function buildPropertyReviewResult() {
     return;
   }
   if (!propertyReviewExternalConsent) {
-    contractReviewCopyMessage = "Підтвердь передачу розпізнаного тексту серверу Anodos і зовнішній AI-моделі.";
+    contractReviewCopyMessage = "Підтвердь умови обробки договору в Anodos.";
     renderContractReviewCurrentSurface();
     return;
   }
@@ -5451,6 +5499,17 @@ async function buildPropertyReviewResult() {
   renderContractReviewCurrentSurface();
 
   try {
+    if (window.ANODOS_CONTRACT_REVIEW_CONFIG?.provider === "ollama-mac") {
+      propertyReviewMacSession = null;
+      propertyReviewResult = null;
+      propertyReviewMacSession = await window.AnodosMacReview.analyze(contractReviewFiles.slice(), {
+        read: contractReviewReadText,
+        progress: message => { contractReviewCopyMessage = message; renderContractReviewCurrentSurface(); }
+      });
+      propertyReviewResult = propertyReviewMacSession.result;
+      contractReviewCopyMessage = propertyReviewResult.overallAssessment;
+      return;
+    }
     const enriched = await Promise.all(contractReviewFiles.map(async (fileRecord) => {
       try {
         const extracted = await contractReviewReadText(fileRecord);
@@ -5524,11 +5583,12 @@ async function buildPropertyReviewResult() {
     contractReviewCopyMessage = propertyReviewResult.diagnosticExplanation;
   } finally {
     propertyReviewBusy = false;
+    renderContractReviewCurrentSurface();
   }
-  renderContractReviewCurrentSurface();
 }
 
 async function downloadPropertyReviewResult() {
+  if (propertyReviewBusy) return;
   if (!propertyReviewResult) {
     contractReviewCopyMessage = "Спочатку перевір договір.";
     renderContractReviewCurrentSurface();
@@ -5540,12 +5600,17 @@ async function downloadPropertyReviewResult() {
     return;
   }
   contractReviewCopyMessage = "Формую PDF-звіт з логотипом BRITMARK...";
+  propertyReviewBusy = true;
   renderContractReviewCurrentSurface();
   try {
-    const { filename } = await window.AnodosPropertyReviewReport.download(propertyReviewResult);
+    const { filename } = propertyReviewMacSession?.result === propertyReviewResult
+      ? await propertyReviewMacSession.download()
+      : await window.AnodosPropertyReviewReport.download(propertyReviewResult);
     contractReviewCopyMessage = `Завантажено: ${filename}`;
   } catch (error) {
     contractReviewCopyMessage = `Не вдалося сформувати PDF: ${error?.message || "невідома помилка"}`;
+  } finally {
+    propertyReviewBusy = false;
   }
   renderContractReviewCurrentSurface();
 }
@@ -6970,6 +7035,7 @@ function renderPropertyReviewResult() {
 
 function renderPropertyReview() {
   const groqFree = window.ANODOS_CONTRACT_REVIEW_CONFIG?.provider === "groq-free";
+  const macReview = window.ANODOS_CONTRACT_REVIEW_CONFIG?.provider === "ollama-mac";
   const readyFilesCount = contractReviewFiles.filter(contractReviewCanAutoReadFile).length;
   const canRun = readyFilesCount >= 1 && propertyReviewExternalConsent && !propertyReviewBusy;
   const runButtonText = propertyReviewBusy
@@ -6993,6 +7059,7 @@ function renderPropertyReview() {
       ${renderContractReviewModeSwitch()}
 
       ${groqFree ? `<p class="contract-review-note"><strong>Тестовий аналіз, не остаточний висновок.</strong> Безкоштовний пілот може помилятися або пропускати умови й не замінює консультацію фахівця. Перевірка може тривати до 6 хвилин. Обсяг пакета обмежений квотою, тому довгі договори можуть не вміститися. Не вилучай важливі умови або додатки заради ліміту.</p>` : ""}
+      ${macReview ? `<p class="contract-review-note"><strong>Локальна модель Anodos, без оплати за ШІ-запит.</strong> Договори перевіряються на комп’ютері оператора Anodos. Ліміт Groq у 20 тисяч символів не застосовується. Аналіз може тривати кілька хвилин; залишай вкладку відкритою. Якщо сервер вимкнений або зайнятий, сервіс повідомить про це. Діють захисні межі розміру, черги й завантажень. Рекомендації потрібно звірити з оригіналом.</p>` : ""}
 
       <section class="contract-review-dropzone" data-contract-review-dropzone aria-label="Додати договір страхування майна">
         <input id="contractReviewInput" type="file" multiple accept=".doc,.docx,.pdf,.xls,.xlsx,.xlsb,.ods,.numbers,.odt,.rtf,.txt,.md,.csv,.tsv,.html,.htm,.xml,.json,.pptx,.png,.jpg,.jpeg,.webp,.bmp,.gif,.tif,.tiff,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,application/rtf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/*,image/*" />
@@ -7022,14 +7089,16 @@ function renderPropertyReview() {
       ` : contractReviewCopyMessage ? `<p class="contract-review-status">${escapeHtml(contractReviewCopyMessage)}</p>` : ""}
 
       <section class="property-review-privacy">
-        <p>${groqFree
+        <p>${macReview
+          ? "Оригінали, розпізнаний текст і результат зберігаються на комп’ютері оператора Anodos. Відкрита вкладка формує PDF і додає його до архіву; якщо створення PDF не вдасться, сервіс повідомить про це. Файли шифруються у браузері перед передачею; Cloudflare передає зашифровані дані, без хмарного архіву договорів. Аналіз виконує локальна Ollama, без Groq або іншої зовнішньої AI-моделі. Це не обробка лише на вашому пристрої."
+          : groqFree
           ? "Файл читається й розпізнається у браузері. Розпізнаний текст через сервер Anodos у Cloudflare передається зовнішньому сервісу Groq для аналізу. Anodos не зберігає договір або результат на сервері; PDF завантажується на ваш пристрій."
           : "Файл читається й розпізнається у браузері, після чого текст захищеним з'єднанням передається серверу Anodos у Cloudflare Workers AI. Worker Anodos не зберігає текст або результат перевірки; PDF завантажується лише на пристрій користувача."}</p>
         <label>
           <input type="checkbox" data-property-review-consent ${propertyReviewExternalConsent ? "checked" : ""} />
-          <span>${groqFree ? "Погоджуюся на передачу тексту договору сервісам Anodos і Groq для цієї перевірки." : "Розумію і погоджуюся на передачу розпізнаного тексту для цієї перевірки."}</span>
+          <span>${macReview ? "Маю право передати ці документи та погоджуюся на їх обробку і зберігання оператором Anodos, включно з оригіналами й результатом." : groqFree ? "Погоджуюся на передачу тексту договору сервісам Anodos і Groq для цієї перевірки." : "Розумію і погоджуюся на передачу розпізнаного тексту для цієї перевірки."}</span>
         </label>
-        ${groqFree
+        ${macReview ? `<small>Архів не видаляється автоматично. Не додавай зайві персональні дані. До 12 файлів по 30 МБ, до 120 МБ на пакет і 600 тисяч символів тексту; пакет не обрізається заради межі. Для отримання PDF не закривай вкладку до завершення.</small>` : groqFree
           ? `<small>Передача до Groq дозволена лише після підтвердження адміністратором режиму Zero Data Retention: без зберігання текстів запитів і відповідей у Groq. Це зовнішня обробка, не обробка лише на вашому пристрої. <a href="https://console.groq.com/docs/your-data" target="_blank" rel="noopener noreferrer">Умови обробки даних Groq</a>. Безкоштовна перевірка має спільний ліміт і може тривати кілька хвилин; завеликі пакети відхиляються без обрізання тексту.</small>`
           : `<small>Cloudflare не використовує переданий текст для навчання моделей або поліпшення своїх чи сторонніх сервісів. Сервіси зберігання Cloudflare для цієї перевірки не підключені. <a href="https://developers.cloudflare.com/workers-ai/platform/data-usage/" target="_blank" rel="noopener noreferrer">Докладніше про обробку даних</a>.</small>`}
       </section>

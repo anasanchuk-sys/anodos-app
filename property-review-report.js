@@ -108,6 +108,9 @@
     ];
     return {
       id: `recommendation-${index}`,
+      // At most two recommendation cards per page keeps the short report
+      // readable and avoids a third dense card orphaning the next border.
+      ...(index > 0 && index % 2 === 0 ? { pageBreak: "before" } : {}),
       margin: [0, 0, 0, 10],
       table: { widths: [4, "*"], body: [[
         { text: "", fillColor: severity.color },
@@ -201,7 +204,7 @@
     } else {
       content.push(...parametersBlock(result));
       if (issues.length) {
-        content.push({ text: "РЕКОМЕНДОВАНІ ПРАВКИ", style: "sectionTitle", margin: [0, 0, 0, 7] });
+        content.push({ id: "recommendations-title", text: "РЕКОМЕНДОВАНІ ПРАВКИ", style: "sectionTitle", margin: [0, 0, 0, 7] });
         issues.forEach((issue, index) => content.push(issueCard(issue, index)));
       }
       content.push(...warningsBlock(result, issues));
@@ -213,6 +216,8 @@
       // Move a card to the next page only if it would split mid-page. A card
       // longer than a whole page may flow normally once it starts at the top.
       pageBreakBefore(node) {
+        // Keep the recommendations heading with its cards, after the conditions.
+        if (node.id === "recommendations-title") return node.startPosition?.top > 35;
         return /^recommendation-/.test(node.id || "") && node.pageNumbers?.length > 1 && node.startPosition?.top > 35;
       },
       info: { title: `BRITMARK - перевірка договору страхування майна - ${sourceNames(result)[0] || "договір"}`,
