@@ -129,13 +129,13 @@
     if (!parameters.length) return [];
     return [
       { text: "ОСНОВНІ УМОВИ ДОГОВОРУ", style: "sectionTitle", margin: [0, 0, 0, 6] },
-      { table: { widths: [146, "*"], body: parameters.map((parameter) => [
+      { table: { widths: [146, "*"], dontBreakRows: true, body: parameters.map((parameter) => [
         { text: clean(parameter.label, "Параметр"), style: "tableCell", color: COLORS.muted },
         { text: clean(parameter.value), style: "tableCell", bold: true }
       ]) }, layout: {
         fillColor: (rowIndex) => rowIndex % 2 === 0 ? COLORS.canvas : COLORS.paper,
         hLineWidth: () => 0, vLineWidth: () => 0,
-        paddingLeft: () => 8, paddingRight: () => 8, paddingTop: () => 5, paddingBottom: () => 5
+        paddingLeft: () => 8, paddingRight: () => 8, paddingTop: () => 4, paddingBottom: () => 4
       }, margin: [0, 0, 0, 15] }
     ];
   }
