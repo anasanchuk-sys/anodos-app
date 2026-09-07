@@ -33,7 +33,7 @@
     const t=await client();const opened=await t.rpc({op:'open',kind:'osint',privacyVersion:'anodos-osint-public-v1'});capability=opened.capability;transport=t;save({...t.data,capability,query:$('query').value});
   }
   function check(){if(!$('consent').checked){$('consent').reportValidity();return false;}if(!$('query').reportValidity())return false;return true;}
-  const el=(tag,content,cls)=>{const node=document.createElement(tag);if(content!==undefined)node.textContent=content;if(cls)node.className=cls;return node;};
+  const el=(tag,content,cls)=>{const node=document.createElement(tag);if(content!==undefined)node.textContent=String(content).replace(/[\u2010-\u2015]/g,'-');if(cls)node.className=cls;return node;};
   function candidates(rows){
     $('candidates').replaceChildren();$('selection').hidden=false;selected='';
     if(!rows.length){$('candidates').append(el('p','Назву не знайдено у джерелі пошуку. Додайте сайт компанії або уточніть назву.','hint'));$('website-details').open=true;}
