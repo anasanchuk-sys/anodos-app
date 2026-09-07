@@ -1,4 +1,4 @@
-const CACHE_NAME = "platform-shell-v316";
+const CACHE_NAME = "platform-shell-v317";
 const ASSETS = [
   "./osint.html",
   "./osint.css?v=1",
@@ -20,8 +20,8 @@ const ASSETS = [
   "./assets/vendor/pdfmake.min.js?v=1",
   "./assets/vendor/vfs_fonts.js?v=1",
   "./assets/britmark-logo.png?v=1",
-  "./questionnaire-generator.js?v=11",
-  "./questionnaire-research.js?v=1",
+  "./questionnaire-generator.js?v=12",
+  "./questionnaire-research.js?v=2",
   "./client-recommendation.js?v=1",
   "./bank-accreditation-data.js?v=8",
   "./contract-tests-data.js?v=5",
@@ -34,7 +34,7 @@ const ASSETS = [
   "./local-review/result.js?v=1",
   "./property-review-semantic.js?v=5",
   "./property-review-report.js?v=7",
-  "./app.js?v=210",
+  "./app.js?v=211",
   "./assets/contract-tests/arx-zusp-053.pdf",
   "./manifest.webmanifest?v=7",
   "./assets/icon.svg?v=7",

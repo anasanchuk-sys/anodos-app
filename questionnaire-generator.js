@@ -2249,7 +2249,9 @@
     let number = 1;
     if (result.research) {
       content.push(paragraphText(docx, `Адреса об’єкта: ${result.research.address}`, {size:21,bold:true}));
-      content.push(paragraphText(docx, "Попереднє заповнення з відкритих джерел. Перевірте відповіді, актуальність даних та заповніть поля, які потребують уточнення.", {size:19}));
+      content.push(paragraphText(docx, result.research.foundCount > 0
+        ? "Попереднє заповнення з відкритих джерел. Перевірте відповіді, актуальність даних та заповніть поля, які потребують уточнення."
+        : "Автоматичне заповнення не вдалося. Вебджерела не дали підтверджених відповідей для цього об’єкта. Ця форма потребує ручного заповнення або повторного пошуку.", {size:19}));
     }
     result.sections.forEach((section, sectionIndex) => {
       content.push(

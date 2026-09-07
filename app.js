@@ -7371,7 +7371,7 @@ function renderQuestionnaireGenerator() {
   const result = questionnaireGeneratorResult;
   const prepareButtonText = questionnaireGeneratorBusy
     ? "Готую документ..."
-    : "Підготувати опитувальник";
+    : "Створити порожню форму";
   const sectionsPreview = result
     ? result.sections.map((section) => `
         <li>
@@ -7417,14 +7417,15 @@ function renderQuestionnaireGenerator() {
           <button class="secondary-action" type="submit" name="mode" value="blank" ${questionnaireGeneratorBusy ? "disabled" : ""}>${escapeHtml(prepareButtonText)}</button>
           ${questionnaireResearchController ? `<p role="status" data-questionnaire-progress>${escapeHtml(questionnaireResearchProgress)}</p><button class="secondary-action" type="button" data-cancel-questionnaire>Скасувати заповнення</button>` : ""}
         </form>
-        <p class="questionnaire-generator-privacy">«Знайти й заповнити» передає адресу й опис сервісу Anodos та пошуковикам Bing / DuckDuckGo. Результат можна перевірити й відредагувати. «Підготувати опитувальник» створює порожню форму у браузері без передачі даних; адреса для цього не обов’язкова.</p>
+        <p class="questionnaire-generator-privacy">«Знайти й заповнити» передає адресу й опис сервісу Anodos та пошуковикам Bing / DuckDuckGo. Результат можна перевірити й відредагувати. «Створити порожню форму» працює у браузері без передачі даних; адреса для цього не обов’язкова.</p>
+        ${window.location.protocol === "file:" ? `<p class="questionnaire-generator-error">Для пошуку відкрийте <a href="https://anodos.com.ua/" target="_blank" rel="noopener">вебверсію Anodos</a>. У локальному файлі можна створити порожню форму.</p>` : ""}
       </section>
 
       ${result ? `
         <section class="questionnaire-generator-result" aria-live="polite">
           <header class="questionnaire-generator-result-head">
             <div>
-              <p class="eyebrow">${result.research ? "Попереднє заповнення - перевірте відповіді" : "Опитувальник готовий"}</p>
+              <p class="eyebrow">${result.research ? result.research.foundCount > 0 ? "Попереднє заповнення - перевірте відповіді" : "Заповнення не вдалося" : "Порожню форму створено"}</p>
               <h2>${escapeHtml(result.title)}</h2>
             </div>
             <span class="questionnaire-generator-count">Галочки й короткі поля</span>
@@ -7443,7 +7444,7 @@ function renderQuestionnaireGenerator() {
               <span>DOCX · ${result.choiceCount} пунктів із клікабельними галочками · ${result.writingFieldCount} коротких полів</span>
             </div>
             <button class="primary-action" type="button" data-download-questionnaire ${questionnaireGeneratorBusy ? "disabled" : ""}>
-              ${questionnaireGeneratorBusy ? "Створюю DOCX..." : "Завантажити DOCX"}
+              ${questionnaireGeneratorBusy ? "Створюю DOCX..." : result.research && !result.research.foundCount ? "Завантажити форму для уточнення" : "Завантажити DOCX"}
             </button>
           </div>
           ${questionnaireGeneratorDownloadMessage ? `<p class="questionnaire-generator-status">${escapeHtml(questionnaireGeneratorDownloadMessage)}</p>` : ""}

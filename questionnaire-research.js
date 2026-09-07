@@ -19,7 +19,7 @@
     const questions=result.sections.flatMap(s=>s.questions);
     const found=questions.filter(q=>q.answerStatus==='found').length,user=questions.filter(q=>q.answerStatus==='user'&&q.answer).length;
     return `<div class="questionnaire-research-review">
-      <p class="questionnaire-research-summary" data-questionnaire-summary>${found} з ${questions.length} полів містять знайдені відомості${user?`; ${user} доповнено вами`:''}. Перевірте їх та уточніть решту.</p>
+      <p class="questionnaire-research-summary" data-questionnaire-summary>${found ? `${found} з ${questions.length} полів містять знайдені відомості${user?`; ${user} доповнено вами`:''}. Перевірте їх та уточніть решту.` : 'Заповнення не вдалося: у прочитаних джерелах немає відповідей для цього об’єкта. Нижче залишилася форма для ручного заповнення. Уточніть адресу або додайте назву будівлі й повторіть пошук.'}</p>
       <p><strong>Адреса:</strong> ${escape(research.address)}</p>
       ${research.warnings?.length?`<details><summary>Обмеження пошуку (${research.warnings.length})</summary><ul>${research.warnings.map(w=>`<li>${escape(w)}</li>`).join('')}</ul></details>`:''}
       ${result.sections.map(s=>`<section class="questionnaire-research-section"><h3>${escape(s.title)}</h3>${s.questions.map(q=>`
@@ -50,6 +50,7 @@
     const summary=document.querySelector('[data-questionnaire-summary]');if(summary)summary.textContent='Зміни внесено. Завантажений DOCX міститиме відредаговані відповіді; початкові джерела залишаться для порівняння.';
   }
   async function research(payload,{signal,progress=()=>{}}={}) {
+    if(scope.location?.protocol==='file:')throw new Error('Пошук з інтернету доступний у вебверсії Anodos. Відкрийте https://anodos.com.ua/ та перейдіть до генератора опитувальників.');
     const config=scope.ANODOS_CONTRACT_REVIEW_CONFIG,crypt=scope.AnodosReviewCrypto;
     if(!scope.crypto?.subtle||!crypt||!config?.macPublicKey)throw new Error('Оновіть Anodos для заповнення опитувальника.');
     const client=await crypt.client(config.macPublicKey,config.macKeyId);
