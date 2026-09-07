@@ -1,9 +1,9 @@
-const CACHE_NAME = "platform-shell-v317";
+const CACHE_NAME = "platform-shell-v318";
 const ASSETS = [
   "./osint.html",
   "./osint.css?v=1",
-  "./osint.js?v=1",
-  "./osint-report.js?v=1",
+  "./osint.js?v=2",
+  "./osint-report.js?v=2",
   "./osint-entry.css?v=1",
   "./",
   "./index.html",

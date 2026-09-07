@@ -45,6 +45,7 @@
   }
   function renderReport(report){
     if(report.qualityChecked!==true)throw new Error('Звіт ще не пройшов контроль змісту. Почніть нове дослідження після оновлення сервісу.');
+    report={...report,gaps:AnodosOsintReport.gaps(report)};
     result=report;$('result').hidden=false;$('selection').hidden=true;$('result-title').textContent=report.name;$('result-meta').textContent=`${report.sources.length} джерел · ${report.findings.length} висновків із цитатами · ${new Date(report.createdAt).toLocaleDateString('uk-UA')}`;
     const content=$('report-content');content.replaceChildren();content.append(el('p','Попередній аналіз. Наявність цитати підтверджує текст джерела; висновки й актуальність відомостей потребують перевірки.','hint'));
     for(const [id,title]of report.sections){content.append(el('h3',title));const rows=report.findings.filter(f=>f.section===id);if(!rows.length)content.append(el('p','Недостатньо підтверджених відомостей.','hint'));
