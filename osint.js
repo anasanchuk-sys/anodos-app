@@ -44,10 +44,11 @@
     });$('research').disabled=true;
   }
   function renderReport(report){
+    if(report.qualityChecked!==true)throw new Error('Звіт ще не пройшов контроль змісту. Почніть нове дослідження після оновлення сервісу.');
     result=report;$('result').hidden=false;$('selection').hidden=true;$('result-title').textContent=report.name;$('result-meta').textContent=`${report.sources.length} джерел · ${report.findings.length} висновків із цитатами · ${new Date(report.createdAt).toLocaleDateString('uk-UA')}`;
     const content=$('report-content');content.replaceChildren();content.append(el('p','Попередній аналіз. Наявність цитати підтверджує текст джерела; висновки й актуальність відомостей потребують перевірки.','hint'));
     for(const [id,title]of report.sections){content.append(el('h3',title));const rows=report.findings.filter(f=>f.section===id);if(!rows.length)content.append(el('p','Недостатньо підтверджених відомостей.','hint'));
-      rows.forEach(f=>{const box=el('article',undefined,'finding');box.append(el('span',f.status==='inference'?'Аналітичне припущення':'Твердження джерела',f.status==='inference'?'label inference':'label'),el('p',f.statement));const details=el('details');details.append(el('summary','Цитати та джерела'));f.evidence.forEach(e=>{const s=report.sources.find(s=>s.id===e.sourceId);details.append(el('blockquote',e.quote));if(s){const a=el('a',`[${s.id}] ${s.title}`);a.href=s.url;a.target='_blank';a.rel='noopener noreferrer';details.append(a);}});box.append(details);content.append(box);});
+      rows.forEach(f=>{const box=el('article',undefined,'finding');box.append(el('span',f.status==='inference'?'Аналітичне припущення':'Твердження джерела',f.status==='inference'?'label inference':'label'),el('p',f.statement),el('p',f.timeNote||'Дата актуальності відомостей не встановлена.','hint'));const details=el('details');details.append(el('summary','Цитати та джерела'));f.evidence.forEach(e=>{const s=report.sources.find(s=>s.id===e.sourceId);details.append(el('blockquote',e.quote));if(s){const a=el('a',`[${s.id}] ${s.title}`);a.href=s.url;a.target='_blank';a.rel='noopener noreferrer';details.append(a);}});box.append(details);content.append(box);});
     }
     content.append(el('h3','Що залишилося перевірити'));const gaps=el('ul');report.gaps.forEach(g=>gaps.append(el('li',g)));content.append(gaps);
     const info=el('details');info.append(el('summary','Межі дослідження та недоступні джерела'),el('p',report.coverage,'hint'));report.unavailable.forEach(s=>info.append(el('p',`${s.url}: ${s.reason}`,'hint')));content.append(info);
@@ -72,7 +73,7 @@
   $('new-search').addEventListener('click',reset);$('reset-session').addEventListener('click',reset);
   (async()=>{let saved;try{saved=JSON.parse(sessionStorage.getItem(key));}catch{}if(!saved)return;
     $('query').value=saved.query||'';
-    if(saved.report){renderReport(saved.report);return;}
+    if(saved.report){try{renderReport(saved.report);}catch(e){sessionStorage.removeItem(key);showError(e);}return;}
     if(Date.now()-saved.created>4*3600000||saved.keyId!==config.macKeyId){sessionStorage.removeItem(key);return;}
     try{capability=saved.capability;transport=await client(saved);setBusy(true,'Відновлюю стан дослідження');await poll();}catch(e){transport=null;capability='';setBusy(false,'');showError(e);}
   })();
