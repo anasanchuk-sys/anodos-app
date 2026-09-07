@@ -2154,6 +2154,9 @@ let questionnaireGeneratorResult = null;
 let questionnaireGeneratorError = "";
 let questionnaireGeneratorDownloadMessage = "";
 let questionnaireGeneratorBusy = false;
+let questionnaireGeneratorAddress = "";
+let questionnaireResearchController = null;
+let questionnaireResearchProgress = "";
 let clientRecommendationResult = null;
 let clientRecommendationBrokerNote = "";
 let clientRecommendationError = "";
@@ -7360,14 +7363,18 @@ function renderQuestionnaireGenerator() {
         <div>
           <p class="eyebrow">Anodos · робочий інструмент</p>
           <h1>Генератор опитувальників</h1>
-          <p class="hero-copy">Опишіть майно, діяльність, перевезення, роботи або відповідальність. Anodos підбере страховий профіль і підготує редагований опитувальник BritMark у форматі DOCX.</p>
+          <p class="hero-copy">Вкажіть адресу й потрібний опитувальник. Anodos знайде доступні відомості в інтернеті та підготує DOCX з відповідями й джерелами.</p>
         </div>
       </header>
 
       <section class="questionnaire-generator-form-card">
         <form id="questionnaireGeneratorForm" class="questionnaire-generator-form">
+          <label for="questionnaireAddress">
+            <span>Адреса об’єкта</span>
+            <input id="questionnaireAddress" name="questionnaireAddress" type="text" maxlength="320" autocomplete="off" placeholder="Місто, вулиця, номер будинку та корпус" value="${escapeHtml(questionnaireGeneratorAddress)}" ${questionnaireGeneratorBusy ? "disabled" : ""} />
+          </label>
           <label for="questionnaireSubject">
-            <span>Що потрібно застрахувати або дослідити?</span>
+            <span>Який опитувальник потрібен?</span>
             <textarea
               id="questionnaireSubject"
               name="questionnaireSubject"
@@ -7375,21 +7382,24 @@ function renderQuestionnaireGenerator() {
               required
               minlength="2"
               maxlength="240"
+              ${questionnaireGeneratorBusy ? "disabled" : ""}
               autocomplete="off"
               placeholder="Наприклад: елеватор, разове вантажоперевезення, будівельно-монтажні роботи або відповідальність за якість продукції"
             >${escapeHtml(questionnaireGeneratorInput)}</textarea>
           </label>
           ${questionnaireGeneratorError ? `<p class="questionnaire-generator-error">${escapeHtml(questionnaireGeneratorError)}</p>` : ""}
-          <button class="primary-action primary-action-wide" type="submit" ${questionnaireGeneratorBusy ? "disabled" : ""}>${escapeHtml(prepareButtonText)}</button>
+          <button class="primary-action primary-action-wide" type="submit" name="mode" value="research" ${questionnaireGeneratorBusy ? "disabled" : ""}>Знайти й заповнити</button>
+          <button class="secondary-action" type="submit" name="mode" value="blank" ${questionnaireGeneratorBusy ? "disabled" : ""}>${escapeHtml(prepareButtonText)}</button>
+          ${questionnaireResearchController ? `<p role="status" data-questionnaire-progress>${escapeHtml(questionnaireResearchProgress)}</p><button class="secondary-action" type="button" data-cancel-questionnaire>Скасувати заповнення</button>` : ""}
         </form>
-        <p class="questionnaire-generator-privacy">Опис обробляється лише у вашому браузері. Введені дані й підготовлений документ не надсилаються назовні та не зберігаються в Anodos.</p>
+        <p class="questionnaire-generator-privacy">«Знайти й заповнити» передає адресу й опис сервісу Anodos та пошуковикам Bing / DuckDuckGo. Результат можна перевірити й відредагувати. «Підготувати опитувальник» створює порожню форму у браузері без передачі даних; адреса для цього не обов’язкова.</p>
       </section>
 
       ${result ? `
         <section class="questionnaire-generator-result" aria-live="polite">
           <header class="questionnaire-generator-result-head">
             <div>
-              <p class="eyebrow">Опитувальник готовий</p>
+              <p class="eyebrow">${result.research ? "Попереднє заповнення - перевірте відповіді" : "Опитувальник готовий"}</p>
               <h2>${escapeHtml(result.title)}</h2>
             </div>
             <span class="questionnaire-generator-count">Галочки й короткі поля</span>
@@ -7401,6 +7411,7 @@ function renderQuestionnaireGenerator() {
           <ol class="questionnaire-generator-sections">
             ${sectionsPreview}
           </ol>
+          ${window.AnodosQuestionnaireResearch?.render(result) || ""}
           <div class="questionnaire-generator-download">
             <div>
               <strong>Редагований документ BritMark</strong>
@@ -10787,6 +10798,10 @@ function renderProgress() {
 }
 
 document.addEventListener("click", async (event) => {
+  if (event.target.closest("[data-cancel-questionnaire]")) {
+    questionnaireResearchController?.abort();
+    return;
+  }
   const routeButton = event.target.closest("button[data-route], a[data-route]");
   const brandMenuButton = event.target.closest("[data-brand-menu]");
   const brandMenuSpaceButton = event.target.closest("[data-brand-menu-space]");
@@ -11466,6 +11481,9 @@ document.addEventListener("focusin", (event) => {
 });
 
 document.addEventListener("input", (event) => {
+  window.AnodosQuestionnaireResearch?.edit(questionnaireGeneratorResult, event.target);
+  if (event.target.id === "questionnaireAddress") questionnaireGeneratorAddress = event.target.value;
+  if (event.target.id === "questionnaireSubject") questionnaireGeneratorInput = event.target.value;
   const accuracyReportForm = event.target.closest("[data-accuracy-report-form]");
   if (accuracyReportForm && event.target.name === "accuracyReportNote") {
     accuracyReportDrafts[accuracyReportForm.dataset.accuracyReportForm] = event.target.value;
@@ -11757,16 +11775,36 @@ document.addEventListener("submit", async (event) => {
 
   if (event.target.id === "questionnaireGeneratorForm") {
     event.preventDefault();
+    if (questionnaireGeneratorBusy) return;
     if (!questionnaireGeneratorIsAllowed()) {
       setActiveSpace("products", "home");
       return;
     }
     const formData = new FormData(event.target);
     questionnaireGeneratorInput = String(formData.get("questionnaireSubject") || "").trim();
+    questionnaireGeneratorAddress = String(formData.get("questionnaireAddress") || "").trim();
     questionnaireGeneratorError = "";
     questionnaireGeneratorDownloadMessage = "";
     try {
       questionnaireGeneratorResult = window.AnodosQuestionnaireGenerator.prepare(questionnaireGeneratorInput);
+      if (event.submitter?.value !== "blank") {
+        if (questionnaireGeneratorAddress.length < 8) throw new Error("Вкажіть повну адресу об’єкта: населений пункт, вулицю та номер будинку.");
+        if (!window.AnodosQuestionnaireResearch) throw new Error("Оновіть Anodos для заповнення з інтернету.");
+        questionnaireGeneratorBusy = true;
+        questionnaireResearchController = new AbortController();
+        questionnaireResearchProgress = "Починаю пошук...";
+        const template = questionnaireGeneratorResult;
+        questionnaireGeneratorResult = null;
+        renderQuestionnaireGenerator();
+        const research = await window.AnodosQuestionnaireResearch.research({address:questionnaireGeneratorAddress,subject:questionnaireGeneratorInput}, {
+          signal:questionnaireResearchController.signal,
+          progress:message=>{questionnaireResearchProgress=message;const status=document.querySelector("[data-questionnaire-progress]");if(status)status.textContent=message;}
+        });
+        questionnaireGeneratorResult = window.AnodosQuestionnaireResearch.apply(template,research);
+      }
+      questionnaireGeneratorBusy = false;
+      questionnaireResearchController = null;
+      if (route !== "questionnaire-generator") return;
       renderQuestionnaireGenerator();
       window.requestAnimationFrame(() => {
         document.querySelector(".questionnaire-generator-result")?.scrollIntoView({
@@ -11777,6 +11815,9 @@ document.addEventListener("submit", async (event) => {
     } catch (error) {
       questionnaireGeneratorResult = null;
       questionnaireGeneratorError = error.message;
+      questionnaireGeneratorBusy = false;
+      questionnaireResearchController = null;
+      if (route !== "questionnaire-generator") return;
       renderQuestionnaireGenerator();
       document.getElementById("questionnaireSubject")?.focus();
     }

@@ -1701,6 +1701,7 @@
       coverage
     ]);
     const questions = sections.flatMap((section) => section.questions);
+    questions.forEach((question, index) => { question.id = `Q${index + 1}`; });
 
     return {
       subject,
@@ -2101,7 +2102,7 @@
             optionRuns.push(
               new docx.CheckBox({
                 alias: `britmark-q${questionNumber}-option${absoluteOptionIndex + 1}`,
-                checked: false,
+                checked: Boolean(question.selectedOptions?.includes(option)),
                 checkedState: { value: "2612", font: "MS Gothic" },
                 uncheckedState: { value: "2610", font: "MS Gothic" }
               }),
@@ -2123,7 +2124,15 @@
         }
       }
 
-      if (question.detailsLabel) {
+      if (question.answerStatus) {
+        responseChildren.push(paragraphText(docx, question.answer || "Потрібно уточнити", {
+          color: question.answer ? "243247" : "85601C", size: 19,
+          spacing: { before: 45, after: 35, line: 260 }
+        }));
+        const labels = {found:"Знайдено у джерелі - перевірте актуальність",unknown:"Потрібно уточнити",conflict:"Суперечливі дані",user:"Внесено користувачем"};
+        const refs = (question.evidence || []).map(e => e.sourceId).join(", ");
+        if (question.answer || question.answerStatus !== "unknown") responseChildren.push(paragraphText(docx, `${labels[question.answerStatus] || "Потрібно уточнити"}${refs ? ` [${refs}]` : ""}`, {size:16,color:"647486",spacing:{after:20,line:230}}));
+      } else if (question.detailsLabel) {
         responseChildren.push(
           paragraphText(docx, question.detailsLabel, {
             color: "647486",
@@ -2238,6 +2247,10 @@
     ];
 
     let number = 1;
+    if (result.research) {
+      content.push(paragraphText(docx, `Адреса об’єкта: ${result.research.address}`, {size:21,bold:true}));
+      content.push(paragraphText(docx, "Попереднє заповнення з відкритих джерел. Перевірте відповіді, актуальність даних та заповніть поля, які потребують уточнення.", {size:19}));
+    }
     result.sections.forEach((section, sectionIndex) => {
       content.push(
         new docx.Paragraph({
@@ -2262,6 +2275,20 @@
       content.push(...questionCards(docx, section, number));
       number += section.questions.length;
     });
+
+    if (result.research) {
+      content.push(paragraphText(docx, "Джерела та підтвердження", {heading:docx.HeadingLevel.HEADING_1,bold:true,size:27}));
+      content.push(paragraphText(docx, `Пошук виконано: ${new Date(result.research.researchedAt).toLocaleString("uk-UA")}. ${result.research.scope}`, {size:18}));
+      for (const source of result.research.sources) {
+        content.push(paragraphText(docx, `[${source.id}] ${source.title}`, {bold:true,size:19}));
+        content.push(new docx.Paragraph({spacing:{after:60},children:[new docx.ExternalHyperlink({link:source.url,children:[new docx.TextRun({text:source.url,style:"Hyperlink",size:17})]})]}));
+        const referenced=result.sections.flatMap(s=>s.questions).filter(q=>(q.evidence||[]).some(e=>e.sourceId===source.id));
+        for (const q of referenced) for (const evidence of q.evidence.filter(e=>e.sourceId===source.id)) {
+          content.push(paragraphText(docx, `${q.text}: «${evidence.quote}»`, {size:18,spacing:{after:60,line:255}}));
+        }
+      }
+      for (const warning of result.research.warnings || []) content.push(paragraphText(docx, warning, {size:17,color:"85601C"}));
+    }
 
     return new docx.Document({
       creator: "BritMark / Anodos",
