@@ -13,7 +13,7 @@
         content.push({text:[{text:`${i+1}. `,bold:true},text(f.statement)],margin:[0,5,0,4]});
         content.push({text:f.status==='inference'?'Аналітичне припущення - потребує перевірки':'Твердження джерела - не незалежна перевірка',fontSize:8.5,color:f.status==='inference'?'#82601d':'#496981',margin:[0,0,0,5]});
         content.push({text:f.timeNote||'Дата актуальності відомостей не встановлена.',fontSize:8.5,color:'#78653c',margin:[0,0,0,5]});
-        for(const e of f.evidence){const s=report.sources.find(s=>s.id===e.sourceId);content.push({text:`[${e.sourceId}] «${text(e.quote)}»`,fontSize:9,color:'#495469',margin:[12,2,0,3]});if(s)content.push({text:text(s.title),link:url(s.url),fontSize:8.5,color:'#2a6285',margin:[12,0,0,9]});}
+        for(const e of f.evidence){const s=report.sources.find(s=>s.id===e.sourceId);if(e.quote)content.push({text:`[${e.sourceId}] «${text(e.quote)}${e.shortened?'…':''}»`,fontSize:9,color:'#495469',margin:[12,2,0,3]});if(s)content.push({text:`[${e.sourceId}] ${text(s.title)}`,link:url(s.url),fontSize:8.5,color:'#2a6285',margin:[12,0,0,9]});}
       });
     }
     content.push({text:'Що залишилося перевірити',style:'h2'},{ul:report.gaps.length?report.gaps.map(text):['Повноту структури, актуальність власників і прав на активи за первинними документами.']});
