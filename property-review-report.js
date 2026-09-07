@@ -180,9 +180,7 @@
     const excludedCount = (Array.isArray(result.issues) ? result.issues.length : 0) - issues.length;
     if (!warnings.length && !excludedCount) return [];
     const readable = warnings.filter((warning) => !INTERNAL_DIAGNOSTIC.test(warning));
-    const details = readable.length ? [readable.slice(0, 3).join(" "),
-      readable.length > 3 ? `Ще ${readable.length - 3} ${issueCountLabel(readable.length - 3)} потребують звірення з оригіналом.` : ""
-    ].filter(Boolean).join(" ") : "Частину умов не вдалося впевнено оцінити за прочитаним текстом. Звірте їх з оригіналом договору.";
+    const details = readable.length ? readable.join("\n") : "Частину умов не вдалося впевнено оцінити за прочитаним текстом. Звірте їх з оригіналом договору.";
     return [{
       stack: [labelText("Потребує уточнення", COLORS.muted),
         { text: details, fontSize: 8.1, lineHeight: 1.15, color: COLORS.muted },
@@ -202,7 +200,7 @@
         { text: clean(result.diagnosticExplanation, "Перевірте формат і зміст документа."), fontSize: 10, lineHeight: 1.2 }
       ], margin: [0, 9, 0, 0] });
     } else {
-      content.push(...parametersBlock(result));
+      if (!options.concise) content.push(...parametersBlock(result));
       if (issues.length) {
         content.push({ id: "recommendations-title", text: "РЕКОМЕНДОВАНІ ПРАВКИ", style: "sectionTitle", margin: [0, 0, 0, 7] });
         issues.forEach((issue, index) => content.push(issueCard(issue, index)));
@@ -217,7 +215,7 @@
       // longer than a whole page may flow normally once it starts at the top.
       pageBreakBefore(node) {
         // Keep the recommendations heading with its cards, after the conditions.
-        if (node.id === "recommendations-title") return node.startPosition?.top > 35;
+        if (node.id === "recommendations-title") return !options.concise && node.startPosition?.top > 35;
         return /^recommendation-/.test(node.id || "") && node.pageNumbers?.length > 1 && node.startPosition?.top > 35;
       },
       info: { title: `BRITMARK - перевірка договору страхування майна - ${sourceNames(result)[0] || "договір"}`,

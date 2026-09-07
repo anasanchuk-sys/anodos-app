@@ -2171,6 +2171,7 @@ let contractReviewPdfModulePromise = null;
 let contractReviewMode = localStorage.getItem(contractReviewModeKey) === "compare" ? "compare" : "property";
 let propertyReviewResult = null;
 let propertyReviewMacSession = null;
+let propertyReviewRecovery = window.AnodosMacWorkflow?.parseLocation() || null;
 let propertyReviewBusy = false;
 let propertyReviewExternalConsent = false;
 let profileEditMode = false;
@@ -2259,13 +2260,14 @@ function applyStateCompensationGuideLocation() {
 }
 
 function applyContractReviewLocation() {
-  if (window.location.hash !== contractReviewHash) {
+  if (window.location.hash !== contractReviewHash && !window.AnodosMacWorkflow?.parseLocation()) {
     return false;
   }
 
   activeSpace = "products";
   route = "contract-review";
   contractReviewMode = "property";
+  propertyReviewRecovery = window.AnodosMacWorkflow?.parseLocation() || propertyReviewRecovery;
   return true;
 }
 
@@ -5505,8 +5507,8 @@ async function buildPropertyReviewResult() {
     if (window.ANODOS_CONTRACT_REVIEW_CONFIG?.provider === "ollama-mac") {
       propertyReviewMacSession = null;
       propertyReviewResult = null;
-      propertyReviewMacSession = await window.AnodosMacReview.analyze(contractReviewFiles.slice(), {
-        read: contractReviewReadText,
+      propertyReviewMacSession = await window.AnodosMacWorkflow.analyze(contractReviewFiles.slice(), {
+        onRecovery: value => { propertyReviewRecovery = value.key; history.replaceState(null, "", value.url); renderContractReviewCurrentSurface(); },
         progress: message => { contractReviewCopyMessage = message; renderContractReviewCurrentSurface(); }
       });
       propertyReviewResult = propertyReviewMacSession.result;
@@ -5584,6 +5586,28 @@ async function buildPropertyReviewResult() {
       summary: { critical: 0, high: 0, medium: 0, acceptable: 0, missing: 0, unclear: 0, reviewed: 0, total: window.AnodosPropertyReview?.checks?.length || 0 }
     };
     contractReviewCopyMessage = propertyReviewResult.diagnosticExplanation;
+  } finally {
+    propertyReviewBusy = false;
+    renderContractReviewCurrentSurface();
+  }
+}
+
+async function resumePropertyReviewResult() {
+  if (propertyReviewBusy || !propertyReviewRecovery) return;
+  propertyReviewBusy = true;
+  propertyReviewResult = null;
+  contractReviewCopyMessage = "Відкриваю збережену перевірку...";
+  renderContractReviewCurrentSurface();
+  try {
+    propertyReviewMacSession = await window.AnodosMacWorkflow.resume(propertyReviewRecovery, {
+      retry: true,
+      records: contractReviewFiles.slice(),
+      progress: message => { contractReviewCopyMessage = message; renderContractReviewCurrentSurface(); }
+    });
+    propertyReviewResult = propertyReviewMacSession.result;
+    contractReviewCopyMessage = propertyReviewResult.overallAssessment;
+  } catch (error) {
+    contractReviewCopyMessage = error.message;
   } finally {
     propertyReviewBusy = false;
     renderContractReviewCurrentSurface();
@@ -7039,7 +7063,7 @@ function renderPropertyReviewResult() {
 function renderPropertyReview() {
   const groqFree = window.ANODOS_CONTRACT_REVIEW_CONFIG?.provider === "groq-free";
   const macReview = window.ANODOS_CONTRACT_REVIEW_CONFIG?.provider === "ollama-mac";
-  const readyFilesCount = contractReviewFiles.filter(contractReviewCanAutoReadFile).length;
+  const readyFilesCount = contractReviewFiles.filter(file => macReview ? window.AnodosMacWorkflow?.accepts(file.name) : contractReviewCanAutoReadFile(file)).length;
   const canRun = readyFilesCount >= 1 && propertyReviewExternalConsent && !propertyReviewBusy;
   const runButtonText = propertyReviewBusy
     ? "Перевіряю..."
@@ -7062,10 +7086,11 @@ function renderPropertyReview() {
       ${renderContractReviewModeSwitch()}
 
       ${groqFree ? `<p class="contract-review-note"><strong>Тестовий аналіз, не остаточний висновок.</strong> Безкоштовний пілот може помилятися або пропускати умови й не замінює консультацію фахівця. Перевірка може тривати до 6 хвилин. Обсяг пакета обмежений квотою, тому довгі договори можуть не вміститися. Не вилучай важливі умови або додатки заради ліміту.</p>` : ""}
-      ${macReview ? `<p class="contract-review-note"><strong>Локальна модель Anodos, без оплати за ШІ-запит.</strong> Договори перевіряються на комп’ютері оператора Anodos. Ліміт Groq у 20 тисяч символів не застосовується. Аналіз може тривати кілька хвилин; залишай вкладку відкритою. Якщо сервер вимкнений або зайнятий, сервіс повідомить про це. Діють захисні межі розміру, черги й завантажень. Рекомендації потрібно звірити з оригіналом.</p>` : ""}
+      ${macReview ? `<p class="contract-review-note"><strong>Локальна модель Anodos, без оплати за ШІ-запит.</strong> Mac Anodos читає оригінали, аналізує договір і зберігає PDF. Після повного завантаження вкладку можна закрити. Повернися за приватним посиланням нижче. Аналіз може тривати кілька хвилин і не зупиняється через одну хвилину. Якщо Mac вимкнений, збережена перевірка продовжиться після запуску сервісу.</p>` : ""}
+      ${macReview && propertyReviewRecovery ? `<section class="contract-review-note"><strong>Приватне посилання цієї перевірки</strong><p><a href="${escapeHtml(window.AnodosMacWorkflow.recoveryURL(propertyReviewRecovery))}">Відкрити збережену перевірку</a></p><p>Збережи це посилання. Кожен, хто має його, може переглянути висновок і завантажити PDF. Не публікуй його.</p><button type="button" data-resume-property-review ${propertyReviewBusy ? "disabled" : ""}>Продовжити перевірку</button></section>` : ""}
 
       <section class="contract-review-dropzone" data-contract-review-dropzone aria-label="Додати договір страхування майна">
-        <input id="contractReviewInput" type="file" multiple accept=".doc,.docx,.pdf,.xls,.xlsx,.xlsb,.ods,.numbers,.odt,.rtf,.txt,.md,.csv,.tsv,.html,.htm,.xml,.json,.pptx,.png,.jpg,.jpeg,.webp,.bmp,.gif,.tif,.tiff,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,application/rtf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/*,image/*" />
+        <input id="contractReviewInput" type="file" multiple accept=".doc,.docx,.docm,.pdf,.xls,.xlsx,.xlsm,.ods,.odt,.rtf,.txt,.md,.csv,.tsv,.html,.htm,.xml,.json,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff" />
         <label for="contractReviewInput">
           <span>Додай договір</span>
           <strong>Перетягни або вибери файли</strong>
@@ -7093,7 +7118,7 @@ function renderPropertyReview() {
 
       <section class="property-review-privacy">
         <p>${macReview
-          ? "Оригінали, розпізнаний текст і результат зберігаються на комп’ютері оператора Anodos. Відкрита вкладка формує PDF і додає його до архіву; якщо створення PDF не вдасться, сервіс повідомить про це. Файли шифруються у браузері перед передачею; Cloudflare передає зашифровані дані, без хмарного архіву договорів. Аналіз виконує локальна Ollama, без Groq або іншої зовнішньої AI-моделі. Це не обробка лише на вашому пристрої."
+          ? "Оригінали, розпізнаний текст, результат і PDF зберігаються на комп’ютері оператора Anodos. Читання та створення PDF виконуються на Mac, незалежно від вкладки. Файли шифруються у браузері перед передачею; Cloudflare передає зашифровані дані без хмарного архіву договорів. Аналіз виконує локальна Ollama, без зовнішньої AI-моделі. Це не обробка лише на вашому пристрої."
           : groqFree
           ? "Файл читається й розпізнається у браузері. Розпізнаний текст через сервер Anodos у Cloudflare передається зовнішньому сервісу Groq для аналізу. Anodos не зберігає договір або результат на сервері; PDF завантажується на ваш пристрій."
           : "Файл читається й розпізнається у браузері, після чого текст захищеним з'єднанням передається серверу Anodos у Cloudflare Workers AI. Worker Anodos не зберігає текст або результат перевірки; PDF завантажується лише на пристрій користувача."}</p>
@@ -7101,7 +7126,7 @@ function renderPropertyReview() {
           <input type="checkbox" data-property-review-consent ${propertyReviewExternalConsent ? "checked" : ""} />
           <span>${macReview ? "Маю право передати ці документи та погоджуюся на їх обробку і зберігання оператором Anodos, включно з оригіналами й результатом." : groqFree ? "Погоджуюся на передачу тексту договору сервісам Anodos і Groq для цієї перевірки." : "Розумію і погоджуюся на передачу розпізнаного тексту для цієї перевірки."}</span>
         </label>
-        ${macReview ? `<small>Архів не видаляється автоматично. Не додавай зайві персональні дані. До 12 файлів по 30 МБ, до 120 МБ на пакет і 600 тисяч символів тексту; пакет не обрізається заради межі. Для отримання PDF не закривай вкладку до завершення.</small>` : groqFree
+        ${macReview ? `<small>Архів не видаляється автоматично. Не додавай зайві персональні дані. До 12 файлів по 30 МБ, до 120 МБ на пакет і 600 тисяч символів тексту; пакет не обрізається заради межі. Закриття вкладки під час передачі файлів потребуватиме повторного вибору тих самих оригіналів.</small>` : groqFree
           ? `<small>Передача до Groq дозволена лише після підтвердження адміністратором режиму Zero Data Retention: без зберігання текстів запитів і відповідей у Groq. Це зовнішня обробка, не обробка лише на вашому пристрої. <a href="https://console.groq.com/docs/your-data" target="_blank" rel="noopener noreferrer">Умови обробки даних Groq</a>. Безкоштовна перевірка має спільний ліміт і може тривати кілька хвилин; завеликі пакети відхиляються без обрізання тексту.</small>`
           : `<small>Cloudflare не використовує переданий текст для навчання моделей або поліпшення своїх чи сторонніх сервісів. Сервіси зберігання Cloudflare для цієї перевірки не підключені. <a href="https://developers.cloudflare.com/workers-ai/platform/data-usage/" target="_blank" rel="noopener noreferrer">Докладніше про обробку даних</a>.</small>`}
       </section>
@@ -10852,6 +10877,10 @@ document.addEventListener("click", async (event) => {
   const clearContractReviewFilesButton = event.target.closest("[data-clear-contract-review-files]");
   const runContractReviewButton = event.target.closest("[data-run-contract-review]");
   const copyContractReviewButton = event.target.closest("[data-copy-contract-review]");
+  if (event.target.closest("[data-resume-property-review]")) {
+    void resumePropertyReviewResult();
+    return;
+  }
   const runPropertyReviewButton = event.target.closest("[data-run-property-review]");
   const downloadPropertyReviewButton = event.target.closest("[data-download-property-review]");
   const downloadQuestionnaireButton = event.target.closest("[data-download-questionnaire]");
