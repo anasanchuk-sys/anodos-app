@@ -63,7 +63,7 @@
       setBusy(true,state.progress?.message||'Дослідження триває');await new Promise(r=>setTimeout(r,4000));
     }}catch(e){setBusy(false,'');showError(e);}finally{polling=false;}
   }
-  $('search-form').addEventListener('submit',async event=>{event.preventDefault();if(busy||!check())return;$('error').hidden=true;$('selection').hidden=true;$('result').hidden=true;try{setBusy(true,'Підключаюся до сервісу Anodos');await connect();await transport.rpc({op:'search',query:$('query').value});await poll();}catch(e){setBusy(false,'');showError(e);}});
+  $('search-form').addEventListener('submit',async event=>{event.preventDefault();if(busy||!check())return;if(result){transport=null;capability='';result=null;sessionStorage.removeItem(key);}$('error').hidden=true;$('selection').hidden=true;$('result').hidden=true;try{setBusy(true,'Підключаюся до сервісу Anodos');await connect();await transport.rpc({op:'search',query:$('query').value});await poll();}catch(e){setBusy(false,'');showError(e);}});
   async function start(id){if(busy||!check())return;$('error').hidden=true;try{const website=$('website').value.trim();if(website&&!/^https:\/\//i.test(website))throw new Error('Вкажіть HTTPS-адресу сайту.');if(id==='website'&&!website)throw new Error('Додайте сайт компанії.');setBusy(true,'Готую дослідження');await connect();await transport.rpc({op:'research',candidateId:id,website,name:$('query').value});await poll();}catch(e){setBusy(false,'');showError(e);}}
   $('research').addEventListener('click',()=>start(selected));$('website-run').addEventListener('click',()=>start('website'));
   $('cancel').addEventListener('click',async()=>{try{await transport.rpc({op:'cancel'});}catch(e){showError(e);}});
