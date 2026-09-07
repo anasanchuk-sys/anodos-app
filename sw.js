@@ -1,4 +1,4 @@
-const CACHE_NAME = "platform-shell-v311";
+const CACHE_NAME = "platform-shell-v312";
 const ASSETS = [
   "./",
   "./index.html",
@@ -23,7 +23,7 @@ const ASSETS = [
   "./property-review.js?v=3",
   "./contract-review-config.js?v=6",
   "./contract-review-secure.js?v=1",
-  "./contract-review-mac.js?v=2",
+  "./contract-review-mac.js?v=3",
   "./local-review/result.js?v=1",
   "./property-review-semantic.js?v=5",
   "./property-review-report.js?v=6",
