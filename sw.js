@@ -1,4 +1,4 @@
-const CACHE_NAME = "platform-shell-v320";
+const CACHE_NAME = "platform-shell-v322";
 const ASSETS = [
   "./geocode.html",
   "./geocode.css?v=2",
