@@ -1,5 +1,9 @@
-const CACHE_NAME = "platform-shell-v318";
+const CACHE_NAME = "platform-shell-v319";
 const ASSETS = [
+  "./geocode.html",
+  "./geocode.css?v=1",
+  "./geocode-config.js?v=1",
+  "./geocode.js?v=1",
   "./osint.html",
   "./osint.css?v=1",
   "./osint.js?v=2",
@@ -95,7 +99,7 @@ async function rangeResponse(request) {
 }
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") {
+  if (event.request.method !== "GET" || event.request.cache === "no-store") {
     return;
   }
 
@@ -111,7 +115,8 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (event.request.mode === "navigate") {
-    event.respondWith(fetch(new Request(event.request, { cache: "reload" })).catch(() => caches.match("./index.html")));
+    const fallback = url.pathname.endsWith("/geocode.html") ? "./geocode.html" : "./index.html";
+    event.respondWith(fetch(new Request(event.request, { cache: "reload" })).catch(() => caches.match(fallback)));
     return;
   }
 

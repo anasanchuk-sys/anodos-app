@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#F9FBFF" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Адреса в GPS-координати - Анодос</title>
+    <meta name="description" content="Вставте адресу, знайдіть GPS-координати, скопіюйте їх або відкрийте місце на карті." />
+    <link rel="canonical" href="https://anodos.com.ua/geocode.html" />
+    <link rel="icon" href="./assets/icon.svg?v=7" type="image/svg+xml" />
+    <link rel="manifest" href="./manifest.webmanifest?v=7" />
+    <link rel="stylesheet" href="./geocode.css?v=1" />
+    <script src="./geocode-config.js?v=1" defer></script>
+    <script src="./geocode.js?v=1" defer></script>
+  </head>
+  <body>
+    <header class="top">
+      <a class="brand" href="./" aria-label="Анодос - головна">Ανοδος</a>
+      <a href="./">На головну</a>
+    </header>
+    <main>
+      <h1>Адреса в GPS-координати</h1>
+      <p class="intro">Вставте адресу з містом, вулицею та номером будинку.</p>
+      <section class="workspace" aria-label="Пошук координат">
+        <form id="geocode-form">
+          <label for="address">Адреса</label>
+          <textarea id="address" name="address" rows="3" required minlength="3" maxlength="500" autocomplete="off" spellcheck="false" placeholder="Наприклад: Україна, Київ, вулиця Хрещатик, 36" aria-describedby="address-hint privacy-note"></textarea>
+          <p id="address-hint" class="hint">Для села або селища додайте область; для адреси за кордоном - країну.</p>
+          <button id="search" type="submit">Знайти координати</button>
+          <p id="privacy-note" class="hint privacy">Після натискання кнопки адреса передається сервісу Photon для пошуку на карті. Вставляйте лише адресу, без імен та інших особистих даних.</p>
+        </form>
+        <p id="status" class="status" role="status" aria-live="polite" hidden></p>
+        <p id="error" class="error" role="alert" hidden></p>
+      </section>
+      <section id="results" aria-labelledby="results-title" hidden>
+        <h2 id="results-title">Знайдені місця</h2>
+        <p id="results-hint" class="hint"></p>
+        <div id="candidates" class="candidates"></div>
+        <p class="hint">Координати позначають точку об'єкта на карті, яка може не збігатися з входом до будинку. Перевірте місце на карті перед використанням.</p>
+      </section>
+      <footer>
+        <p>Пошук: <a href="https://photon.komoot.io/" target="_blank" rel="noopener noreferrer">Photon</a>. Дані: © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">учасники OpenStreetMap</a>.</p>
+        <p>Потрібен інтернет. Точність залежить від повноти адреси та даних карти.</p>
+      </footer>
+      <noscript><p class="error">Для пошуку координат увімкніть JavaScript у браузері.</p></noscript>
+    </main>
+  </body>
+</html>
