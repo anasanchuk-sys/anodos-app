@@ -1,14 +1,15 @@
-const CACHE_NAME = "platform-shell-v328";
+const CACHE_NAME = "platform-shell-v329";
 const ASSETS = [
+  "./assets/fonts/eb-garamond-latin-400.woff2?v=1",
   "./geocode.html",
   "./geocode.css?v=2",
   "./geocode-config.js?v=1",
   "./geocode.js?v=2",
   "./osint.html",
-  "./osint.css?v=4",
+  "./osint.css?v=5",
   "./osint.js?v=3",
   "./osint-report.js?v=2",
-  "./osint-entry.css?v=3",
+  "./osint-entry.css?v=4",
   "./",
   "./index.html",
   "./styles.css?v=193",
