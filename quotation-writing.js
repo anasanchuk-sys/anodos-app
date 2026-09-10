@@ -9,14 +9,14 @@
     ['subjectivities', 'Умови та застереження']
   ];
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const empty = () => ({clientName:'',title:'Котирування страхування',pasted:'',files:[],documents:[],warnings:[],report:null});
-  let state=empty(),host=null,readDocument=null,transport=null,capability='',expiresAt=0,expiryTimer=null,busy=false,status='',error='',generation=0,confirmed=false;
+  const empty = () => ({clientName:'',title:'Котирування страхування',pasted:'',files:[],documents:[],intakeWarnings:[],warnings:[],report:null});
+  let state=empty(),host=null,readDocument=null,transport=null,capability='',expiresAt=0,expiryTimer=null,busy=false,receiving=false,status='',error='',generation=0,confirmed=false;
   const attached=new WeakSet();
   let requestQueue=Promise.resolve();
   function authorized(){return Boolean(transport&&capability&&Date.now()<expiresAt);}
   function active(){return host?.isConnected && host.querySelector('[data-quotation-root]');}
   function update(){if(active())render();}
-  function locked(){clearTimeout(expiryTimer);expiryTimer=null;transport=null;capability='';expiresAt=0;state=empty();confirmed=false;busy=false;status='';error='';generation++;}
+  function locked(){clearTimeout(expiryTimer);expiryTimer=null;transport=null;capability='';expiresAt=0;state=empty();confirmed=false;busy=false;receiving=false;status='';error='';generation++;}
   function leave(){if(!transport&&!busy&&!state.files.length&&!state.pasted&&!state.report)return;const prior=transport,cap=capability;locked();if(prior&&cap)void rpcWith(prior,{op:'close',capability:cap}).catch(()=>{});}
   async function rpcWith(client,input){
     const work=async()=>{
@@ -54,16 +54,29 @@
       const node=host?.querySelector('#'+id);if(node)state[key]=node.value;
     }
   }
-  function addFiles(files){
+  function addFiles(files,{warnings=[],fromDrop=false}={}){
     if(!authorized()||busy)return;readInputs();error='';
     const incoming=Array.from(files||[]),reader=scope.AnodosQuotationMailReader;
     try{
+      if(!incoming.length)throw new Error('Outlook не передав вміст листа. Збережіть лист як EML і додайте створений файл.');
       for(const file of incoming){if(!reader?.accepts(file.name))throw new Error(`${file.name}: збережіть лист як EML або PDF.`);if(file.size>20*1024**2)throw new Error('Один файл може мати розмір до 20 МБ.');}
-      const next=[...state.files];for(const file of incoming)if(!next.some(f=>f.name===file.name&&f.size===file.size&&f.lastModified===file.lastModified))next.push(file);
+      const next=[...state.files];for(const file of incoming)if(!next.includes(file))next.push(file);
       if(next.length>12||next.reduce((n,f)=>n+f.size,0)>60*1024**2)throw new Error('Додайте до 12 файлів загальним розміром до 60 МБ.');
-      state.files=next;state.report=null;confirmed=false;
-    }catch(e){error=e.message;}
+      state.files=next;state.report=null;confirmed=false;state.intakeWarnings=[...state.intakeWarnings,...warnings];state.warnings=[...state.intakeWarnings];status=fromDrop?`Файли з Outlook додано: ${incoming.length}. Можна збирати котирування.`:'';
+    }catch(e){error=e.message;status='';}
     update();
+  }
+  async function receiveDrop(dataTransfer){
+    if(!authorized()||busy)return;readInputs();const own=++generation;
+    try{
+      // Capture every native item now, while the drop event still owns access.
+      const snapshot=scope.AnodosQuotationDrop.capture(dataTransfer);
+      receiving=true;busy=true;error='';status='Отримую листи з Outlook';update();
+      const result=await scope.AnodosQuotationDrop.resolve(snapshot);
+      if(own!==generation||!authorized())return;
+      receiving=false;busy=false;addFiles(result.files,{warnings:result.warnings,fromDrop:true});
+    }catch(e){if(own===generation){error=e.message;status='';}}
+    finally{if(own===generation){receiving=false;busy=false;update();}}
   }
   async function analyze(){
     if(busy||!authorized())return;readInputs();
@@ -74,7 +87,7 @@
       if(own!==generation)return;
       if(state.pasted.trim())sources.documents.push({id:'pasted-conditions',name:'Вставлені умови страховиків',text:state.pasted.trim()});
       if(sources.documents.reduce((n,d)=>n+d.text.length,0)>180000)throw new Error('Листи містять забагато тексту. Розділіть пакет на кілька котирувань.');
-      state.documents=sources.documents;state.warnings=sources.warnings||[];
+      state.documents=sources.documents;state.warnings=[...state.intakeWarnings,...(sources.warnings||[])];
       status='Зіставляю умови страховиків';update();
       await rpc({op:'analyze',documents:state.documents,clientName:state.clientName,title:state.title});
       const deadline=Date.now()+11*60*1000;
@@ -94,7 +107,8 @@
     finally{if(own===generation){busy=false;update();}}
   }
   async function cancel(){
-    if(!busy||!authorized())return;++generation;busy=false;status='Обробку зупинено';update();
+    if(!busy||!authorized())return;const onlyReceiving=receiving;++generation;busy=false;receiving=false;status='Обробку зупинено';update();
+    if(onlyReceiving)return;
     try{await rpc({op:'cancel'});}catch(e){error=e.message;update();}
   }
   function reportData(){
@@ -131,7 +145,8 @@
       ${!access?`<section class="quotation-gate"><h2>Вхід за паролем</h2><p>Цей інструмент є приватним і не призначений для публічного користування.</p><form data-quotation-access><label for="quotationPassword">Пароль</label><input id="quotationPassword" type="password" autocomplete="current-password" required maxlength="256" ${busy?'disabled':''}/><button class="primary-action" type="submit" ${busy?'disabled':''}>Відкрити інструмент</button></form></section>`:
       `<form class="quotation-intake" data-quotation-intake><div class="quotation-section-head"><div><h2>Листи з умовами страхування</h2><p>Додайте пропозиції страховиків. Anodos збере їх в одне котирування.</p></div></div>
       <div class="quotation-fields"><label>Клієнт<input id="quotationClient" maxlength="200" value="${esc(state.clientName)}" placeholder="Назва компанії або клієнта" ${busy?'disabled':''}/></label><label>Назва котирування<input id="quotationTitle" maxlength="200" value="${esc(state.title)}" ${busy?'disabled':''}/></label></div>
-      <label class="quotation-dropzone" data-quotation-dropzone><strong>Виберіть або перетягніть листи сюди</strong><span>EML, PDF, DOCX, XLSX, TXT, HTML, RTF або зображення</span><small>До 12 файлів, 20 МБ кожен. Лист Outlook збережіть як EML або PDF. Старі DOC та XLS експортуйте в PDF.</small><input id="quotationFiles" type="file" multiple accept=".eml,.pdf,.docx,.xlsx,.txt,.html,.htm,.rtf,.png,.jpg,.jpeg,.webp" ${busy?'disabled':''}/></label>
+      <label class="quotation-dropzone" data-quotation-dropzone><strong>Перетягніть листи безпосередньо з Outlook сюди</strong><span>Один або кілька листів зі списку повідомлень. Або виберіть збережені файли.</span><small>До 12 файлів, 20 МБ кожен. EML, PDF, DOCX, XLSX, TXT, HTML, RTF або зображення.</small><input id="quotationFiles" aria-label="Вибрати листи та вкладення" type="file" multiple accept=".eml,.pdf,.docx,.xlsx,.txt,.html,.htm,.rtf,.png,.jpg,.jpeg,.webp" ${busy?'disabled':''}/></label>
+      <p class="quotation-hint">Якщо браузер передає лише посилання, збережіть лист з Outlook як EML або перетягніть його спочатку на робочий стіл, а потім сюди.</p>
       ${state.files.length?`<ul class="quotation-files">${state.files.map((file,i)=>`<li><span>${esc(file.name)} <small>${(file.size/1024/1024).toFixed(2)} МБ</small></span><button type="button" class="secondary-action" data-quotation-remove="${i}" ${busy?'disabled':''} aria-label="Видалити ${esc(file.name)}">×</button></li>`).join('')}</ul>`:''}
       <details ${state.pasted?'open':''}><summary>Або вставте текст листа</summary><label class="quotation-pasted">Умови страховиків<textarea id="quotationPasted" rows="7" maxlength="100000" ${busy?'disabled':''} placeholder="Вставте лист разом із назвою страховика та його умовами">${esc(state.pasted)}</textarea></label></details>
       <p class="quotation-hint">Текст листів передається захищеним з’єднанням до приватного сервісу Anodos для обробки. У цьому інструменті листи не зберігаються в архіві.</p>
@@ -162,10 +177,14 @@
         if(event.target.closest('[data-quotation-lock]')){leave();render();return;}
         if(event.target.closest('[data-quotation-cancel]')){void cancel();return;}
         if(event.target.closest('[data-quotation-download]')){void download();return;}
-        const button=event.target.closest('[data-quotation-remove]');if(button&&authorized()&&!busy){readInputs();state.files.splice(Number(button.dataset.quotationRemove),1);state.report=null;confirmed=false;update();}
+        const button=event.target.closest('[data-quotation-remove]');if(button&&authorized()&&!busy){readInputs();state.files.splice(Number(button.dataset.quotationRemove),1);if(!state.files.length){state.intakeWarnings=[];state.warnings=[];}state.report=null;confirmed=false;status='';update();}
       });
-      for(const name of ['dragover','drop'])element.addEventListener(name,event=>{
-        if(!event.target.closest('[data-quotation-dropzone]'))return;event.preventDefault();event.stopPropagation();if(name==='drop')addFiles(event.dataTransfer?.files);
+      for(const name of ['dragenter','dragover','dragleave','drop'])element.addEventListener(name,event=>{
+        const zone=event.target.closest('[data-quotation-dropzone]');
+        if(!zone)return;event.preventDefault();event.stopPropagation();
+        if(name==='dragleave'){if(!zone.contains(event.relatedTarget))zone.classList.remove('quotation-dropzone-active');return;}
+        if(name==='drop'){zone.classList.remove('quotation-dropzone-active');void receiveDrop(event.dataTransfer);return;}
+        if(authorized()&&!busy){zone.classList.add('quotation-dropzone-active');try{if(event.dataTransfer)event.dataTransfer.dropEffect='copy';}catch{/* Some embedded browsers expose a read-only dropEffect. */}}
       });
     }
     if(transport&&!authorized())locked();render();

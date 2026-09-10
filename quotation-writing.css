@@ -19,6 +19,7 @@
 .quotation-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 24px}
 .quotation-dropzone{padding:26px;margin:24px 0;border:1px dashed #91b1ad;border-radius:12px;background:#f3f8f7;text-align:center;justify-items:center;cursor:pointer}
 .quotation-dropzone strong{font-size:17px}
+.quotation-dropzone-active{background:#e0f0e9;border:2px solid #337f6d;outline:3px solid rgba(51,127,109,.14);outline-offset:3px}
 .quotation-dropzone span,.quotation-dropzone small{font-weight:400;color:#526777}
 .quotation-dropzone input{width:100%;max-width:340px;margin-top:12px;font:inherit;font-size:14px}
 .quotation-files{list-style:none;padding:0;margin:0 0 20px}
