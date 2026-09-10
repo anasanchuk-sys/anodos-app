@@ -1,12 +1,12 @@
-const CACHE_NAME = "platform-shell-v322";
+const CACHE_NAME = "platform-shell-v323";
 const ASSETS = [
   "./geocode.html",
   "./geocode.css?v=2",
   "./geocode-config.js?v=1",
   "./geocode.js?v=2",
   "./osint.html",
-  "./osint.css?v=1",
-  "./osint.js?v=2",
+  "./osint.css?v=2",
+  "./osint.js?v=3",
   "./osint-report.js?v=2",
   "./osint-entry.css?v=1",
   "./",
