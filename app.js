@@ -2011,6 +2011,9 @@ function availableRoute(nextRoute) {
   if (nextRoute === "questionnaire-generator" && !questionnaireGeneratorIsAllowed()) {
     return "home";
   }
+  if (nextRoute === "questionnaire-fill" && (!questionnaireGeneratorIsAllowed() || !window.AnodosQuestionnaireResearch)) {
+    return "home";
+  }
   if (nextRoute === "client-recommendation" && !clientRecommendationIsAllowed()) {
     return "home";
   }
@@ -2157,6 +2160,8 @@ let questionnaireGeneratorBusy = false;
 let questionnaireGeneratorAddress = "";
 let questionnaireResearchController = null;
 let questionnaireResearchProgress = "";
+let questionnaireFillActive = false;
+let questionnaireResearchGeneration = 0;
 let clientRecommendationResult = null;
 let clientRecommendationBrokerNote = "";
 let clientRecommendationError = "";
@@ -6625,6 +6630,7 @@ function draftFor(id) {
 function render() {
   route = availableRoute(route);
   if (route !== "quotation-writing") window.AnodosQuotationWriting?.leave();
+  if (route !== "questionnaire-fill") leaveQuestionnaireFill();
   syncStateCompensationGuideLocation();
   renderSpaceShell();
   body.dataset.route = route;
@@ -6706,7 +6712,7 @@ function render() {
     return;
   }
 
-  if (route === "questionnaire-generator") {
+  if (route === "questionnaire-generator" || route === "questionnaire-fill") {
     renderQuestionnaireGenerator();
     return;
   }
@@ -7359,12 +7365,49 @@ function renderContractReviewComparison() {
   `;
 }
 
+function leaveQuestionnaireFill() {
+  if (!questionnaireFillActive) return;
+  questionnaireFillActive = false;
+  ++questionnaireResearchGeneration;
+  questionnaireResearchController?.abort();
+  questionnaireResearchController = null;
+  window.AnodosQuestionnaireResearch?.lock();
+  questionnaireGeneratorInput = "";
+  questionnaireGeneratorAddress = "";
+  questionnaireGeneratorResult = null;
+  questionnaireGeneratorError = "";
+  questionnaireGeneratorDownloadMessage = "";
+  questionnaireGeneratorBusy = false;
+}
+
 function renderQuestionnaireGenerator() {
   if (!questionnaireGeneratorIsAllowed()) {
     setActiveSpace("products", "home");
     return;
   }
 
+  const automatic = route === "questionnaire-fill";
+  if (automatic && !questionnaireFillActive) {
+    questionnaireGeneratorResult = null;
+    questionnaireGeneratorError = "";
+    questionnaireFillActive = true;
+  }
+  if (automatic && !window.AnodosQuestionnaireResearch?.authorized()) {
+    screen.innerHTML = `<section class="questionnaire-generator-workspace">
+      <header class="questionnaire-generator-head">
+        <button class="module-back" type="button" data-route="home" aria-label="Назад">←</button>
+        <div><p class="anodos-pro-label">ANODOS PRO</p><h1>Автоматичне заповнення опитувальника</h1><p class="hero-copy">Увійдіть за паролем Anodos Pro.</p></div>
+      </header>
+      <section class="questionnaire-generator-form-card">
+        <form id="questionnaireAccessForm" class="questionnaire-generator-form">
+          <label for="questionnairePassword"><span>Пароль Anodos Pro</span><input id="questionnairePassword" name="password" type="password" autocomplete="current-password" maxlength="256" required ${questionnaireGeneratorBusy ? "disabled" : ""} /></label>
+          ${questionnaireGeneratorError ? `<p class="questionnaire-generator-error" role="alert">${escapeHtml(questionnaireGeneratorError)}</p>` : ""}
+          <button class="primary-action" type="submit" ${questionnaireGeneratorBusy ? "disabled" : ""}>${questionnaireGeneratorBusy ? "Перевіряю пароль..." : "Увійти"}</button>
+        </form>
+      </section>
+    </section>`;
+    return;
+  }
   const result = questionnaireGeneratorResult;
   const prepareButtonText = questionnaireGeneratorBusy
     ? "Готую документ..."
@@ -7383,18 +7426,19 @@ function renderQuestionnaireGenerator() {
       <header class="questionnaire-generator-head">
         <button class="module-back" type="button" data-route="home" aria-label="Назад до продуктів">←</button>
         <div>
-          <p class="eyebrow">Anodos · робочий інструмент</p>
-          <h1>Генератор опитувальників</h1>
-          <p class="hero-copy">Вкажіть адресу й потрібний опитувальник. Anodos знайде доступні відомості в інтернеті та підготує DOCX з відповідями й джерелами.</p>
+          <p class="${automatic ? "anodos-pro-label" : "eyebrow"}">${automatic ? "ANODOS PRO" : "Anodos · робочий інструмент"}</p>
+          <h1>${automatic ? "Автоматичне заповнення опитувальника" : "Генератор опитувальників"}</h1>
+          <p class="hero-copy">${automatic ? "Вкажіть адресу й потрібний опитувальник. Anodos знайде доступні відомості в інтернеті та підготує DOCX з відповідями й джерелами." : "Опишіть потрібний опитувальник та отримайте порожню форму BritMark для заповнення."}</p>
+          ${automatic ? `<button class="secondary-action" type="button" data-lock-questionnaire>Вийти з інструмента</button>` : ""}
         </div>
       </header>
 
       <section class="questionnaire-generator-form-card">
         <form id="questionnaireGeneratorForm" class="questionnaire-generator-form">
-          <label for="questionnaireAddress">
+          ${automatic ? `<label for="questionnaireAddress">
             <span>Адреса об’єкта</span>
             <input id="questionnaireAddress" name="questionnaireAddress" type="text" maxlength="320" autocomplete="off" placeholder="Місто, вулиця, номер будинку та корпус" value="${escapeHtml(questionnaireGeneratorAddress)}" ${questionnaireGeneratorBusy ? "disabled" : ""} />
-          </label>
+          </label>` : ""}
           <label for="questionnaireSubject">
             <span>Який опитувальник потрібен?</span>
             <textarea
@@ -7410,12 +7454,10 @@ function renderQuestionnaireGenerator() {
             >${escapeHtml(questionnaireGeneratorInput)}</textarea>
           </label>
           ${questionnaireGeneratorError ? `<p class="questionnaire-generator-error">${escapeHtml(questionnaireGeneratorError)}</p>` : ""}
-          <button class="primary-action primary-action-wide" type="submit" name="mode" value="research" ${questionnaireGeneratorBusy ? "disabled" : ""}>Знайти й заповнити</button>
-          <button class="secondary-action" type="submit" name="mode" value="blank" ${questionnaireGeneratorBusy ? "disabled" : ""}>${escapeHtml(prepareButtonText)}</button>
+          <button class="primary-action primary-action-wide" type="submit" name="mode" value="${automatic ? "research" : "blank"}" ${questionnaireGeneratorBusy ? "disabled" : ""}>${automatic ? "Знайти й заповнити" : escapeHtml(prepareButtonText)}</button>
           ${questionnaireResearchController ? `<p role="status" data-questionnaire-progress>${escapeHtml(questionnaireResearchProgress)}</p><button class="secondary-action" type="button" data-cancel-questionnaire>Скасувати заповнення</button>` : ""}
         </form>
-        <p class="questionnaire-generator-privacy">«Знайти й заповнити» передає адресу й опис сервісу Anodos та пошуковикам Bing / DuckDuckGo. Результат можна перевірити й відредагувати. «Створити порожню форму» працює у браузері без передачі даних; адреса для цього не обов’язкова.</p>
-        ${window.location.protocol === "file:" ? `<p class="questionnaire-generator-error">Для пошуку відкрийте <a href="https://anodos.com.ua/" target="_blank" rel="noopener">вебверсію Anodos</a>. У локальному файлі можна створити порожню форму.</p>` : ""}
+        <p class="questionnaire-generator-privacy">${automatic ? "«Знайти й заповнити» передає адресу й опис сервісу Anodos та пошуковикам Bing / DuckDuckGo. Результат можна перевірити й відредагувати." : "Порожня форма створюється у браузері без передачі даних."}</p>
       </section>
 
       ${result ? `
@@ -10802,6 +10844,9 @@ function renderProgress() {
 }
 
 document.addEventListener("click", async (event) => {
+  if (event.target.closest("[data-lock-questionnaire]")) {
+    leaveQuestionnaireFill();renderQuestionnaireGenerator();return;
+  }
   if (event.target.closest("[data-cancel-questionnaire]")) {
     questionnaireResearchController?.abort();
     return;
@@ -11037,18 +11082,23 @@ document.addEventListener("click", async (event) => {
     if (!questionnaireGeneratorResult || questionnaireGeneratorBusy) {
       return;
     }
+    if (route === "questionnaire-fill" && !window.AnodosQuestionnaireResearch?.authorized()) {
+      leaveQuestionnaireFill();renderQuestionnaireGenerator();return;
+    }
+    const own = questionnaireResearchGeneration;
+    const expectedRoute = route;
     questionnaireGeneratorBusy = true;
     questionnaireGeneratorError = "";
     questionnaireGeneratorDownloadMessage = "";
     renderQuestionnaireGenerator();
     try {
       const downloadResult = await window.AnodosQuestionnaireGenerator.download(questionnaireGeneratorResult);
-      questionnaireGeneratorDownloadMessage = `Завантажено: ${downloadResult.filename}`;
+      if (own === questionnaireResearchGeneration && route === expectedRoute) questionnaireGeneratorDownloadMessage = `Завантажено: ${downloadResult.filename}`;
     } catch (error) {
-      questionnaireGeneratorError = `Не вдалося створити DOCX: ${error.message}`;
+      if (own === questionnaireResearchGeneration && route === expectedRoute) questionnaireGeneratorError = `Не вдалося створити DOCX: ${error.message}`;
     } finally {
-      questionnaireGeneratorBusy = false;
-      renderQuestionnaireGenerator();
+      if (own === questionnaireResearchGeneration) questionnaireGeneratorBusy = false;
+      if (own === questionnaireResearchGeneration && route === expectedRoute) renderQuestionnaireGenerator();
     }
     return;
   }
@@ -11781,6 +11831,20 @@ document.addEventListener("submit", async (event) => {
     return;
   }
 
+  if (event.target.id === "questionnaireAccessForm") {
+    event.preventDefault();
+    if (route !== "questionnaire-fill" || questionnaireGeneratorBusy) return;
+    const field = event.target.elements.password;
+    const password = field.value; field.value = "";
+    const own = ++questionnaireResearchGeneration;
+    questionnaireGeneratorBusy = true;questionnaireGeneratorError = "";
+    renderQuestionnaireGenerator();
+    try { await window.AnodosQuestionnaireResearch.unlock(password); }
+    catch (error) { if (own === questionnaireResearchGeneration) questionnaireGeneratorError = error.message; }
+    finally { if (own === questionnaireResearchGeneration && route === "questionnaire-fill") { questionnaireGeneratorBusy = false;renderQuestionnaireGenerator(); } }
+    return;
+  }
+
   if (event.target.id === "questionnaireGeneratorForm") {
     event.preventDefault();
     if (questionnaireGeneratorBusy) return;
@@ -11788,6 +11852,10 @@ document.addEventListener("submit", async (event) => {
       setActiveSpace("products", "home");
       return;
     }
+    const automatic = route === "questionnaire-fill";
+    if (automatic && !window.AnodosQuestionnaireResearch?.authorized()) { renderQuestionnaireGenerator();return; }
+    const own = ++questionnaireResearchGeneration;
+    const expectedRoute = route;
     const formData = new FormData(event.target);
     questionnaireGeneratorInput = String(formData.get("questionnaireSubject") || "").trim();
     questionnaireGeneratorAddress = String(formData.get("questionnaireAddress") || "").trim();
@@ -11795,7 +11863,7 @@ document.addEventListener("submit", async (event) => {
     questionnaireGeneratorDownloadMessage = "";
     try {
       questionnaireGeneratorResult = window.AnodosQuestionnaireGenerator.prepare(questionnaireGeneratorInput);
-      if (event.submitter?.value !== "blank") {
+      if (automatic) {
         if (questionnaireGeneratorAddress.length < 8) throw new Error("Вкажіть повну адресу об’єкта: населений пункт, вулицю та номер будинку.");
         if (!window.AnodosQuestionnaireResearch) throw new Error("Оновіть Anodos для заповнення з інтернету.");
         questionnaireGeneratorBusy = true;
@@ -11808,11 +11876,12 @@ document.addEventListener("submit", async (event) => {
           signal:questionnaireResearchController.signal,
           progress:message=>{questionnaireResearchProgress=message;const status=document.querySelector("[data-questionnaire-progress]");if(status)status.textContent=message;}
         });
+        if (own !== questionnaireResearchGeneration || route !== expectedRoute) return;
         questionnaireGeneratorResult = window.AnodosQuestionnaireResearch.apply(template,research);
       }
       questionnaireGeneratorBusy = false;
       questionnaireResearchController = null;
-      if (route !== "questionnaire-generator") return;
+      if (route !== expectedRoute) return;
       renderQuestionnaireGenerator();
       window.requestAnimationFrame(() => {
         document.querySelector(".questionnaire-generator-result")?.scrollIntoView({
@@ -11821,11 +11890,12 @@ document.addEventListener("submit", async (event) => {
         });
       });
     } catch (error) {
+      if (own !== questionnaireResearchGeneration || route !== expectedRoute) return;
       questionnaireGeneratorResult = null;
       questionnaireGeneratorError = error.message;
       questionnaireGeneratorBusy = false;
       questionnaireResearchController = null;
-      if (route !== "questionnaire-generator") return;
+      if (route !== expectedRoute) return;
       renderQuestionnaireGenerator();
       document.getElementById("questionnaireSubject")?.focus();
     }

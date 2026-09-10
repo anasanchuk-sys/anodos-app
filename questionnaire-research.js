@@ -49,37 +49,58 @@
     const badge=document.querySelector(`[data-answer-badge="${id}"]`);if(badge){badge.textContent=labels.user;badge.dataset.status='user';}
     const summary=document.querySelector('[data-questionnaire-summary]');if(summary)summary.textContent='Зміни внесено. Завантажений DOCX міститиме відредаговані відповіді; початкові джерела залишаться для порівняння.';
   }
-  async function research(payload,{signal,progress=()=>{}}={}) {
-    if(scope.location?.protocol==='file:')throw new Error('Пошук з інтернету доступний у вебверсії Anodos. Відкрийте https://anodos.com.ua/ та перейдіть до генератора опитувальників.');
+  let transport=null,capability='',expiresAt=0,revision=0,activeController=null,queue=Promise.resolve();
+  const authorized=()=>Boolean(transport&&capability&&Date.now()<expiresAt);
+  function requestWith(client,input,{signal,cleanup=false}={}) {
+    const run=async()=>{
+      const request=await client.request(input);
+      for(let attempt=0;attempt<2;attempt++){
+        try{
+          const timeout=AbortSignal.timeout(cleanup?3000:20000);
+          const r=await fetch(scope.ANODOS_CONTRACT_REVIEW_CONFIG.endpoint+'/rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request),cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',signal:signal?AbortSignal.any([signal,timeout]):timeout});
+          const envelope=await r.json();if(!r.ok)throw new Error(envelope.error||'Сервіс Anodos зараз недоступний.');
+          const result=await client.response(envelope,request);if(!result.ok)throw Object.assign(new Error(result.error||'Не вдалося виконати запит.'),{final:true});return result.value;
+        }catch(e){signal?.throwIfAborted();if(attempt||e.final||cleanup)throw e;}
+      }
+    };
+    const pending=queue.then(run,run);queue=pending.catch(()=>{});return pending;
+  }
+  function lock(){
+    ++revision;activeController?.abort();activeController=null;
+    const client=transport,cap=capability;transport=null;capability='';expiresAt=0;
+    if(client&&cap)void requestWith(client,{op:'close',capability:cap},{cleanup:true}).catch(()=>{});
+  }
+  async function unlock(password){
+    const own=++revision;
+    if(scope.location?.protocol==='file:')throw new Error('Відкрийте вебверсію https://anodos.com.ua/ для доступу до Anodos Pro.');
     const config=scope.ANODOS_CONTRACT_REVIEW_CONFIG,crypt=scope.AnodosReviewCrypto;
     if(!scope.crypto?.subtle||!crypt||!config?.macPublicKey)throw new Error('Оновіть Anodos для заповнення опитувальника.');
     const client=await crypt.client(config.macPublicKey,config.macKeyId);
-    const timeout=AbortSignal.timeout(15*60*1000),combined=signal?AbortSignal.any([signal,timeout]):timeout;
-    let capability='';
-    async function call(input,cleanup=false) {
-      const request=await client.request({...input,...(capability?{capability}:{})});
-      // Retry the SAME encrypted request, preserving server idempotency.
-      for(let attempt=0;attempt<2;attempt++){
-        try{
-          const r=await fetch(config.endpoint+'/rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request),cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',signal:cleanup?AbortSignal.timeout(3000):AbortSignal.any([combined,AbortSignal.timeout(20000)])});
-          const envelope=await r.json();if(!r.ok)throw new Error(envelope.error||'Сервіс заповнення Anodos зараз недоступний. Спробуйте пізніше.');
-          const result=await client.response(envelope,request);if(!result.ok)throw Object.assign(new Error(result.error||'Заповнення не завершено.'),{final:true});return result.value;
-        }catch(e){if(!cleanup)combined.throwIfAborted();if(attempt||e.final||cleanup)throw e;}
-      }
-    }
-    const started=Date.now();
-    try {
+    const opened=await requestWith(client,{op:'open',kind:'questionnaire',password});password='';
+    if(own!==revision){await requestWith(client,{op:'close',capability:opened.capability},{cleanup:true}).catch(()=>{});return;}
+    if(!opened.capability||!Number.isFinite(opened.expiresAt))throw new Error('Не вдалося підтвердити доступ Anodos Pro.');
+    transport=client;capability=opened.capability;expiresAt=opened.expiresAt;
+  }
+  async function research(payload,{signal,progress=()=>{}}={}) {
+    if(!authorized())throw new Error('Введіть пароль Anodos Pro для автоматичного заповнення.');
+    const client=transport,cap=capability,controller=new AbortController();activeController=controller;
+    const signals=[controller.signal,AbortSignal.timeout(15*60*1000)];if(signal)signals.push(signal);
+    const combined=AbortSignal.any(signals),started=Date.now();
+    const call=input=>requestWith(client,{...input,capability:cap},{signal:combined});
+    try{
       progress('Підключаю сервіс заповнення Anodos...');
-      const opened=await call({op:'open',kind:'questionnaire',privacyVersion:'anodos-questionnaire-web-v1',budgetMs:15*60*1000,payload});capability=opened.capability;
+      await call({op:'research',privacyVersion:'anodos-questionnaire-web-v1',payload});
       while(true){
-        combined.throwIfAborted();
-        const state=await call({op:'status'});
+        combined.throwIfAborted();const state=await call({op:'status'});
         if(state.state==='done')return state.result;
-        if(['error','cancelled'].includes(state.state))throw new Error(state.error||'Заповнення зупинено.');
+        if(['error','cancelled','closed','expired'].includes(state.state))throw new Error(state.error||'Заповнення зупинено.');
         progress((state.progress?.message||'Шукаю відомості...')+(Date.now()-started>60000?' Пошук і заповнення тривають, залиште вкладку відкритою.':''));
         await new Promise((resolve,reject)=>{const end=()=>{clearTimeout(timer);combined.removeEventListener('abort',abort);};const abort=()=>{end();reject(combined.reason);};const timer=setTimeout(()=>{end();resolve();},1500);combined.addEventListener('abort',abort,{once:true});if(combined.aborted)abort();});
       }
-    }catch(e){if(capability)await call({op:'cancel'},true).catch(()=>{});if(combined.aborted)throw new Error(signal?.aborted?'Заповнення скасовано.':'Заповнення перевищило час очікування. Спробуйте ще раз.');throw e;}
+    }catch(e){
+      await requestWith(client,{op:'cancel',capability:cap},{cleanup:true}).catch(()=>{});
+      if(combined.aborted)throw new Error(signal?.aborted||controller.signal.aborted?'Заповнення скасовано.':'Заповнення перевищило час очікування.');throw e;
+    }finally{if(activeController===controller)activeController=null;}
   }
-  scope.AnodosQuestionnaireResearch=Object.freeze({research,apply,render,edit});
+  scope.AnodosQuestionnaireResearch=Object.freeze({research,apply,render,edit,unlock,lock,authorized});
 })(window);
