@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f9fbff"><meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://anodos-review-bridge.mesquite-wishbone.workers.dev; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <title>Пошук контактів ДМів - Anodos Pro</title>
+  <meta name="description" content="Пошук публічних ділових телефонів та email за ім’ям і назвою компанії. Anodos Pro.">
+  <link rel="icon" href="./assets/icon.svg?v=7" type="image/svg+xml">
+  <link rel="stylesheet" href="./osint.css?v=5"><link rel="stylesheet" href="./contacts.css?v=1">
+</head>
+<body>
+  <header class="top"><a class="brand" href="./">Ανοδος</a><a href="./">До робочих інструментів ↗</a></header>
+  <main>
+    <section id="access-gate" class="workspace access-gate" aria-labelledby="access-title">
+      <div class="eyebrow">ПОШУК КОНТАКТІВ ДМІВ <span class="badge anodos-pro-label">ANODOS PRO</span></div>
+      <h1 id="access-title">це приватний інструмент. введіть пароль</h1>
+      <form id="access-form">
+        <label for="access-password">Пароль Anodos Pro</label>
+        <div class="search-row"><input id="access-password" name="password" type="password" autocomplete="current-password" required maxlength="256" autofocus><button id="access-submit" type="submit">Відкрити інструмент</button></div>
+        <p id="access-status" class="hint" role="status" hidden></p><p id="access-error" class="error" role="alert" hidden></p>
+      </form>
+    </section>
+    <div id="private-tool" hidden>
+      <div class="tool-heading"><div class="eyebrow">РОБОЧІ ІНСТРУМЕНТИ <span class="badge anodos-pro-label">ANODOS PRO</span></div><button id="lock" class="text-button" type="button">Закрити доступ</button></div>
+      <h1>Пошук контактів ДМів</h1>
+      <p class="intro">Знайдіть діловий контакт людини, яка приймає рішення. Ім’я та компанія - на вході. Телефони, email і джерела - у результаті.</p>
+      <section class="workspace" aria-labelledby="search-title">
+        <form id="search-form">
+          <h2 id="search-title">Чий контакт шукаємо?</h2>
+          <div class="contact-inputs"><div><label for="person-name">Ім’я та прізвище</label><input id="person-name" name="person-name" minlength="4" maxlength="120" placeholder="Ім’я Прізвище" autocomplete="off" required></div><div><label for="company-name">Назва компанії</label><input id="company-name" name="company-name" minlength="2" maxlength="160" placeholder="Компанія або група" autocomplete="off" required></div></div>
+          <details><summary>Уточнити сайт компанії</summary><label for="website">Сайт компанії, якщо відомий</label><input id="website" type="url" maxlength="2000" placeholder="https://company.ua"></details>
+          <label class="consent"><input id="consent" type="checkbox" required><span>Погоджуюся передати ім’я та назву компанії пошуковим сервісам для пошуку публічних ділових контактів.</span></label>
+          <div class="search-actions"><button id="search" type="submit">Знайти контакти →</button><span class="hint">Насамперед телефони. Зазвичай кілька хвилин.</span></div>
+        </form>
+        <div id="status-box" class="status" role="status" aria-live="polite" hidden><span id="status-text"></span><button id="cancel" class="text-button" type="button">Зупинити</button></div>
+        <div id="error" class="error" role="alert" hidden></div>
+      </section>
+      <section id="result" class="workspace" aria-labelledby="result-title" hidden>
+        <div class="result-top"><div><div class="eyebrow">РЕЗУЛЬТАТ ПОШУКУ</div><h2 id="result-title"></h2><p id="result-meta" class="hint"></p></div><button id="download" class="secondary" type="button">Зберегти результат ↓</button></div>
+        <p id="result-summary"></p><div id="report-content"></div>
+      </section>
+      <div class="scope"><div><h2>Від номера до джерела</h2><p>Для кожного контакту показуємо сторінку і фрагмент, у якому його опубліковано. Загальні телефони компанії наведено окремо.</p></div><div><h2>Актуальність має значення</h2><p>Старі джерела позначаємо. Якщо ділового номера людини не підтверджено, прямо про це повідомляємо.</p></div></div>
+      <p class="footnote">Пошук працює з відкритими діловими сторінками та PDF у межах доступності пошукових сервісів. Повне охоплення інтернету не гарантується. Залишайте вкладку відкритою. Сервіс залежить від доступності комп’ютера оператора Anodos.</p>
+    </div>
+  </main>
+  <script src="./contract-review-config.js?v=6"></script><script src="./contract-review-secure.js?v=1"></script><script src="./contacts.js?v=1"></script>
+</body>
+</html>
