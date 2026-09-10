@@ -23,15 +23,16 @@
       });queue=task;return task;
     }};
   }
-  function sourceLink(source){const link=el('a',source.title||source.url);try{const url=new URL(source.url);if(url.protocol!=='https:')throw new Error();link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';}catch{link.removeAttribute('href');}return link;}
+  function sourceLink(source){const link=el('a',source.title||source.url);try{const url=new URL(source.url);if(!['https:','http:'].includes(url.protocol))throw new Error();link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';}catch{link.removeAttribute('href');}return link;}
   function render(report){
     result=report;$('result').hidden=false;$('result-title').textContent=report.name+' · '+report.company;
     $('result-meta').textContent=`${report.sources.length} прочитаних джерел · ${report.pagesAttempted} спроб читання · ${new Date(report.createdAt).toLocaleString('uk-UA')}`;
     $('result-summary').textContent=report.summary;const content=$('report-content');content.replaceChildren();
-    for(const [type,association,title,empty]of [['phone','person','Телефони людини','Діловий телефон людини не підтверджено.'],['email','person','Ділова електронна пошта','Діловий email людини не підтверджено.'],['phone','company','Загальні телефони компанії','Загальний телефон компанії не підтверджено.']]){
-      content.append(el('h3',title));const rows=report.contacts.filter(r=>r.type===type&&r.association===association);
+    for(const [filterType,association,title,empty]of [['phone','person','Телефони людини','Діловий телефон людини не підтверджено.'],['any','workplace','Контакти підрозділу, де вказано людину','Контакти підрозділу не підтверджено.'],['email','person','Ділова електронна пошта','Діловий email людини не підтверджено.'],['phone','company','Загальні телефони компанії','Загальний телефон компанії не підтверджено.']]){
+      content.append(el('h3',title));const rows=report.contacts.filter(r=>(filterType==='any'||r.type===filterType)&&r.association===association);
       if(!rows.length){content.append(el('p',empty,'empty-contact'));continue;}
       for(const row of rows){
+        const type=row.type;
         const card=el('article',undefined,'contact-card '+(association==='person'&&type==='phone'?'person-phone':'')),line=el('div',undefined,'contact-line');
         const value=el('a',row.value,'contact-value');if(type==='phone'&&/^\+[1-9]\d{7,14}$/.test(row.value))value.href='tel:'+row.value;else if(type==='email'&&/^[^\s<>]+@[^\s<>]+$/.test(row.value))value.href='mailto:'+encodeURIComponent(row.value);
         const copy=el('button','Копіювати','text-button');copy.type='button';copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(row.value);copy.textContent='Скопійовано';}catch{copy.textContent='Виділіть номер';}});line.append(value,copy);
@@ -39,6 +40,10 @@
         for(const evidence of row.evidence){const source=report.sources.find(s=>s.id===evidence.sourceId);if(!source)continue;card.append(el('blockquote',evidence.quote),sourceLink(source));if(evidence.publishedAt)card.append(el('p','Дата публікації: '+new Date(evidence.publishedAt).toLocaleDateString('uk-UA'),'hint'));}
         content.append(card);
       }
+    }
+    if(report.reviewPages?.length){
+      const pages=el('section',undefined,'review-pages');pages.append(el('h3','Сторінки для перевірки'),el('p','Ці сторінки містять згадки людини. Відкрийте їх, якщо прямого номера немає або сайт потребує ручного перегляду.','hint'));
+      for(const page of report.reviewPages){const card=el('article',undefined,'contact-card');card.append(sourceLink(page));if(page.snippet)card.append(el('p',page.snippet,'hint'));if(page.reason)card.append(el('p',page.reason,'hint'));pages.append(card);}content.append(pages);
     }
     const details=el('details');details.append(el('summary','Джерела та межі пошуку'),el('p',report.coverage,'hint'));
     for(const gap of report.gaps)details.append(el('p',gap,'hint'));
@@ -61,7 +66,7 @@
     try{
       setBusy(true,'Починаю пошук ділових контактів');
       await transport.rpc({op:'search',name:$('person-name').value,company:$('company-name').value,website:$('website').value.trim(),privacyVersion:'anodos-business-contacts-v1'});
-      const deadline=Date.now()+300000;
+      const deadline=Date.now()+480000;
       while(current===generation){
         if(Date.now()>deadline)throw new Error('Час очікування вичерпано. Спробуйте пошук ще раз.');
         const state=await transport.rpc({op:'status'});if(current!==generation)return;

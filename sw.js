@@ -1,8 +1,8 @@
-const CACHE_NAME = "platform-shell-v332";
+const CACHE_NAME = "platform-shell-v333";
 const ASSETS = [
   "./contacts.html",
   "./contacts.css?v=1",
-  "./contacts.js?v=1",
+  "./contacts.js?v=2",
   "./assets/fonts/eb-garamond-latin-400.woff2?v=1",
   "./geocode.html",
   "./geocode.css?v=2",
