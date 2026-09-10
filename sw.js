@@ -1,4 +1,4 @@
-const CACHE_NAME = "platform-shell-v333";
+const CACHE_NAME = "platform-shell-v334";
 const ASSETS = [
   "./contacts.html",
   "./contacts.css?v=1",
@@ -19,8 +19,8 @@ const ASSETS = [
   "./quotation-writing.css?v=2",
   "./quotation-mail-reader.js?v=1",
   "./quotation-report.js?v=1",
-  "./quotation-mail-drop.js?v=1",
-  "./quotation-writing.js?v=2",
+  "./quotation-mail-drop.js?v=2",
+  "./quotation-writing.js?v=3",
   "./law-data.js?v=3",
   "./munich-re-clauses.js?v=1",
   "./sync-config.js?v=1",

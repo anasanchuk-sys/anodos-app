@@ -6,6 +6,7 @@
   const fail = (message = FALLBACK, code = 'quotation_drop_incomplete') => Object.assign(new Error(message), { code });
   const mime = value => String(value || '').toLowerCase().split(';')[0].trim();
   const safeName = value => String(value || 'Лист Outlook').replace(/[\u0000-\u001f\u007f/\\]/g, '_').slice(0, 220);
+  const hasBytes = file => file && typeof file.arrayBuffer === 'function' && Number.isFinite(file.size) && file.size > 0;
   function bounded(promise) {
     return new Promise(resolve => {
       const timer = setTimeout(() => resolve(null), 10000);
@@ -17,19 +18,20 @@
     try { file = item.getAsFile?.(); } catch { /* Another representation may still be available. */ }
     try { entry = item.webkitGetAsEntry?.(); } catch { /* Optional browser API. */ }
     if (entry?.isDirectory) return Promise.resolve({ directory: true });
-    if (file) return Promise.resolve({ file });
+    if (hasBytes(file)) return Promise.resolve({ file });
+    const alternatives = [];
     if (entry?.isFile) {
       // Start reading the entry during drop, before the data store is protected.
-      return bounded(new Promise(resolve => {
+      alternatives.push(bounded(new Promise(resolve => {
         try { entry.file(value => resolve({ file: value }), () => resolve(null)); } catch { resolve(null); }
-      }));
+      })));
     }
     try {
       // The handle must be requested synchronously; its file can resolve later.
-      if (item.getAsFileSystemHandle) return bounded(item.getAsFileSystemHandle().then(async handle =>
-        handle?.kind === 'directory' ? { directory: true } : handle?.kind === 'file' ? { file: await handle.getFile() } : null));
+      if (item.getAsFileSystemHandle) alternatives.push(bounded(item.getAsFileSystemHandle().then(async handle =>
+        handle?.kind === 'directory' ? { directory: true } : handle?.kind === 'file' ? { file: await handle.getFile() } : null)));
     } catch { /* An inaccessible promise is reported, never silently skipped. */ }
-    return Promise.resolve(null);
+    return Promise.all(alternatives).then(values => values.find(value => value?.directory) || values.find(value => hasBytes(value?.file)) || (file ? { file } : null));
   }
   function capture(dataTransfer) {
     // Never retain DataTransfer itself or access it after returning from drop.
@@ -59,13 +61,19 @@
     const resolved = await Promise.all(snapshot.fileItems);
     if (resolved.some(item => item?.directory)) throw fail('Перетягніть самі листи або файли, а не папку.');
     let files;
-    if (snapshot.files.length && snapshot.files.length >= resolved.length) files = snapshot.files;
+    if (snapshot.files.length && snapshot.files.length === resolved.length) {
+      // Some native hosts expose an empty FileList placeholder and a complete
+      // item/entry for the same message. Prefer the representation with bytes.
+      files = resolved.map((item, index) => hasBytes(item?.file) ? item.file : snapshot.files[index]);
+    }
+    else if (snapshot.files.length > resolved.length) files = snapshot.files;
     else if (resolved.length) {
       if (resolved.some(item => !item?.file)) {
         if (resolved.length === 1 && !snapshot.files.length && snapshot.raw.length) files = [];
         else throw fail('Не всі листи передано з Outlook. ' + FALLBACK);
       } else files = resolved.map(item => item.file);
     } else files = [];
+    if (files.length === 1 && !hasBytes(files[0]) && snapshot.raw.length) files = [];
     const warnings = [];
     if (!files.length && snapshot.raw.length) {
       const raw = await Promise.all(snapshot.raw);

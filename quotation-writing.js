@@ -12,6 +12,7 @@
   const empty = () => ({clientName:'',title:'Котирування страхування',pasted:'',files:[],documents:[],intakeWarnings:[],warnings:[],report:null});
   let state=empty(),host=null,readDocument=null,transport=null,capability='',expiresAt=0,expiryTimer=null,busy=false,receiving=false,status='',error='',generation=0,confirmed=false;
   const attached=new WeakSet();
+  let dragAttached=false;
   let requestQueue=Promise.resolve();
   function authorized(){return Boolean(transport&&capability&&Date.now()<expiresAt);}
   function active(){return host?.isConnected && host.querySelector('[data-quotation-root]');}
@@ -77,6 +78,26 @@
       receiving=false;busy=false;addFiles(result.files,{warnings:result.warnings,fromDrop:true});
     }catch(e){if(own===generation){error=e.message;status='';}}
     finally{if(own===generation){receiving=false;busy=false;update();}}
+  }
+  function handleDrag(event){
+    if(!active())return;
+    const target=event.target?.nodeType===3?event.target.parentElement:event.target;
+    const inZone=target?.closest?.('[data-quotation-dropzone]');
+    const types=Array.from(event.dataTransfer?.types||[]).map(value=>String(value).toLowerCase());
+    const fileDrag=types.some(type=>type==='files'||type.includes('message')||type.includes('outlook')||type.includes('uri-list'))||Array.from(event.dataTransfer?.items||[]).some(item=>item.kind==='file');
+    // Preserve ordinary text editing while accepting native mail/file drops
+    // across the whole tool, including its margins and the file input itself.
+    if(!fileDrag&&!inZone&&target?.closest?.('textarea,input:not([type=file]),[contenteditable=true]'))return;
+    event.preventDefault();event.stopPropagation();
+    const zone=host.querySelector('[data-quotation-dropzone]');
+    if(event.type==='dragleave'){if(!event.relatedTarget)zone?.classList.remove('quotation-dropzone-active');return;}
+    if(event.type==='drop'){
+      zone?.classList.remove('quotation-dropzone-active');
+      if(!authorized()){error='Спочатку введіть пароль, потім перетягніть листи з Outlook.';update();return;}
+      void receiveDrop(event.dataTransfer);return;
+    }
+    if(authorized()&&!busy)zone?.classList.add('quotation-dropzone-active');
+    try{if(event.dataTransfer)event.dataTransfer.dropEffect=authorized()&&!busy?'copy':'none';}catch{/* Some embedded browsers expose a read-only dropEffect. */}
   }
   async function analyze(){
     if(busy||!authorized())return;readInputs();
@@ -146,12 +167,13 @@
       `<form class="quotation-intake" data-quotation-intake><div class="quotation-section-head"><div><h2>Листи з умовами страхування</h2><p>Додайте пропозиції страховиків. Anodos збере їх в одне котирування.</p></div></div>
       <div class="quotation-fields"><label>Клієнт<input id="quotationClient" maxlength="200" value="${esc(state.clientName)}" placeholder="Назва компанії або клієнта" ${busy?'disabled':''}/></label><label>Назва котирування<input id="quotationTitle" maxlength="200" value="${esc(state.title)}" ${busy?'disabled':''}/></label></div>
       <label class="quotation-dropzone" data-quotation-dropzone><strong>Перетягніть листи безпосередньо з Outlook сюди</strong><span>Один або кілька листів зі списку повідомлень. Або виберіть збережені файли.</span><small>До 12 файлів, 20 МБ кожен. EML, PDF, DOCX, XLSX, TXT, HTML, RTF або зображення.</small><input id="quotationFiles" aria-label="Вибрати листи та вкладення" type="file" multiple accept=".eml,.pdf,.docx,.xlsx,.txt,.html,.htm,.rtf,.png,.jpg,.jpeg,.webp" ${busy?'disabled':''}/></label>
+      ${error?`<p class="quotation-error" role="alert">${esc(error)}</p>`:''}${status?`<p class="quotation-status" role="status">${esc(status)}</p>`:''}
       <p class="quotation-hint">Якщо браузер передає лише посилання, збережіть лист з Outlook як EML або перетягніть його спочатку на робочий стіл, а потім сюди.</p>
       ${state.files.length?`<ul class="quotation-files">${state.files.map((file,i)=>`<li><span>${esc(file.name)} <small>${(file.size/1024/1024).toFixed(2)} МБ</small></span><button type="button" class="secondary-action" data-quotation-remove="${i}" ${busy?'disabled':''} aria-label="Видалити ${esc(file.name)}">×</button></li>`).join('')}</ul>`:''}
       <details ${state.pasted?'open':''}><summary>Або вставте текст листа</summary><label class="quotation-pasted">Умови страховиків<textarea id="quotationPasted" rows="7" maxlength="100000" ${busy?'disabled':''} placeholder="Вставте лист разом із назвою страховика та його умовами">${esc(state.pasted)}</textarea></label></details>
       <p class="quotation-hint">Текст листів передається захищеним з’єднанням до приватного сервісу Anodos для обробки. У цьому інструменті листи не зберігаються в архіві.</p>
       <div class="quotation-actions"><button class="primary-action" type="submit" ${busy?'disabled':''}>${state.report?'Оновити котирування':'Зібрати котирування'}</button>${busy?'<button class="secondary-action" type="button" data-quotation-cancel>Скасувати</button>':''}</div></form>`}
-      ${error?`<p class="quotation-error" role="alert">${esc(error)}</p>`:''}${status?`<p class="quotation-status" role="status">${esc(status)}</p>`:''}
+      ${!access&&error?`<p class="quotation-error" role="alert">${esc(error)}</p>`:''}${!access&&status?`<p class="quotation-status" role="status">${esc(status)}</p>`:''}
       ${access&&state.warnings.length?`<details class="quotation-warnings" open><summary>Потребує уваги</summary><ul>${[...new Set(state.warnings)].map(w=>`<li>${esc(w)}</li>`).join('')}</ul></details>`:''}
       ${access?resultHtml():''}</section>`;
   }
@@ -179,14 +201,8 @@
         if(event.target.closest('[data-quotation-download]')){void download();return;}
         const button=event.target.closest('[data-quotation-remove]');if(button&&authorized()&&!busy){readInputs();state.files.splice(Number(button.dataset.quotationRemove),1);if(!state.files.length){state.intakeWarnings=[];state.warnings=[];}state.report=null;confirmed=false;status='';update();}
       });
-      for(const name of ['dragenter','dragover','dragleave','drop'])element.addEventListener(name,event=>{
-        const zone=event.target.closest('[data-quotation-dropzone]');
-        if(!zone)return;event.preventDefault();event.stopPropagation();
-        if(name==='dragleave'){if(!zone.contains(event.relatedTarget))zone.classList.remove('quotation-dropzone-active');return;}
-        if(name==='drop'){zone.classList.remove('quotation-dropzone-active');void receiveDrop(event.dataTransfer);return;}
-        if(authorized()&&!busy){zone.classList.add('quotation-dropzone-active');try{if(event.dataTransfer)event.dataTransfer.dropEffect='copy';}catch{/* Some embedded browsers expose a read-only dropEffect. */}}
-      });
     }
+    if(!dragAttached){dragAttached=true;for(const name of ['dragenter','dragover','dragleave','drop'])(scope.document||element).addEventListener(name,handleDrag,true);}
     if(transport&&!authorized())locked();render();
   }
   scope.addEventListener?.('pagehide',()=>{locked();if(active())render();});
