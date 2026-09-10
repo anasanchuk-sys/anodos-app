@@ -1,4 +1,4 @@
-const CACHE_NAME = "platform-shell-v329";
+const CACHE_NAME = "platform-shell-v330";
 const ASSETS = [
   "./assets/fonts/eb-garamond-latin-400.woff2?v=1",
   "./geocode.html",
@@ -9,7 +9,7 @@ const ASSETS = [
   "./osint.css?v=5",
   "./osint.js?v=3",
   "./osint-report.js?v=2",
-  "./osint-entry.css?v=4",
+  "./osint-entry.css?v=5",
   "./",
   "./index.html",
   "./styles.css?v=193",
