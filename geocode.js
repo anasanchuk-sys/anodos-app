@@ -30,10 +30,52 @@
       const key = `${coordinates}|${title}|${detail}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      results.push({title, detail, latitude, longitude, coordinates, houseNumber, type: clean("type")});
+      results.push({title, detail, latitude, longitude, coordinates, houseNumber, street,
+        city: clean("city"), state: clean("state"), country: clean("country"),
+        name, category: clean("osm_key"), type: clean("type")});
     }
     if (data.features.length && !results.length) throw new Error("У відповіді немає придатних координат. Уточніть адресу або спробуйте пізніше.");
     return results;
+  }
+
+  function selectAddresses(items, query) {
+    const words = value => String(value).toLocaleLowerCase("uk").normalize("NFC")
+      .replace(/['’ʼ`]/g, "").replace(/[^\p{L}\p{N}/-]+/gu, " ").trim();
+    const input = ` ${words(query)} `;
+    const mentions = value => !!value && input.includes(` ${words(value)} `);
+    const streetName = value => value.replace(/^(?:вулиця|вул\.?|площа|пл\.?|проспект|просп\.?|провулок|пров\.?|бульвар|бул\.?)\s+/iu, "");
+    // Narrow only when all three address components explicitly occur in the
+    // query. Keep ambiguous/renamed/transliterated addresses as suggestions.
+    let matches = items.filter(item => item.city && item.street && item.houseNumber &&
+      mentions(item.city) && mentions(streetName(item.street)) && mentions(item.houseNumber));
+    if (matches.length) {
+      const specificity = item => words(streetName(item.street)).split(" ").length;
+      const longest = Math.max(...matches.map(specificity));
+      matches = matches.filter(item => specificity(item) === longest);
+    }
+    if (matches.some(item => mentions(item.state))) matches = matches.filter(item => mentions(item.state));
+    if (matches.some(item => mentions(item.country))) matches = matches.filter(item => mentions(item.country));
+    const selected = matches.length ? matches : items;
+    const groups = [];
+    const distance = (a, b) => {
+      const radians = Math.PI / 180;
+      const x = (b.longitude - a.longitude) * radians * Math.cos((a.latitude + b.latitude) * radians / 2);
+      const y = (b.latitude - a.latitude) * radians;
+      return Math.hypot(x, y) * 6371000;
+    };
+    for (const item of selected) {
+      const key = item.city && item.street && item.houseNumber
+        ? [item.country, item.state, item.city, item.street, item.houseNumber].map(words).join("|") : "";
+      const group = key && groups.find(group => group.key === key && distance(group.points[0], item) <= 100);
+      if (group) group.points.push(item);
+      else groups.push({key, points: [item]});
+    }
+    return groups.map(group => {
+      // Prefer an actual building point when one exists; otherwise preserve the
+      // provider's ranking. Never average coordinates or fabricate a location.
+      const main = group.points.find(item => item.category === "building") || group.points[0];
+      return {...main, matchedComponents: !!matches.length, alternatives: group.points.filter(item => item !== main)};
+    });
   }
 
   function createSearch(config, {fetcher = globalThis.fetch.bind(globalThis), now = Date.now} = {}) {
@@ -70,7 +112,7 @@
         throw new Error("Сервіс повернув некоректну відповідь. Спробуйте пізніше.");
       }
       signal?.throwIfAborted();
-      const result = parseResults(data).slice(0, config.limit);
+      const result = selectAddresses(parseResults(data), query).slice(0, config.limit);
       if (cache.size >= 20) cache.delete(cache.keys().next().value);
       cache.set(key, result);
       return result;
@@ -95,10 +137,11 @@
     function render(items) {
       candidates.replaceChildren();
       results.hidden = !items.length;
-      $("results-title").textContent = items.length === 1 ? "Знайдене місце" : "Знайдені місця";
-      $("results-hint").textContent = items.length === 1
-        ? "Звірте населений пункт, вулицю та номер будинку зі своєю адресою."
-        : "Є кілька можливих збігів. Оберіть місце, яке відповідає вашому населеному пункту, вулиці та номеру будинку.";
+      const matched = items.some(item => item.matchedComponents);
+      $("results-title").textContent = matched && items.length === 1 ? "Координати адреси" : "Можливі збіги";
+      $("results-hint").textContent = matched && items.length === 1
+        ? "Збігаються назви міста, вулиці та номер будинку. Звірте повну адресу нижче."
+        : "Пошук не визначив єдину адресу. Це можливі збіги: звірте населений пункт, вулицю та номер будинку перед копіюванням.";
       items.forEach((item, index) => {
         const card = node("article", "", "candidate");
         card.append(node("span", item.houseNumber ? "Адреса з номером будинку" : "Приблизне розташування", `accuracy${item.houseNumber ? "" : " approximate"}`));
@@ -126,7 +169,21 @@
         const map = node("a", "Відкрити на карті", "map-link");
         map.href = `https://www.openstreetmap.org/?mlat=${item.latitude}&mlon=${item.longitude}#map=${item.houseNumber ? 18 : 14}/${item.latitude}/${item.longitude}`;
         map.target = "_blank"; map.rel = "noopener noreferrer";
-        actions.append(copy, map); card.append(label, value, actions, feedback); candidates.append(card);
+        actions.append(copy, map); card.append(label, value, actions, feedback);
+        if (item.alternatives?.length) {
+          const details = node("details", "", "address-points");
+          details.append(node("summary", `Інші точки за цією адресою: ${item.alternatives.length}`));
+          details.append(node("p", "Карта містить кілька близьких точок за цією адресою: будівлю, входи або установи всередині. Вище показана точка будівлі, якщо вона є в результатах, або перший збіг карти. Інші точки можна перевірити нижче.", "hint"));
+          const list = node("ul");
+          for (const point of item.alternatives) {
+            const entry = node("li"), link = node("a", `${point.name || point.title}: ${point.coordinates}`);
+            link.href = `https://www.openstreetmap.org/?mlat=${point.latitude}&mlon=${point.longitude}#map=19/${point.latitude}/${point.longitude}`;
+            link.target = "_blank"; link.rel = "noopener noreferrer";
+            entry.append(link); list.append(entry);
+          }
+          details.append(list); card.append(details);
+        }
+        candidates.append(card);
       });
     }
 
@@ -170,6 +227,6 @@
     }
   }
 
-  globalThis.AnodosGeocode = Object.freeze({normalizeAddress, parseResults, createSearch, mount});
+  globalThis.AnodosGeocode = Object.freeze({normalizeAddress, parseResults, selectAddresses, createSearch, mount});
   if (globalThis.document?.getElementById("geocode-form")) mount(globalThis.document, globalThis.ANODOS_GEOCODE_CONFIG);
 })();
