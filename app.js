@@ -2014,7 +2014,7 @@ function availableRoute(nextRoute) {
   if (nextRoute === "client-recommendation" && !clientRecommendationIsAllowed()) {
     return "home";
   }
-  if (nextRoute === "quotation-writing" && !quotationWritingIsAllowed()) {
+  if (nextRoute === "quotation-writing" && !window.AnodosQuotationWriting) {
     return "home";
   }
   return nextRoute;
@@ -2381,7 +2381,7 @@ function renderSpaceShell() {
 
   const quotationWritingTool = document.querySelector("[data-private-quotation-writing]");
   if (quotationWritingTool) {
-    quotationWritingTool.hidden = !quotationWritingIsAllowed();
+    quotationWritingTool.hidden = !window.AnodosQuotationWriting;
   }
 
   if (nav) {
@@ -2570,10 +2570,6 @@ function questionnaireGeneratorIsAllowed() {
 
 function clientRecommendationIsAllowed(user = currentUser()) {
   return Boolean(window.AnodosClientRecommendation?.isAllowedUser(user));
-}
-
-function quotationWritingIsAllowed(user = currentUser()) {
-  return normalizeEmail(user?.email) === "onasanchuk@britmark.com";
 }
 
 function isAuthorizedUser(user) {
@@ -6628,6 +6624,7 @@ function draftFor(id) {
 
 function render() {
   route = availableRoute(route);
+  if (route !== "quotation-writing") window.AnodosQuotationWriting?.leave();
   syncStateCompensationGuideLocation();
   renderSpaceShell();
   body.dataset.route = route;
@@ -7624,26 +7621,7 @@ function renderClientRecommendation() {
 }
 
 function renderQuotationWriting() {
-  if (!quotationWritingIsAllowed()) {
-    setActiveSpace("products", "home");
-    return;
-  }
-
-  screen.innerHTML = `
-    <section class="client-recommendation-workspace" aria-labelledby="quotationWritingTitle">
-      <header class="contract-review-head">
-        <button class="module-back" type="button" data-route="home" aria-label="Назад до продуктів">←</button>
-        <div>
-          <p class="eyebrow">Приватний інструмент</p>
-          <h1 id="quotationWritingTitle">Написання котирувань</h1>
-        </div>
-      </header>
-
-      <section class="client-recommendation-empty" role="status">
-        <p>Цей інструмент є приватним і не призначений для публічного користування.</p>
-      </section>
-    </section>
-  `;
+  window.AnodosQuotationWriting.mount(screen, { readDocument: contractReviewReadText });
 }
 
 function renderHome() {

@@ -1,0 +1,47 @@
+.quotation-workspace{display:grid;gap:20px;max-width:1080px;width:100%;margin:0 auto;padding:14px 0 34px;color:var(--text,#172534)}
+.quotation-workspace *{box-sizing:border-box}
+.quotation-workspace .contract-review-head{align-items:center}
+.quotation-workspace .contract-review-head>div{flex:1;min-width:0}
+.quotation-workspace h1{overflow-wrap:anywhere}
+.quotation-gate,.quotation-intake,.quotation-results{background:#fff;border:1px solid #dce5ec;border-radius:18px;padding:28px}
+.quotation-gate{max-width:540px;width:100%;margin:20px auto}
+.quotation-workspace h2{font-size:22px;margin:0 0 12px;color:#16324f}
+.quotation-workspace h3{font-size:19px;margin:0;color:#16324f;overflow-wrap:anywhere}
+.quotation-workspace p{line-height:1.55}
+.quotation-gate form{display:grid;gap:12px;margin-top:24px}
+.quotation-workspace label{display:grid;gap:8px;font-size:14px;font-weight:600;color:#16324f}
+.quotation-workspace input:not([type=checkbox]):not([type=file]),.quotation-workspace textarea{display:block;min-width:0;width:100%;border:1px solid #bbcbd7;border-radius:8px;padding:11px 12px;background:#fff;color:#172534;font:inherit;font-size:16px;line-height:1.45}
+.quotation-workspace textarea{resize:vertical;font-weight:400;min-height:70px}
+.quotation-workspace input:focus-visible,.quotation-workspace textarea:focus-visible{outline:2px solid #337f6d;outline-offset:2px}
+.quotation-section-head{display:flex;justify-content:space-between;gap:14px;align-items:start;margin-bottom:20px}
+.quotation-section-head p{margin:0;color:#526777}
+.quotation-section-head>span{white-space:nowrap;color:#526777;font-size:14px}
+.quotation-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 24px}
+.quotation-dropzone{padding:26px;margin:24px 0;border:1px dashed #91b1ad;border-radius:12px;background:#f3f8f7;text-align:center;justify-items:center;cursor:pointer}
+.quotation-dropzone strong{font-size:17px}
+.quotation-dropzone span,.quotation-dropzone small{font-weight:400;color:#526777}
+.quotation-dropzone input{width:100%;max-width:340px;margin-top:12px;font:inherit;font-size:14px}
+.quotation-files{list-style:none;padding:0;margin:0 0 20px}
+.quotation-files li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #e4ebef}
+.quotation-files span{min-width:0;overflow-wrap:anywhere}.quotation-files small{color:#526777;white-space:nowrap}
+.quotation-files button{padding:6px 13px;font-size:20px}
+.quotation-workspace summary{cursor:pointer;color:#245a4c;font-size:14px}
+.quotation-pasted{margin-top:12px}
+.quotation-hint{font-size:13px;color:#526777;margin:18px 0}
+.quotation-actions{display:flex;gap:12px;flex-wrap:wrap}
+.quotation-error,.quotation-status{padding:14px 18px;border-radius:10px;margin:0}
+.quotation-error{background:#fff0ee;color:#9e2920;border:1px solid #f1c6c0}
+.quotation-status{background:#edf7f2;color:#245a4c}
+.quotation-warnings{padding:16px 20px;border-radius:10px;background:#fff9e9;border:1px solid #e8d69e;font-size:14px}
+.quotation-warnings li{margin:8px 0;line-height:1.5;overflow-wrap:anywhere}
+.quotation-offer{margin:24px 0;border-top:2px solid #dae5ea;padding-top:22px}
+.quotation-offer>header{display:flex;gap:18px;align-items:start;justify-content:space-between;margin-bottom:22px}
+.quotation-workspace .quotation-check{display:flex;align-items:center;gap:9px;font-weight:400;font-size:14px}
+.quotation-check input{width:18px;height:18px;flex-shrink:0;accent-color:#337f6d}
+.quotation-field>label{margin-bottom:7px}
+.quotation-evidence{margin-top:7px;font-size:12px;max-height:240px;overflow:auto}
+.quotation-evidence summary{font-size:12px}.quotation-evidence p{font-size:12px;margin:10px 0 5px;overflow-wrap:anywhere}
+.quotation-evidence blockquote{white-space:pre-wrap;margin:0;padding:8px 12px;border-left:2px solid #abc5bb;color:#526777;overflow-wrap:anywhere}
+.quotation-download{display:grid;justify-items:start;gap:18px;padding-top:24px;border-top:1px solid #dce5ec}
+.quotation-workspace button:disabled{opacity:.5;cursor:default}
+@media(max-width:680px){.quotation-workspace{gap:14px;padding:6px 0 24px}.quotation-gate,.quotation-intake,.quotation-results{padding:20px 16px;border-radius:12px}.quotation-fields{grid-template-columns:1fr;gap:16px}.quotation-section-head,.quotation-offer>header{flex-direction:column;gap:10px}.quotation-workspace .contract-review-head{flex-wrap:wrap}.quotation-lock{margin-left:auto}.quotation-dropzone{padding:20px 12px}.quotation-download button,.quotation-actions>.primary-action{width:100%}.quotation-workspace h2{font-size:20px}}
