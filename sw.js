@@ -1,4 +1,4 @@
-const CACHE_NAME = "platform-shell-v336";
+const CACHE_NAME = "platform-shell-v337";
 const ASSETS = [
   "./contacts.html",
   "./contacts.css?v=1",
@@ -15,7 +15,7 @@ const ASSETS = [
   "./osint-entry.css?v=5",
   "./",
   "./index.html",
-  "./styles.css?v=195",
+  "./styles.css?v=196",
   "./quotation-writing.css?v=2",
   "./quotation-mail-reader.js?v=1",
   "./quotation-report.js?v=1",
@@ -47,7 +47,7 @@ const ASSETS = [
   "./local-review/result.js?v=1",
   "./property-review-semantic.js?v=5",
   "./property-review-report.js?v=7",
-  "./app.js?v=214",
+  "./app.js?v=215",
   "./assets/contract-tests/arx-zusp-053.pdf",
   "./manifest.webmanifest?v=7",
   "./assets/icon.svg?v=7",

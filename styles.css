@@ -7228,6 +7228,17 @@ body[data-route="bank-accreditation"] .bank-accreditation-table thead th:first-c
 body[data-route="bank-accreditation"] .bank-accreditation-table [hidden] {
   display: none !important;
 }
+body[data-route="bank-accreditation"] .bank-accreditation-table th.bank-accreditation-axis-active {
+  background: #cde9de;
+  color: #104f3f;
+  box-shadow: inset 0 0 0 2px #328568;
+}
+body[data-route="bank-accreditation"] .bank-accreditation-axis-active .bank-accreditation-bank-name {
+  color: #104f3f;
+}
+body[data-route="bank-accreditation"] .bank-accreditation-table td.bank-accreditation-cell-active {
+  box-shadow: inset 0 0 0 2px #328568;
+}
 .bank-accreditation-limited {
   color: #855600;
   background: #fff6df;

@@ -66,5 +66,54 @@ for (const asset of ["app.js", "styles.css", "bank-accreditation-data.js"]) {
   const find = content => content.split('"').find(s => s.startsWith("./" + asset + "?v="));
   assert.equal(find(read("index.html")), find(read("sw.js")));
 }
-assert.match(read("sw.js"), /platform-shell-v336/);
+assert.match(read("sw.js"), /platform-shell-v337/);
+
+// Exercise the delegated highlight handlers with filled and empty cells.
+const elements = [];
+const element = (extra = {}) => {
+  const classes = new Set();
+  const item = { hidden: false, classes, classList: {
+    add: (...names) => names.forEach(name => classes.add(name)),
+    remove: (...names) => names.forEach(name => classes.delete(name))
+  }, ...extra };
+  elements.push(item);
+  return item;
+};
+const headers = ["arx", "ingo"].map(id => element({ dataset: { insurerCol: id } }));
+const rowHeaders = [element(), element()];
+const rows = rowHeaders.map(header => element({ querySelector: () => header }));
+const cells = rows.map((row, index) => element({
+  dataset: { insurerCol: headers[index].dataset.insurerCol }, parentElement: row,
+  closest() { return this; }
+}));
+const handlers = {};
+const table = {
+  querySelectorAll: () => headers,
+  contains: target => cells.includes(target),
+  addEventListener: (type, handler) => { handlers[type] = handler; }
+};
+const hoverContext = vm.createContext({ document: {
+  querySelector: () => table,
+  querySelectorAll: () => elements.filter(item => item.classes.size)
+} });
+vm.runInContext(app.slice(app.indexOf("function clearBankAccreditationHighlight"), app.indexOf("function filterBankAccreditationRows")), hoverContext);
+hoverContext.setupBankAccreditationHighlight();
+const active = () => elements.filter(item => item.classes.size);
+handlers.pointerover({ target: { closest: () => cells[0] } });
+assert.deepEqual(active(), [headers[0], rowHeaders[0], cells[0]]);
+handlers.pointerover({ target: cells[1] });
+assert.deepEqual(active(), [headers[1], rowHeaders[1], cells[1]]);
+handlers.pointerleave();
+assert.equal(active().length, 0);
+handlers.focusin({ target: cells[0] });
+assert.equal(active().length, 3);
+handlers.focusout({ relatedTarget: null });
+assert.equal(active().length, 0);
+cells[1].hidden = true;
+handlers.pointerover({ target: cells[1] });
+assert.equal(active().length, 0);
+handlers.pointerover({ target: headers[0] });
+assert.equal(active().length, 0);
+assert.match(renderer, /function filterBankAccreditationRows\(\) \{\s+clearBankAccreditationHighlight\(\)/);
+console.log("Matrix hover/focus OK: matching axes, empty cells, cleanup and hidden cells.");
 console.log(`Property matrix OK: ${data.banks.length} banks, ${data.insurers.length} insurers, ${pairs} evidenced pairs, 28 banks with confirmation.`);

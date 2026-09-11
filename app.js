@@ -6843,9 +6843,35 @@ function renderBankAccreditation() {
     </section>
   `;
   filterBankAccreditationRows();
+  setupBankAccreditationHighlight();
+}
+
+function clearBankAccreditationHighlight() {
+  document.querySelectorAll(".bank-accreditation-axis-active, .bank-accreditation-cell-active").forEach((element) => {
+    element.classList.remove("bank-accreditation-axis-active", "bank-accreditation-cell-active");
+  });
+}
+
+function setupBankAccreditationHighlight() {
+  const table = document.querySelector(".bank-accreditation-table");
+  if (!table) return;
+  const headers = new Map([...table.querySelectorAll("thead [data-insurer-col]")].map((header) => [header.dataset.insurerCol, header]));
+  const highlight = (target) => {
+    const cell = target?.closest?.("td[data-insurer-col]");
+    clearBankAccreditationHighlight();
+    if (!cell || !table.contains(cell) || cell.hidden || cell.parentElement.hidden) return;
+    cell.classList.add("bank-accreditation-cell-active");
+    cell.parentElement.querySelector('th[scope="row"]')?.classList.add("bank-accreditation-axis-active");
+    headers.get(cell.dataset.insurerCol)?.classList.add("bank-accreditation-axis-active");
+  };
+  table.addEventListener("pointerover", (event) => highlight(event.target));
+  table.addEventListener("pointerleave", clearBankAccreditationHighlight);
+  table.addEventListener("focusin", (event) => highlight(event.target));
+  table.addEventListener("focusout", (event) => highlight(event.relatedTarget));
 }
 
 function filterBankAccreditationRows() {
+  clearBankAccreditationHighlight();
   const data = window.AnodosBankAccreditation;
   if (!data) return;
   const normalized = (document.getElementById("bankAccreditationSearch")?.value || "").trim().toLocaleLowerCase("uk");
