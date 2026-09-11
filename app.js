@@ -6731,18 +6731,21 @@ function render() {
 }
 
 function bankAccreditationStatusMeta(status) {
-  return { symbol: "✓", label: "Публічно підтверджено", className: "bank-accreditation-official" };
+  if (status === "limited") {
+    return { symbol: "✓*", label: "Підтверджено для майна з обмеженнями", className: "bank-accreditation-limited" };
+  }
+  return { symbol: "✓", label: "Підтверджено для майна", className: "bank-accreditation-official" };
 }
 
 function renderBankAccreditationCell(bank, insurer) {
   const record = bank.insurers?.[insurer.id];
   if (!record) {
-    return `<td class="bank-accreditation-empty" aria-label="${escapeHtml(`${insurer.name}: немає підтвердження`)}">—</td>`;
+    return `<td data-insurer-col="${escapeHtml(insurer.id)}" class="bank-accreditation-empty" aria-label="${escapeHtml(`${insurer.name}: публічного підтвердження для майна не знайдено`)}">-</td>`;
   }
   const meta = bankAccreditationStatusMeta(record.status);
-  const label = `${insurer.name} · ${bank.name}: ${meta.label}`;
+  const label = `${insurer.name} · ${bank.name}: ${meta.label}. ${record.coverage || ""}${record.note ? `. ${record.note}` : ""}`;
   return `
-    <td class="${meta.className}">
+    <td data-insurer-col="${escapeHtml(insurer.id)}" class="${meta.className}">
       <button
         type="button"
         class="bank-accreditation-cell"
@@ -6783,7 +6786,7 @@ function renderBankAccreditation() {
         <div>
           <p class="eyebrow">Anodos · банки</p>
           <h1>Акредитація страхових компаній</h1>
-          <p class="hero-copy">Знайдіть банк і перегляньте страховиків, зазначених у відкритих переліках на офіційних сайтах банків.</p>
+          <p class="hero-copy">Заставне майно та нерухомість · офіційні джерела банків і страховиків</p>
         </div>
       </header>
 
@@ -6792,29 +6795,38 @@ function renderBankAccreditation() {
           <span>Банк</span>
           <input id="bankAccreditationSearch" type="search" autocomplete="off" placeholder="Наприклад: Кредит Дніпро або Південний" />
         </label>
+        <label for="bankAccreditationInsurerSearch">
+          <span>Страхова компанія</span>
+          <input id="bankAccreditationInsurerSearch" type="search" autocomplete="off" placeholder="Наприклад: УНІКА або ARX" />
+        </label>
+        <label class="bank-accreditation-confirmed-filter">
+          <input id="bankAccreditationConfirmed" type="checkbox" />
+          <span>Лише банки з підтвердженням</span>
+        </label>
         <div class="bank-accreditation-legend" aria-label="Умовні позначення">
-          <span><b class="bank-accreditation-official">✓</b> є публічне підтвердження</span>
-          <span>— публічного підтвердження не знайдено</span>
+          <span><b class="bank-accreditation-official">✓</b> підтверджено для майна</span>
+          <span><b class="bank-accreditation-limited">✓*</b> є обмеження</span>
+          <span>- публічного підтвердження не знайдено</span>
         </div>
-        <p class="bank-accreditation-count" data-bank-accreditation-count>${data.banks.length} банків</p>
+        <p class="bank-accreditation-count" data-bank-accreditation-count aria-live="polite"></p>
       </section>
 
-      <section class="bank-accreditation-table-shell" aria-label="Матриця акредитації">
+      <section class="bank-accreditation-table-shell" tabindex="0" aria-label="Матриця акредитації для майна. Прокручуйте, щоб переглянути всі банки та страхові компанії.">
         <table class="bank-accreditation-table">
           <thead>
             <tr>
               <th scope="col">Банк</th>
               ${data.insurers.map((insurer) => `
-                <th scope="col" title="${escapeHtml(insurer.name)}">${escapeHtml(insurer.name)}</th>
+                <th scope="col" data-insurer-col="${escapeHtml(insurer.id)}" title="${escapeHtml(insurer.name)}">${escapeHtml(insurer.name)}</th>
               `).join("")}
             </tr>
           </thead>
           <tbody>
             ${data.banks.map((bank) => {
-              const searchText = [bank.name, ...(bank.aliases || [])].join(" ").toLocaleLowerCase("uk");
+              const searchText = [bank.name, bank.brandName, ...(bank.aliases || [])].join(" ").toLocaleLowerCase("uk");
               return `
-                <tr data-bank-row data-search="${escapeHtml(searchText)}">
-                  <th scope="row">
+                <tr data-bank-row data-bank-id="${escapeHtml(bank.id)}" data-search="${escapeHtml(searchText)}">
+                  <th scope="row" title="${escapeHtml(bank.name)}">
                     ${bank.legalForm ? `<span class="bank-accreditation-bank-legal">${escapeHtml(bank.legalForm)}</span>` : ""}
                     <strong class="bank-accreditation-bank-name">${escapeHtml(bank.brandName || bank.name)}</strong>
                   </th>
@@ -6826,18 +6838,32 @@ function renderBankAccreditation() {
         </table>
       </section>
 
-      <p class="bank-accreditation-no-results" data-bank-accreditation-empty hidden>Банк не знайдено. Спробуйте коротшу назву.</p>
+      <p class="bank-accreditation-no-results" data-bank-accreditation-empty hidden>За цими фільтрами нічого не знайдено. Спробуйте коротшу назву або змініть фільтри.</p>
       <aside class="bank-accreditation-evidence" data-bank-accreditation-evidence aria-live="polite" hidden></aside>
     </section>
   `;
+  filterBankAccreditationRows();
 }
 
-function filterBankAccreditationRows(query) {
-  const normalized = String(query || "").trim().toLocaleLowerCase("uk");
+function filterBankAccreditationRows() {
+  const data = window.AnodosBankAccreditation;
+  if (!data) return;
+  const normalized = (document.getElementById("bankAccreditationSearch")?.value || "").trim().toLocaleLowerCase("uk");
+  const insurerQuery = (document.getElementById("bankAccreditationInsurerSearch")?.value || "").trim().toLocaleLowerCase("uk");
+  const confirmedOnly = document.getElementById("bankAccreditationConfirmed")?.checked;
+  const visibleInsurers = new Set(data.insurers.filter((insurer) =>
+    [insurer.name, ...(insurer.aliases || [])].join(" ").toLocaleLowerCase("uk").includes(insurerQuery)
+  ).map((insurer) => insurer.id));
+  document.querySelectorAll("[data-insurer-col]").forEach((cell) => {
+    cell.hidden = !visibleInsurers.has(cell.dataset.insurerCol);
+  });
+  const banksById = new Map(data.banks.map((bank) => [bank.id, bank]));
   const rows = [...document.querySelectorAll("[data-bank-row]")];
   let visible = 0;
   rows.forEach((row) => {
-    const matches = !normalized || String(row.dataset.search || "").includes(normalized);
+    const bank = banksById.get(row.dataset.bankId);
+    const hasConfirmation = Object.keys(bank?.insurers || {}).some((id) => visibleInsurers.has(id));
+    const matches = visibleInsurers.size > 0 && (!normalized || String(row.dataset.search || "").includes(normalized)) && (!confirmedOnly || hasConfirmation);
     row.hidden = !matches;
     if (matches) {
       visible += 1;
@@ -6845,9 +6871,11 @@ function filterBankAccreditationRows(query) {
   });
   const count = document.querySelector("[data-bank-accreditation-count]");
   if (count) {
-    count.textContent = `${visible} ${visible === 1 ? "банк" : visible >= 2 && visible <= 4 ? "банки" : "банків"}`;
+    const form = (n, words) => words[n % 100 >= 11 && n % 100 <= 14 ? 2 : n % 10 === 1 ? 0 : n % 10 >= 2 && n % 10 <= 4 ? 1 : 2];
+    count.textContent = `${visible} ${form(visible, ["банк", "банки", "банків"])} · ${visibleInsurers.size} ${form(visibleInsurers.size, ["страховик", "страховики", "страховиків"])}`;
   }
   document.querySelector("[data-bank-accreditation-empty]")?.toggleAttribute("hidden", visible > 0);
+  document.querySelector("[data-bank-accreditation-evidence]")?.setAttribute("hidden", "");
 }
 
 function showBankAccreditationEvidence(button) {
@@ -6868,6 +6896,7 @@ function showBankAccreditationEvidence(button) {
     </div>
     <span class="${meta.className}">${escapeHtml(meta.label)}</span>
     <dl>
+      <div><dt>Обсяг</dt><dd>${escapeHtml(record.coverage || "Заставне майно")}</dd></div>
       <div><dt>Джерело</dt><dd>${escapeHtml(record.source)}</dd></div>
     </dl>
     <a class="bank-accreditation-source-link" href="${escapeHtml(record.url)}" target="_blank" rel="noopener noreferrer">Відкрити офіційне джерело ↗</a>
@@ -11556,8 +11585,8 @@ document.addEventListener("input", (event) => {
     return;
   }
 
-  if (event.target.id === "bankAccreditationSearch") {
-    filterBankAccreditationRows(event.target.value);
+  if (["bankAccreditationSearch", "bankAccreditationInsurerSearch", "bankAccreditationConfirmed"].includes(event.target.id)) {
+    filterBankAccreditationRows();
     return;
   }
 

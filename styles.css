@@ -7096,8 +7096,14 @@ body[data-route="home"] .module-row-end,
 }
 
 @media (min-width: 1024px) {
+  body[data-route="bank-accreditation"] .app-shell {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+  }
+
   body[data-route="bank-accreditation"] .bank-accreditation-table-shell {
-    overflow-y: hidden;
+    overflow: auto;
   }
 
   body[data-route="bank-accreditation"] .bank-accreditation-head {
@@ -7131,35 +7137,145 @@ body[data-route="home"] .module-row-end,
   }
 
   body[data-route="bank-accreditation"] .bank-accreditation-table {
-    font-size: 10px;
+    font-size: 13px;
   }
 
   body[data-route="bank-accreditation"] .bank-accreditation-table th,
   body[data-route="bank-accreditation"] .bank-accreditation-table td {
-    height: 30px;
-    padding-top: 1px;
-    padding-bottom: 1px;
+    height: 48px;
+    padding-top: 5px;
+    padding-bottom: 5px;
   }
 
   body[data-route="bank-accreditation"] .bank-accreditation-table thead th {
-    height: 54px;
-    font-size: 8px;
-    line-height: 1.08;
+    height: 110px;
+    font-size: 12px;
+    line-height: 1.3;
   }
 
   body[data-route="bank-accreditation"] .bank-accreditation-bank-legal {
     margin-bottom: 1px;
-    font-size: 7px;
-    line-height: 1;
+    font-size: 10px;
+    line-height: 1.2;
   }
 
   body[data-route="bank-accreditation"] .bank-accreditation-bank-name {
-    font-size: 9.5px;
-    line-height: 1.04;
+    font-size: 13px;
+    line-height: 1.25;
   }
 
   body[data-route="bank-accreditation"] .bank-accreditation-cell {
-    height: 21px;
+    height: 36px;
+  }
+}
+
+/* A large, searchable property matrix: scroll the data, not tiny type. */
+body[data-route="bank-accreditation"] .bank-accreditation-controls {
+  grid-template-columns: minmax(190px, 1fr) minmax(200px, 1fr) auto;
+  align-items: center;
+  padding: 10px 12px;
+}
+body[data-route="bank-accreditation"] .bank-accreditation-controls label {
+  grid-template-columns: 1fr;
+  gap: 5px;
+}
+body[data-route="bank-accreditation"] .bank-accreditation-controls .bank-accreditation-confirmed-filter {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+body[data-route="bank-accreditation"] .bank-accreditation-confirmed-filter input {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  flex: 0 0 auto;
+  accent-color: #206c59;
+}
+body[data-route="bank-accreditation"] .bank-accreditation-confirmed-filter span {
+  text-transform: none;
+  letter-spacing: 0;
+}
+body[data-route="bank-accreditation"] .bank-accreditation-legend {
+  grid-column: 1 / 3;
+  min-height: 20px;
+}
+body[data-route="bank-accreditation"] .bank-accreditation-count {
+  margin: 0;
+}
+body[data-route="bank-accreditation"] .bank-accreditation-table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: fixed;
+}
+body[data-route="bank-accreditation"] .bank-accreditation-table th,
+body[data-route="bank-accreditation"] .bank-accreditation-table td {
+  box-sizing: border-box;
+  width: 144px;
+  min-width: 144px;
+  max-width: 144px;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+body[data-route="bank-accreditation"] .bank-accreditation-table th:first-child {
+  width: 270px;
+  min-width: 270px;
+  max-width: 270px;
+  background: #f8fbfa;
+}
+body[data-route="bank-accreditation"] .bank-accreditation-table thead th:first-child {
+  background: #e6efee;
+}
+body[data-route="bank-accreditation"] .bank-accreditation-table [hidden] {
+  display: none !important;
+}
+.bank-accreditation-limited {
+  color: #855600;
+  background: #fff6df;
+}
+body[data-route="bank-accreditation"] .bank-accreditation-evidence {
+  max-height: 30vh;
+  overflow: auto;
+}
+body[data-route="bank-accreditation"] .bank-accreditation-table-shell:focus-visible {
+  outline: 2px solid #206c59;
+  outline-offset: 2px;
+}
+@media (max-width: 1023px) {
+  body[data-route="bank-accreditation"] .bank-accreditation-controls {
+    grid-template-columns: 1fr 1fr;
+  }
+  body[data-route="bank-accreditation"] .bank-accreditation-confirmed-filter,
+  body[data-route="bank-accreditation"] .bank-accreditation-legend {
+    grid-column: 1 / -1;
+  }
+  body[data-route="bank-accreditation"] .bank-accreditation-count {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+  body[data-route="bank-accreditation"] .bank-accreditation-table-shell {
+    max-height: 65vh;
+  }
+  body[data-route="bank-accreditation"] .bank-accreditation-table th:first-child {
+    width: 180px;
+    min-width: 180px;
+    max-width: 180px;
+  }
+  body[data-route="bank-accreditation"] .bank-accreditation-table thead th {
+    font-size: 12px;
+    line-height: 1.25;
+    height: 108px;
+  }
+  body[data-route="bank-accreditation"] .bank-accreditation-bank-legal {
+    font-size: 10px;
+    line-height: 1.2;
+  }
+}
+@media (max-width: 540px) {
+  body[data-route="bank-accreditation"] .bank-accreditation-controls {
+    grid-template-columns: 1fr;
+  }
+  body[data-route="bank-accreditation"] .bank-accreditation-legend span {
+    white-space: normal;
   }
 }
 

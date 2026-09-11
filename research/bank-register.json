@@ -1,0 +1,537 @@
+{
+  "source": "https://bank.gov.ua/NBU_BankInfo/get_data_branch_glbank?json",
+  "checkedAt": "2026-09-11",
+  "banks": [
+    {
+      "id": "300119",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"БАНК АЛЬЯНС\"",
+      "website": "https://alb.ua",
+      "aliases": [
+        "АТ \"БАНК АЛЬЯНС\"",
+        "JSC \"BANK ALLIANCE\""
+      ]
+    },
+    {
+      "id": "300335",
+      "name": "Акціонерне товариство \"Райффайзен Банк\"",
+      "website": "https://raiffeisen.ua",
+      "aliases": [
+        "АТ \"Райффайзен Банк\"",
+        "Raiffeisen Bank JSC"
+      ]
+    },
+    {
+      "id": "300346",
+      "name": "акціонерне товариство \"Сенс Банк\"",
+      "website": "https://sensebank.ua",
+      "aliases": [
+        "АТ \"Сенс Банк\"",
+        "JSC \"Sense Bank\""
+      ]
+    },
+    {
+      "id": "300465",
+      "name": "акціонерне товариство \"Державний ощадний банк України\"",
+      "website": "https://www.oschadbank.ua",
+      "aliases": [
+        "АТ \"Ощадбанк\"",
+        "JSC \"Oschadbank\""
+      ]
+    },
+    {
+      "id": "300506",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"ПЕРШИЙ ІНВЕСТИЦІЙНИЙ БАНК\"",
+      "website": "https://www.pinbank.ua",
+      "aliases": [
+        "АТ \"ПЕРШИЙ ІНВЕСТИЦІЙНИЙ БАНК\"",
+        "JSC \"FIRST INVESTMENT BANK\""
+      ]
+    },
+    {
+      "id": "300528",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"ОТП БАНК\"",
+      "website": "https://www.otpbank.com.ua",
+      "aliases": [
+        "АТ \"ОТП БАНК\"",
+        "OTP BANK JSC"
+      ]
+    },
+    {
+      "id": "300539",
+      "name": "Акціонерне товариство \"ІНГ Банк Україна\"",
+      "website": "https://www.ingwb.com/ua/merezha/emea/ukrayina/",
+      "aliases": [
+        "АТ \"ІНГ Банк Україна\"",
+        "JSC \"ING Bank Ukraine\""
+      ]
+    },
+    {
+      "id": "300584",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"СІТІБАНК\"",
+      "website": "https://www.citibank.com/icg/sa/emea/ukraine/",
+      "aliases": [
+        "АТ \"СІТІБАНК\"",
+        "JSC \"CITIBANK\""
+      ]
+    },
+    {
+      "id": "300614",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"КРЕДІ АГРІКОЛЬ БАНК\"",
+      "website": "https://credit-agricole.ua",
+      "aliases": [
+        "АТ \"КРЕДІ АГРІКОЛЬ БАНК\"",
+        "JSC \"CREDIT AGRICOLE BANK\""
+      ]
+    },
+    {
+      "id": "300647",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"БАНК КД\"",
+      "website": "https://clhs.com.ua",
+      "aliases": [
+        "АТ \"БАНК КД\"",
+        "JSC \"BANK KD\""
+      ]
+    },
+    {
+      "id": "300658",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"ПІРЕУС БАНК МКБ\"",
+      "website": "https://piraeusbank.ua",
+      "aliases": [
+        "АТ \"ПІРЕУС БАНК МКБ\"",
+        "JSC \"PIRAEUS BANK ICB\""
+      ]
+    },
+    {
+      "id": "305299",
+      "name": "акціонерне товариство комерційний банк \"ПриватБанк\"",
+      "website": "https://privatbank.ua",
+      "aliases": [
+        "АТ КБ \"ПриватБанк\"",
+        "JSC CB \"PrivatBank\""
+      ]
+    },
+    {
+      "id": "305749",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"БАНК КРЕДИТ ДНІПРО\"",
+      "website": "https://creditdnepr.com.ua",
+      "aliases": [
+        "АТ \"БАНК КРЕДИТ ДНІПРО\"",
+        "JSC \"BANK CREDIT DNIPRO\""
+      ]
+    },
+    {
+      "id": "306500",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"АКЦІОНЕРНИЙ БАНК \"РАДАБАНК\"",
+      "website": "https://www.radabank.com.ua",
+      "aliases": [
+        "АТ \"АБ \"РАДАБАНК\"",
+        "JOINT STOCK BANK \"RADABANK\""
+      ]
+    },
+    {
+      "id": "307123",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"ВСТ БАНК\"",
+      "website": "https://vstbank.ua",
+      "aliases": [
+        "АТ \"ВСТ БАНК\"",
+        "JSC \"VST BANK\""
+      ]
+    },
+    {
+      "id": "307770",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"АКЦЕНТ - БАНК\"",
+      "website": "https://a-bank.com.ua",
+      "aliases": [
+        "АТ \"А - БАНК\"",
+        "JSC \"A - BANK\""
+      ]
+    },
+    {
+      "id": "313582",
+      "name": "Акціонерне товариство \"МетаБанк\"",
+      "website": "https://www.mbank.com.ua",
+      "aliases": [
+        "АТ \"МетаБанк\"",
+        "\"MetaBank\""
+      ]
+    },
+    {
+      "id": "313849",
+      "name": "ПУБЛІЧНЕ АКЦІОНЕРНЕ ТОВАРИСТВО АКЦІОНЕРНИЙ  КОМЕРЦІЙНИЙ БАНК \"ІНДУСТРІАЛБАНК\"",
+      "website": "https://industrialbank.ua",
+      "aliases": [
+        "АКБ \"ІНДУСТРІАЛБАНК\"",
+        "JSCB \"INDUSTRIALBANK\""
+      ]
+    },
+    {
+      "id": "320371",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"БАНК \"УКРАЇНСЬКИЙ КАПІТАЛ\"",
+      "website": "https://ukrcapital.com.ua",
+      "aliases": [
+        "АТ \"БАНК \"УКРАЇНСЬКИЙ КАПІТАЛ\"",
+        "JSC \"BANK \"UKRAINIAN CAPITAL\""
+      ]
+    },
+    {
+      "id": "320478",
+      "name": "ПУБЛІЧНЕ АКЦІОНЕРНЕ ТОВАРИСТВО АКЦІОНЕРНИЙ БАНК \"УКРГАЗБАНК\"",
+      "website": "https://www.ukrgasbank.com",
+      "aliases": [
+        "АБ \"УКРГАЗБАНК\"",
+        "JSB \"UKRGASBANK\""
+      ]
+    },
+    {
+      "id": "320940",
+      "name": "Акціонерне товариство \"АЛЬТБАНК\"",
+      "website": "https://altbank.ua",
+      "aliases": [
+        "АТ \"АЛЬТБАНК\"",
+        "JSC \"ALTBANK\""
+      ]
+    },
+    {
+      "id": "320984",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"ПРОКРЕДИТ БАНК\"",
+      "website": "https://www.procreditbank.com.ua",
+      "aliases": [
+        "АТ \"ПРОКРЕДИТ БАНК\"",
+        "JSC \"PROCREDIT BANK\""
+      ]
+    },
+    {
+      "id": "321723",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"БТА БАНК\"",
+      "website": "http://btabank.ua",
+      "aliases": [
+        "АТ \"БТА БАНК\"",
+        "PJSC \"BTA BANK\""
+      ]
+    },
+    {
+      "id": "322001",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"УНІВЕРСАЛ БАНК\"",
+      "website": "https://www.universalbank.com.ua",
+      "aliases": [
+        "АТ \"УНІВЕРСАЛ БАНК\"",
+        "JSC \"UNIVERSAL BANK\""
+      ]
+    },
+    {
+      "id": "322313",
+      "name": "акціонерне товариство \"Державний експортно-імпортний банк України\"",
+      "website": "https://www.eximb.com",
+      "aliases": [
+        "АТ \"Укрексімбанк\"",
+        "JSC \"Ukreximbank\""
+      ]
+    },
+    {
+      "id": "322539",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"ЮНЕКС БАНК\"",
+      "website": "https://unexbank.ua",
+      "aliases": [
+        "АТ \"ЮНЕКС БАНК\"",
+        "JSC \"UNEX BANK\""
+      ]
+    },
+    {
+      "id": "322540",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"КОМІНБАНК\"",
+      "website": "https://cib.com.ua",
+      "aliases": [
+        "АТ \"КОМІНБАНК\"",
+        "JSC \"COMINBANK\""
+      ]
+    },
+    {
+      "id": "325268",
+      "name": "Акціонерне товариство Акціонерно-комерційний банк \"Львів\"",
+      "website": "http://www.banklviv.ua",
+      "aliases": [
+        "АТ АКБ \"Львів\"",
+        "JSCB \"Lviv\""
+      ]
+    },
+    {
+      "id": "325365",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"КРЕДОБАНК\"",
+      "website": "https://kredobank.com.ua",
+      "aliases": [
+        "АТ \"КРЕДОБАНК\"",
+        "JSC \"KREDOBANK\""
+      ]
+    },
+    {
+      "id": "325990",
+      "name": "Акціонерне товариство \"ОКСІ БАНК\"",
+      "website": "https://oxibank.ua",
+      "aliases": [
+        "АТ \"ОКСІ БАНК\"",
+        "OKCI BANK, JSC"
+      ]
+    },
+    {
+      "id": "328168",
+      "name": "ПУБЛІЧНЕ АКЦІОНЕРНЕ ТОВАРИСТВО \"МТБ БАНК\"",
+      "website": "https://www.mtb.ua",
+      "aliases": [
+        "ПАТ \"МТБ БАНК\"",
+        "PJSC \"MTB BANK\""
+      ]
+    },
+    {
+      "id": "328209",
+      "name": "ПУБЛІЧНЕ АКЦІОНЕРНЕ ТОВАРИСТВО АКЦІОНЕРНИЙ БАНК \"ПІВДЕННИЙ\"",
+      "website": "https://bank.com.ua",
+      "aliases": [
+        "Акціонерний банк \"Південний\"",
+        "Pivdennyi Bank"
+      ]
+    },
+    {
+      "id": "331489",
+      "name": "Акціонерне товариство \"Полтава-банк\"",
+      "website": "https://poltavabank.com",
+      "aliases": [
+        "АТ \"Полтава-банк\"",
+        "JSC \"Poltava-bank\""
+      ]
+    },
+    {
+      "id": "334840",
+      "name": "ПРИВАТНЕ АКЦІОНЕРНЕ ТОВАРИСТВО \"БАНК ФАМІЛЬНИЙ\"",
+      "website": "https://fbank.com.ua",
+      "aliases": [
+        "ПрАТ \"БАНК ФАМІЛЬНИЙ\"",
+        "PJSC BANK FAMILNY"
+      ]
+    },
+    {
+      "id": "334851",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"ПЕРШИЙ УКРАЇНСЬКИЙ МІЖНАРОДНИЙ БАНК\"",
+      "website": "https://www.pumb.ua",
+      "aliases": [
+        "АТ \"ПУМБ\"",
+        "JSC \"FUIB\""
+      ]
+    },
+    {
+      "id": "336310",
+      "name": "Акціонерне товариство \"Ідея Банк\"",
+      "website": "https://ideabank.ua/uk",
+      "aliases": [
+        "АТ \"Ідея Банк\"",
+        "JSC \"Idea Bank\""
+      ]
+    },
+    {
+      "id": "339050",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"КРИСТАЛБАНК\"",
+      "website": "https://crystalbank.com.ua",
+      "aliases": [
+        "АТ \"КРИСТАЛБАНК\"",
+        "JSC \"CRYSTALBANK\""
+      ]
+    },
+    {
+      "id": "339500",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"ТАСКОМБАНК\"",
+      "website": "https://tascombank.ua",
+      "aliases": [
+        "АТ \"ТАСКОМБАНК\"",
+        "TASCOMBANK JSC"
+      ]
+    },
+    {
+      "id": "351005",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"УКРСИББАНК\"",
+      "website": "https://ukrsibbank.com",
+      "aliases": [
+        "АТ \"УКРСИББАНК\"",
+        "JSС \"UKRSIBBANK\""
+      ]
+    },
+    {
+      "id": "351254",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"СКАЙ БАНК\"",
+      "website": "https://www.sky.bank/uk",
+      "aliases": [
+        "АТ \"СКАЙ БАНК\"",
+        "JSC \"SKY BANK\""
+      ]
+    },
+    {
+      "id": "351607",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"СХІДНО-УКРАЇНСЬКИЙ БАНК \"ГРАНТ\"",
+      "website": "https://www.grant.ua",
+      "aliases": [
+        "АТ \"БАНК \"ГРАНТ\"",
+        "JSC \"BANK \"GRANT\""
+      ]
+    },
+    {
+      "id": "353100",
+      "name": "Акціонерне товариство \"Полікомбанк\"",
+      "website": "https://www.policombank.com",
+      "aliases": [
+        "Полікомбанк",
+        "Policombank"
+      ]
+    },
+    {
+      "id": "353489",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"АСВІО БАНК\"",
+      "website": "https://www.asviobank.ua/ua",
+      "aliases": [
+        "АТ \"АСВІО БАНК\"",
+        "JSC \"ASVIO BANK\""
+      ]
+    },
+    {
+      "id": "370140",
+      "name": "ПРИВАТНЕ АКЦІОНЕРНЕ ТОВАРИСТВО  “ПЕРЕХІДНИЙ БАНК “ЮТЕ БАНК”",
+      "website": null,
+      "aliases": [
+        "ПрАТ “ПЕРЕХІДНИЙ БАНК “ЮТЕ БАНК”",
+        "PRIVATE JOINT STOCK COMPANY “BRIDGE BANK “IUTE BANK”"
+      ]
+    },
+    {
+      "id": "377090",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"ЄВРОПЕЙСЬКИЙ ПРОМИСЛОВИЙ БАНК\"",
+      "website": "https://europrombank.ua",
+      "aliases": [
+        "АТ \"ЄПБ\"",
+        "JSC \"EIB\""
+      ]
+    },
+    {
+      "id": "380106",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"БАНК ТРАСТ-КАПІТАЛ\"",
+      "website": "https://tc-bank.com",
+      "aliases": [
+        "АТ \"БАНК ТРАСТ-КАПІТАЛ\"",
+        "JSC \"BANK TRUST-CAPITAL\""
+      ]
+    },
+    {
+      "id": "380281",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"БАНК ІНВЕСТИЦІЙ ТА ЗАОЩАДЖЕНЬ\"",
+      "website": "https://www.bisbank.com.ua",
+      "aliases": [
+        "АТ \"БІЗБАНК\"",
+        "JSC \"BISBANK\""
+      ]
+    },
+    {
+      "id": "380366",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"НЕКСЕНТ БАНК\"",
+      "website": "https://www.nexentbank.com.ua/",
+      "aliases": [
+        "АТ \"НЕКСЕНТ БАНК\"",
+        "JSC \"NEXENT BANK\""
+      ]
+    },
+    {
+      "id": "380441",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"ВЕСТ ФАЙНЕНС ЕНД КРЕДИТ БАНК\"",
+      "website": "https://www.creditwest.ua/uk",
+      "aliases": [
+        "АТ \"КРЕДИТВЕСТ БАНК\"",
+        "JSC \"CREDITWEST BANK\""
+      ]
+    },
+    {
+      "id": "380526",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"КОМЕРЦІЙНИЙ БАНК \"ГЛОБУС\"",
+      "website": "https://globusbank.com.ua",
+      "aliases": [
+        "АТ \"КБ \"ГЛОБУС\"",
+        "JSC \"CB \"GLOBUS\""
+      ]
+    },
+    {
+      "id": "380548",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"АГРОПРОСПЕРІС БАНК\"",
+      "website": "https://ap-bank.com",
+      "aliases": [
+        "АТ \"АГРОПРОСПЕРІС БАНК\"",
+        "JSC \"AP BANK\""
+      ]
+    },
+    {
+      "id": "380582",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"МІЖНАРОДНИЙ ІНВЕСТИЦІЙНИЙ БАНК\"",
+      "website": "https://ii-bank.com.ua",
+      "aliases": [
+        "АТ \"МІБ\"",
+        "JSC MIB"
+      ]
+    },
+    {
+      "id": "380634",
+      "name": "ПУБЛІЧНЕ АКЦІОНЕРНЕ ТОВАРИСТВО \"КОМЕРЦІЙНИЙ БАНК \"АКОРДБАНК\"",
+      "website": "https://accordbank.com.ua",
+      "aliases": [
+        "ПуАТ \"КБ \"АКОРДБАНК\"",
+        "\"CB \"ACCORDBANK\" PuJSC"
+      ]
+    },
+    {
+      "id": "380645",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"БАНК 3/4\"",
+      "website": "https://bank34.ua",
+      "aliases": [
+        "АТ \"БАНК 3/4\"",
+        "JSC \"BANK 3/4\""
+      ]
+    },
+    {
+      "id": "380731",
+      "name": "Акціонерне товариство \"Дойче Банк ДБУ\"",
+      "website": "https://country.db.com/ukraine",
+      "aliases": [
+        "АТ \"Дойче Банк ДБУ\"",
+        "JSC Deutsche Bank DBU"
+      ]
+    },
+    {
+      "id": "380797",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"СЕБ КОРПОРАТИВНИЙ БАНК\"",
+      "website": "https://sebgroup.com/about-us/our-locations/international-offices/seb-in-ukraine",
+      "aliases": [
+        "АТ \"СЕБ КОРПОРАТИВНИЙ БАНК\"",
+        "JSC \"SEB CORPORATE BANK\" або S | E | B"
+      ]
+    },
+    {
+      "id": "380838",
+      "name": "Акціонерне товариство \"ПРАВЕКС БАНК\"",
+      "website": "https://www.pravex.com.ua",
+      "aliases": [
+        "АТ \"ПРАВЕКС БАНК\"",
+        "\"PRAVEX BANK\" JSC"
+      ]
+    },
+    {
+      "id": "380883",
+      "name": "Акціонерне товариство \"Український банк реконструкції та розвитку\"",
+      "website": "https://www.ubrr.com.ua",
+      "aliases": [
+        "АТ \"УБРР\"",
+        "JSC \"UBRD\""
+      ]
+    },
+    {
+      "id": "380946",
+      "name": "АКЦІОНЕРНЕ ТОВАРИСТВО \"БАНК АВАНГАРД\"",
+      "website": "https://avgd.ua",
+      "aliases": [
+        "АТ \"БАНК АВАНГАРД\"",
+        "JSC \"BANK AVANGARD\""
+      ]
+    }
+  ]
+}
