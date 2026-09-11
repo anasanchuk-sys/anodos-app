@@ -1,10 +1,10 @@
-const CACHE_NAME = "platform-shell-glossary-v1";
+const CACHE_NAME = "platform-shell-contract-quality-v2";
 const ASSETS = [
   "./contract-quality.html",
-  "./contract-quality.css?v=1",
-  "./contract-quality.mjs?v=1",
-  "./contract-quality-reader.mjs?v=1",
-  "./contract-quality-report.mjs?v=1",
+  "./contract-quality.css?v=2",
+  "./contract-quality.mjs?v=2",
+  "./contract-quality-reader.mjs?v=2",
+  "./contract-quality-report.mjs?v=2",
   "./contacts.html",
   "./contacts.css?v=1",
   "./contacts.js?v=2",

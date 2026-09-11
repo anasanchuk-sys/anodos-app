@@ -1,5 +1,5 @@
-import {readQualityFile} from './contract-quality-reader.mjs?v=1';
-import {qualityPdfBlob} from './contract-quality-report.mjs?v=1';
+import {readQualityFile} from './contract-quality-reader.mjs?v=2';
+import {qualityPdfBlob} from './contract-quality-report.mjs?v=2';
 const endpoint='https://anodos-contract-quality.mesquite-wishbone.workers.dev';
 const $=id=>document.getElementById(id),escape=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let files=[],job=null,result=null,busy=false,available=false,pollTimer,run=0;
@@ -31,7 +31,8 @@ async function poll(generation=run){
   if(s.status==='completed'){const report=await api('/jobs/'+job.id+'/result');if(generation!==run)return;render(report);$('progress').hidden=true;setBusy(false);return;}
   if(s.status==='failed'){throw new Error(s.error||'Аналіз не завершено.');}
   if(s.status==='uploading'){setBusy(false);$('progress').hidden=true;error('Завантаження не було завершено. Почніть нову перевірку з повним пакетом файлів.');return;}
-  progress(s.status==='queued'?'Договір у черзі':'Читаємо та оцінюємо умови','Перевірка триває у хмарі. Ви можете закрити сторінку та повернутися за приватним посиланням.');
+  const detail=s.progress?.total>1?`Опрацьовано ${s.progress.completed} із ${s.progress.total} частин повного пакета. Результати об’єднаємо в один звіт. `:'';
+  progress(s.status==='queued'?'Продовжуємо перевірку':'Читаємо та оцінюємо умови',detail+'Перевірка триває у хмарі. Ви можете повернутися за приватним посиланням.');
   pollTimer=setTimeout(()=>poll(generation),5000);
  }catch(e){if(generation!==run)return;$('progress').hidden=true;setBusy(false);error(e.message+' Якщо з’єднання перервалося, відкрийте збережене посилання ще раз.');}
 }
@@ -41,7 +42,7 @@ $('review-form').addEventListener('submit',async e=>{
  try{
   const docs=[],manifest=[];
   for(const f of files){progress('Читаємо '+f.name,'Залишайте сторінку відкритою під час розпізнавання та завантаження. Скановані документи потребують більше часу.');docs.push(await readQualityFile(f));manifest.push({name:f.name,size:f.size,sha256:await sha(await f.arrayBuffer())});}
-  if(docs.reduce((n,d)=>n+d.text.length,0)>180000)throw new Error('Обсяг перевищує 180 000 символів. Для повного пакета потрібен окремий розгляд. Текст не обрізано.');
+  if(docs.reduce((n,d)=>n+d.text.length,0)>4000000)throw new Error('Пакет перевищує 4 мільйони символів. Розділіть незалежні договори на окремі перевірки; текст не обрізано.');
   job=await api('/jobs',{method:'POST',json:{files:manifest,consent:'cloud-and-britmark-archive-v1'},token:null});
   for(let i=0;i<files.length;i++){const file=files[i];for(let start=0,j=0;start<file.size;start+=job.chunkSize,j++){progress('Зберігаємо '+file.name,Math.round(start/file.size*100)+'%');const bytes=await file.slice(start,start+job.chunkSize).arrayBuffer();await api('/jobs/'+job.id+'/chunks/'+i+'/'+j,{method:'PUT',bytes});}}
   await api('/jobs/'+job.id+'/submit',{method:'POST',json:{documents:docs}});recovery();await poll(generation);
