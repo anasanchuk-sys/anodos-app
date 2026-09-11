@@ -1788,215 +1788,7 @@ const foundationSources = [
   "Матеріали для навчання/04_Фінансові_ризики"
 ];
 
-const glossaryTerms = [
-  {
-    id: "glossary-abandonment",
-    term: "Абандон",
-    english: "Abandonment",
-    group: "Загальні страхові поняття",
-    definition: "Передача страхувальником страховикові права власності на застраховане майно з метою отримання повного страхового відшкодування у випадках, передбачених договором або законодавством.",
-    practice: "Найчастіше використовується у морському страхуванні, але може зустрічатися й в окремих видах страхування майна.",
-    related: ["Повна загибель", "Страхове відшкодування"]
-  },
-  {
-    id: "glossary-accident",
-    term: "Аварія",
-    english: "Accident",
-    group: "Загальні страхові поняття",
-    definition: "Раптова непередбачувана подія, що призводить до пошкодження, знищення або втрати майна.",
-    practice: "Аварія сама по собі не є страховим випадком. Вона стає страховим випадком лише тоді, коли належить до переліку застрахованих ризиків.",
-    related: ["Страховий ризик", "Страховий випадок"]
-  },
-  {
-    id: "glossary-underwriter",
-    term: "Андеррайтер",
-    english: "Underwriter",
-    group: "Учасники та ролі",
-    definition: "Фахівець страховика або перестраховика, який аналізує ризик, оцінює можливість його прийняття на страхування, визначає умови договору, страхову суму, тариф, франшизу та інші параметри покриття.",
-    practice: "У корпоративному майновому страхуванні рішення андеррайтера визначає кінцеві умови договору.",
-    related: ["Андеррайтинг", "Страховий тариф"]
-  },
-  {
-    id: "glossary-underwriting",
-    term: "Андеррайтинг",
-    english: "Underwriting",
-    group: "Оцінка ризику",
-    definition: "Комплекс заходів з аналізу ризику перед укладенням договору страхування, що включає оцінку ймовірності збитку, можливого максимального збитку, технічного стану об'єкта, систем протипожежного захисту, історії збитковості та інших факторів.",
-    practice: "Якісний андеррайтинг дозволяє забезпечити адекватне страхове покриття та економічно обґрунтований тариф.",
-    related: ["Інспекція ризику", "PML", "Страховий тариф"]
-  },
-  {
-    id: "glossary-beneficiary",
-    term: "Бенефіціар",
-    english: "Beneficiary",
-    group: "Учасники та ролі",
-    definition: "Особа, визначена договором страхування, яка має право отримати страхове відшкодування у випадках, передбачених договором.",
-    note: "У майновому страхуванні частіше використовується термін «вигодонабувач»."
-  },
-  {
-    id: "glossary-loss-payee",
-    term: "Вигодонабувач",
-    english: "Loss Payee / Beneficiary",
-    group: "Учасники та ролі",
-    definition: "Фізична або юридична особа, на користь якої здійснюється виплата страхового відшкодування відповідно до умов договору.",
-    practice: "Банки часто зазначаються вигодонабувачами при страхуванні заставного майна.",
-    related: ["Іпотека", "Заставодержатель"]
-  },
-  {
-    id: "glossary-insurance-contract",
-    term: "Договір страхування",
-    english: "Insurance Policy / Insurance Contract",
-    group: "Документи",
-    definition: "Письмова угода між страховиком і страхувальником, що визначає предмет страхування, ризики, виключення, страхову суму, премію, строк дії та порядок врегулювання збитків.",
-    practice: "Договір є основним документом, який визначає права та обов'язки сторін."
-  },
-  {
-    id: "glossary-insured-property",
-    term: "Застраховане майно",
-    english: "Insured Property",
-    group: "Майно",
-    definition: "Будівлі, споруди, обладнання, машини, товарно-матеріальні цінності або інше майно, зазначене в договорі страхування."
-  },
-  {
-    id: "glossary-insurable-interest",
-    term: "Майновий інтерес",
-    english: "Insurable Interest",
-    group: "Майно",
-    definition: "Законний економічний інтерес особи щодо збереження майна від загибелі, пошкодження або втрати.",
-    practice: "Без наявності майнового інтересу договір страхування не може бути укладений."
-  },
-  {
-    id: "glossary-reinsurance",
-    term: "Перестрахування",
-    english: "Reinsurance",
-    group: "Перестрахування",
-    definition: "Передача страховиком частини прийнятого ризику іншому страховикові або перестраховику з метою обмеження власної відповідальності.",
-    practice: "Великі корпоративні ризики майже завжди перестраховуються на міжнародному ринку."
-  },
-  {
-    id: "glossary-reinsurer",
-    term: "Перестраховик",
-    english: "Reinsurer",
-    group: "Перестрахування",
-    definition: "Страхова або перестрахувальна компанія, яка приймає частину ризику від первинного страховика."
-  },
-  {
-    id: "glossary-policy",
-    term: "Поліс",
-    english: "Policy",
-    group: "Документи",
-    definition: "Документ, що підтверджує укладення договору страхування та містить його основні умови."
-  },
-  {
-    id: "glossary-premium",
-    term: "Премія",
-    english: "Insurance Premium",
-    group: "Фінансові параметри",
-    definition: "Плата, яку страхувальник сплачує страховикові за надане страхове покриття.",
-    practice: "Розмір премії визначається як добуток страхової суми на страховий тариф з урахуванням індивідуальних коригувальних коефіцієнтів."
-  },
-  {
-    id: "glossary-risk",
-    term: "Ризик",
-    english: "Risk",
-    group: "Ризики",
-    definition: "Імовірність настання події, здатної спричинити матеріальний збиток.",
-    note: "У страхуванні поняття «ризик» може означати як саму небезпечну подію, так і об'єкт, що підлягає оцінці."
-  },
-  {
-    id: "glossary-insurer",
-    term: "Страховик",
-    english: "Insurer",
-    group: "Учасники та ролі",
-    definition: "Юридична особа, яка має право здійснювати страхову діяльність відповідно до законодавства та укладає договори страхування."
-  },
-  {
-    id: "glossary-policyholder",
-    term: "Страхувальник",
-    english: "Policyholder / Insured",
-    group: "Учасники та ролі",
-    definition: "Фізична або юридична особа, яка укладає договір страхування, сплачує страхову премію та має права й обов'язки, визначені договором."
-  },
-  {
-    id: "glossary-insurance-payment",
-    term: "Страхова виплата",
-    english: "Insurance Payment",
-    group: "Виплата",
-    definition: "Грошова сума, яку страховик виплачує відповідно до умов договору після визнання події страховим випадком."
-  },
-  {
-    id: "glossary-insurance-indemnity",
-    term: "Страхове відшкодування",
-    english: "Insurance Indemnity",
-    group: "Виплата",
-    definition: "Частина страхової виплати, що компенсує фактичний майновий збиток у межах умов договору.",
-    note: "У майновому страхуванні використовується саме термін «страхове відшкодування», оскільки діє принцип відшкодування збитків."
-  },
-  {
-    id: "glossary-insured-event",
-    term: "Страховий випадок",
-    english: "Insured Event",
-    group: "Ризики",
-    definition: "Подія, передбачена договором страхування, після настання якої виникає обов'язок страховика здійснити страхову виплату."
-  },
-  {
-    id: "glossary-insured-risk",
-    term: "Страховий ризик",
-    english: "Insured Risk",
-    group: "Ризики",
-    definition: "Небезпека або подія, на випадок настання якої надається страхове покриття.",
-    examples: ["пожежа", "вибух", "удар блискавки", "стихійні явища", "протиправні дії третіх осіб"]
-  },
-  {
-    id: "glossary-sum-insured",
-    term: "Страхова сума",
-    english: "Sum Insured",
-    group: "Фінансові параметри",
-    definition: "Максимальний розмір відповідальності страховика за конкретним договором або окремим об'єктом страхування."
-  },
-  {
-    id: "glossary-insurance-coverage",
-    term: "Страхове покриття",
-    english: "Insurance Coverage",
-    group: "Покриття",
-    definition: "Сукупність ризиків, умов, лімітів та виключень, у межах яких страховик бере на себе відповідальність."
-  },
-  {
-    id: "glossary-insurance-rate",
-    term: "Страховий тариф",
-    english: "Insurance Rate",
-    group: "Фінансові параметри",
-    definition: "Вартість страхового покриття, що визначається у відсотках або проміле від страхової суми."
-  },
-  {
-    id: "glossary-deductible",
-    term: "Франшиза",
-    english: "Deductible / Excess",
-    group: "Фінансові параметри",
-    definition: "Частина збитку, яка не підлягає відшкодуванню страховиком і залишається на відповідальності страхувальника."
-  },
-  {
-    id: "glossary-absolute-deductible",
-    term: "Франшиза безумовна",
-    english: "Absolute Deductible",
-    group: "Фінансові параметри",
-    definition: "Франшиза, яка віднімається із суми відшкодування незалежно від розміру збитку."
-  },
-  {
-    id: "glossary-conditional-deductible",
-    term: "Франшиза умовна",
-    english: "Conditional Deductible",
-    group: "Фінансові параметри",
-    definition: "Франшиза, за якої збитки, що не перевищують її розміру, не відшкодовуються, а збитки понад встановлений розмір компенсуються повністю, якщо інше не передбачено договором."
-  },
-  {
-    id: "glossary-loss",
-    term: "Збиток",
-    english: "Loss",
-    group: "Виплата",
-    definition: "Фактична грошова оцінка пошкодження, знищення або втрати майна внаслідок страхового випадку."
-  }
-];
+const glossaryTerms = window.AnodosGlossary?.terms || [];
 
 const progressKey = "platform-progress-v2";
 const editorKey = "platform-editor-v1";
@@ -2144,7 +1936,8 @@ let compassSearchTerm = "";
 let compassSearchTimer = null;
 let glossarySearchTerm = "";
 let glossaryResultsExpanded = false;
-let activeGlossaryTermId = "glossary-abandonment";
+let activeGlossaryTermId = "glossary-property-insurance";
+let glossaryGroup = "";
 let glossarySearchTimer = null;
 let munichSearchTerm = "";
 let munichResultsExpanded = false;
@@ -8106,7 +7899,7 @@ function scenarioSearchEntries() {
       title: glossaryTermLabel(term),
       meta: term.group,
       description: term.definition,
-      text: [term.practice, term.note, ...(term.related || []), ...(term.examples || [])].join(" "),
+      text: [term.practice, term.note, ...(term.aliases || []), ...(term.examples || [])].join(" "),
       action: "glossary",
       termId: term.id,
       boost: 8
@@ -8245,7 +8038,8 @@ function openScenarioResult(target, query = scenarioSearchTerm) {
 
   if (action === "glossary") {
     activeGlossaryTermId = target.dataset.scenarioTerm || activeGlossaryTermId;
-    glossarySearchTerm = query;
+    glossarySearchTerm = "";
+    glossaryGroup = "";
     glossaryResultsExpanded = false;
     setRoute("glossary");
     return;
@@ -10493,142 +10287,64 @@ function renderMunichContent() {
   `;
 }
 
-const glossarySearchClusters = [
-  {
-    label: "договір",
-    triggers: ["догов", "поліс", "контракт", "умов", "документ"],
-    terms: ["договір страхування", "поліс", "страхувальник", "страховик", "премія", "страхове покриття"]
-  },
-  {
-    label: "майно",
-    triggers: ["майн", "об'єкт", "обєкт", "будів", "споруд", "обладнан", "товар", "цінност"],
-    terms: ["застраховане майно", "майновий інтерес", "страхова сума", "збиток", "ризик"]
-  },
-  {
-    label: "виплата",
-    triggers: ["виплат", "відшкод", "компенс", "збит", "врегул", "гроші"],
-    terms: ["страхова виплата", "страхове відшкодування", "страховий випадок", "збиток", "франшиза"]
-  },
-  {
-    label: "франшиза",
-    triggers: ["франш", "самоуч", "утриман", "не відшкод"],
-    terms: ["франшиза", "франшиза безумовна", "франшиза умовна", "збиток", "страхове відшкодування"]
-  },
-  {
-    label: "ризик",
-    triggers: ["ризик", "поді", "авар", "пожеж", "вибух", "небезп"],
-    terms: ["ризик", "страховий ризик", "страховий випадок", "аварія", "страхове покриття"]
-  },
-  {
-    label: "оцінка",
-    triggers: ["андер", "оцін", "тариф", "pml", "інспек", "прийнят"],
-    terms: ["андеррайтер", "андеррайтинг", "страховий тариф", "страхова сума", "премія"]
-  },
-  {
-    label: "перестрахування",
-    triggers: ["перестрах", "міжнарод", "великий ризик", "reinsur"],
-    terms: ["перестрахування", "перестраховик", "страховик", "ризик"]
-  },
-  {
-    label: "вигодонабувач",
-    triggers: ["вигод", "бенеф", "банк", "застав", "іпотек", "отримувач"],
-    terms: ["вигодонабувач", "бенефіціар", "страхове відшкодування", "застраховане майно"]
-  }
-];
-
 function glossaryTermLabel(item) {
   return `${item.term}${item.english ? ` (${item.english})` : ""}`;
 }
 
+function normalizeGlossaryText(value) {
+  return normalizeSemanticText(value).normalize("NFKC")
+    .replace(/['’‘`´]/g, "")
+    .replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+}
+
 function glossarySearchText(item) {
   if (!item.searchText) {
-    item.searchText = normalizeSemanticText([
-      item.term,
-      item.english,
-      item.group,
-      item.definition,
-      item.practice,
-      item.note,
-      ...(item.related || []),
-      ...(item.examples || [])
+    item.searchText = normalizeGlossaryText([
+      item.term, item.english, item.group, item.definition, item.practice,
+      ...(item.aliases || []), ...(item.examples || [])
     ].join(" "));
   }
   return item.searchText;
 }
 
 function glossaryQueryProfile() {
-  const normalizedQuery = normalizeSemanticText(glossarySearchTerm);
-  const terms = new Set(splitSearchTerms(glossarySearchTerm));
-  const labels = new Set();
-
-  glossarySearchClusters.forEach((cluster) => {
-    if (cluster.triggers.some((trigger) => normalizedQuery.includes(normalizeSemanticText(trigger)))) {
-      labels.add(cluster.label);
-      cluster.terms.forEach((term) => terms.add(normalizeSemanticText(term)));
-    }
-  });
-
-  return {
-    terms: uniqueTerms([...terms]).sort((a, b) => b.length - a.length),
-    labels: [...labels]
-  };
+  const query = normalizeGlossaryText(glossarySearchTerm);
+  return { query, terms: [...new Set(query.split(" ").filter(Boolean))] };
 }
 
 function scoreGlossaryTerm(item, profile) {
-  if (!profile.terms.length) {
-    return 1;
-  }
-
+  if (!profile.terms.length) return 1;
+  const names = [item.term, item.english, ...(item.aliases || [])].map(normalizeGlossaryText);
+  // Short English abbreviations must match a word, not a fragment of another word.
+  const contains = (value, token) => token.length <= 2
+    ? value.split(" ").includes(token)
+    : value.includes(token);
+  const title = names.join(" ");
   const haystack = glossarySearchText(item);
-  const term = normalizeSemanticText(item.term);
-  const english = normalizeSemanticText(item.english || "");
-  let score = 0;
-
-  profile.terms.forEach((entry) => {
-    if (!entry) {
-      return;
-    }
-    if (term === entry || english === entry) {
-      score += 50;
-    }
-    if (term.includes(entry) || english.includes(entry)) {
-      score += 12;
-    }
-    if (haystack.includes(entry)) {
-      const matches = haystack.split(entry).length - 1;
-      score += Math.min(matches, 6);
-    }
-  });
-
+  if (names.includes(profile.query)) return 1000;
+  if (!profile.terms.every(token => contains(haystack, token))) return 0;
+  let score = names.some(name => name.startsWith(profile.query)) ? 150 : 0;
+  if (profile.terms.every(token => contains(title, token))) score += 100;
+  for (const token of profile.terms) {
+    if (contains(title, token)) score += 20;
+    if (contains(haystack, token)) score += 1;
+  }
   return score;
 }
 
 function filteredGlossaryTerms() {
   const profile = glossaryQueryProfile();
-  const scored = glossaryTerms.map((item) => ({
-    item,
-    score: scoreGlossaryTerm(item, profile)
-  }));
-
-  if (!profile.terms.length) {
-    return scored;
-  }
-
-  return scored
-    .filter((result) => result.score > 0)
-    .sort((first, second) => second.score - first.score || first.item.term.localeCompare(second.item.term, "uk"));
+  return glossaryTerms
+    .filter(item => !glossaryGroup || item.group === glossaryGroup)
+    .map(item => ({ item, score: scoreGlossaryTerm(item, profile) }))
+    .filter(result => result.score > 0)
+    .sort((a, b) => b.score - a.score || a.item.term.localeCompare(b.item.term, "uk"));
 }
 
 function currentGlossaryTerm(results) {
-  if (!results.length) {
-    return null;
-  }
-  let current = results.find((result) => result.item.id === activeGlossaryTermId)?.item;
-  if (!current) {
-    current = results[0].item;
-    activeGlossaryTermId = current.id;
-  }
-  return current;
+  const current = results.find(result => result.item.id === activeGlossaryTermId)?.item || results[0]?.item;
+  if (current) activeGlossaryTermId = current.id;
+  return current || null;
 }
 
 function setActiveGlossaryTerm(termId) {
@@ -10636,12 +10352,7 @@ function setActiveGlossaryTerm(termId) {
   glossaryResultsExpanded = false;
   document.getElementById("glossarySearch")?.blur();
   renderGlossaryContent();
-  window.requestAnimationFrame(() => {
-    const termNode = document.getElementById("glossaryTerm");
-    if (termNode) {
-      termNode.scrollTop = 0;
-    }
-  });
+  window.requestAnimationFrame(() => document.getElementById("glossaryTerm")?.focus({ preventScroll: true }));
 }
 
 function renderGlossary() {
@@ -10652,79 +10363,86 @@ function renderGlossary() {
           <div>
             <p class="eyebrow">Словник</p>
             <h1>Майнове страхування</h1>
-            <p>Терміни, практичні пояснення і пошук за близьким змістом.</p>
+            <p>Українські пояснення, англійські відповідники та практичні приклади.</p>
           </div>
         </header>
-        <label class="law-search-label reference-search-label" for="glossarySearch">
-          <span>Пошук у словнику</span>
-          <input id="glossarySearch" type="search" autocomplete="off" placeholder="що шукаємо?" value="${escapeHtml(glossarySearchTerm)}" />
-        </label>
-        <div id="glossaryResults" class="reference-results"></div>
-        <section id="glossaryTerm" class="law-article-shell reference-article-shell" aria-live="polite"></section>
+        <div class="glossary-controls">
+          <label class="law-search-label reference-search-label" for="glossarySearch">
+            <span>Пошук у словнику</span>
+            <input id="glossarySearch" type="search" autocomplete="off" placeholder="Термін, скорочення або ситуація" value="${escapeHtml(glossarySearchTerm)}" />
+          </label>
+          <div class="glossary-toolbar">
+            <label for="glossaryGroup"><span class="glossary-sr-only">Тема словника</span>
+              <select id="glossaryGroup">
+                <option value="">Усі теми</option>
+                ${(window.AnodosGlossary?.groups || []).map(group => `<option value="${escapeHtml(group)}" ${group === glossaryGroup ? "selected" : ""}>${escapeHtml(group)}</option>`).join("")}
+              </select>
+            </label>
+            <button type="button" class="secondary-action" data-glossary-browse aria-controls="glossaryResults" aria-expanded="${glossaryResultsExpanded}">${glossaryResultsExpanded ? "Згорнути список" : "Список термінів"}</button>
+          </div>
+        </div>
+        <div id="glossaryResults" class="reference-results" aria-live="polite"></div>
+        <section id="glossaryTerm" class="law-article-shell reference-article-shell" tabindex="-1" aria-live="polite" aria-label="Пояснення терміна"></section>
       </section>
-    </section>
-  `;
+    </section>`;
   renderGlossaryContent();
 }
 
 function renderGlossaryContent() {
   const resultsNode = document.getElementById("glossaryResults");
   const termNode = document.getElementById("glossaryTerm");
-  if (!resultsNode || !termNode) {
-    return;
-  }
-
+  if (!resultsNode || !termNode) return;
   const profile = glossaryQueryProfile();
   const results = filteredGlossaryTerms();
   const current = currentGlossaryTerm(results);
-  const highlightTerms = profile.terms.slice(0, 28);
-  const showResultList = glossaryResultsExpanded;
-  const visibleResults = showResultList ? results : [];
-
+  const browseButton = document.querySelector("[data-glossary-browse]");
+  if (browseButton) {
+    browseButton.setAttribute("aria-expanded", String(glossaryResultsExpanded));
+    browseButton.textContent = glossaryResultsExpanded ? "Згорнути список" : "Список термінів";
+  }
   if (!current) {
-    resultsNode.innerHTML = `
-      <div class="law-empty">
-        <strong>Нічого не знайдено</strong>
-        <p>Спробуй описати запит іншими словами: виплата, франшиза, договір, майно, ризик.</p>
-      </div>
-    `;
+    resultsNode.innerHTML = `<div class="law-empty">
+      <strong>${glossaryTerms.length ? "Нічого не знайдено" : "Не вдалося завантажити словник"}</strong>
+      <p>${glossaryTerms.length ? "Спробуйте коротший термін, англійське скорочення або виберіть усі теми." : "Оновіть сторінку, щоб завантажити терміни."}</p>
+      ${glossaryTerms.length ? '<button type="button" class="secondary-action" data-glossary-reset>Показати всі терміни</button>' : ""}
+    </div>`;
     termNode.innerHTML = "";
     return;
   }
-
   resultsNode.innerHTML = `
     <div class="munich-result-summary glossary-result-summary">
-      <strong>${profile.terms.length ? `${results.length} збігів` : `${glossaryTerms.length} термінів`}</strong>
+      <strong>${profile.query || glossaryGroup ? `Знайдено: ${results.length} із ${glossaryTerms.length}` : `Термінів: ${glossaryTerms.length}`}</strong>
       <span>${escapeHtml(current.term)}</span>
     </div>
-    ${showResultList ? `
-      <select id="glossaryTermSelect" class="munich-clause-select glossary-term-select" size="${Math.min(Math.max(visibleResults.length, 2), 9)}" aria-label="Обрати термін зі словника">
-        ${visibleResults.map((result) => `
-          <option value="${escapeHtml(result.item.id)}" ${result.item.id === current.id ? "selected" : ""}>
-            ${escapeHtml(glossaryTermLabel(result.item))}
-          </option>
-        `).join("")}
-      </select>
-    ` : ""}
-  `;
-
+    ${glossaryResultsExpanded ? `
+      <select id="glossaryTermSelect" class="munich-clause-select glossary-term-select" size="${Math.min(Math.max(results.length, 2), 7)}" aria-label="Обрати термін зі словника">
+        ${results.map(({item}) => `<option value="${escapeHtml(item.id)}" ${item.id === current.id ? "selected" : ""}>${escapeHtml(glossaryTermLabel(item))}</option>`).join("")}
+      </select>` : ""}`;
+  const registry = window.AnodosGlossary?.sources || {};
+  const sourceItems = (current.sourceIds || []).map(id => ({id, ...registry[id]})).filter(source => source.url);
   termNode.innerHTML = `
     <article class="law-article glossary-article">
       <p class="section-kicker">${escapeHtml(current.group)}</p>
-      <h2>${escapeHtml(glossaryTermLabel(current))}</h2>
+      <h2>${escapeHtml(current.term)}</h2>
+      <p class="glossary-english" lang="en">${escapeHtml(current.english || "")}</p>
       <div class="law-body">
-        <p>${highlightLawText(current.definition, highlightTerms)}</p>
-        ${current.practice ? `<p><strong>Практичне застосування:</strong> ${highlightLawText(current.practice, highlightTerms)}</p>` : ""}
-        ${current.note ? `<p><strong>Примітка:</strong> ${highlightLawText(current.note, highlightTerms)}</p>` : ""}
-        ${current.examples?.length ? `<p><strong>Приклади:</strong> ${highlightLawText(current.examples.join(", "), highlightTerms)}.</p>` : ""}
-        ${current.related?.length ? `
-          <div class="glossary-related" aria-label="Пов'язані терміни">
-            ${current.related.map((term) => `<span>${escapeHtml(term)}</span>`).join("")}
-          </div>
-        ` : ""}
+        <p>${escapeHtml(current.definition)}</p>
+        ${current.practice ? `<p><strong>На практиці:</strong> ${escapeHtml(current.practice)}</p>` : ""}
+        ${current.note ? `<p>${escapeHtml(current.note)}</p>` : ""}
+        ${current.related?.length ? `<div class="glossary-related" aria-label="Пов'язані терміни">
+          ${current.related.map(id => glossaryTerms.find(item => item.id === id)).filter(Boolean).map(item => `<button type="button" data-glossary-related="${escapeHtml(item.id)}">${escapeHtml(item.term)}</button>`).join("")}
+        </div>` : ""}
+        <details class="glossary-sources">
+          <summary>Джерела та контекст</summary>
+          <ul>${sourceItems.map(source => `<li>${source.url.startsWith("#")
+            ? `<button type="button" class="glossary-source-link" data-glossary-clause="${escapeHtml(source.id.slice(-3))}">${escapeHtml(source.title)}</button>`
+            : `<a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.title)}</a>`}
+            <p>${escapeHtml(source.context || "")}</p></li>`).join("")}</ul>
+          <p>${escapeHtml(window.AnodosGlossary?.editorialNote || "")}</p>
+          <p>Редакція: 11.09.2026.</p>
+        </details>
       </div>
-    </article>
-  `;
+    </article>`;
   termNode.scrollTop = 0;
 }
 
@@ -10899,6 +10617,41 @@ function renderProgress() {
 }
 
 document.addEventListener("click", async (event) => {
+  const glossaryRelated = event.target.closest("[data-glossary-related]");
+  if (glossaryRelated) {
+    window.clearTimeout(glossarySearchTimer);
+    glossarySearchTerm = "";
+    glossaryGroup = "";
+    activeGlossaryTermId = glossaryRelated.dataset.glossaryRelated;
+    glossaryResultsExpanded = false;
+    renderGlossary();
+    document.getElementById("glossaryTerm")?.focus({ preventScroll: true });
+    return;
+  }
+  if (event.target.closest("[data-glossary-browse]")) {
+    glossaryResultsExpanded = !glossaryResultsExpanded;
+    renderGlossaryContent();
+    if (glossaryResultsExpanded) document.getElementById("glossaryTermSelect")?.focus();
+    return;
+  }
+  if (event.target.closest("[data-glossary-reset]")) {
+    window.clearTimeout(glossarySearchTimer);
+    glossarySearchTerm = "";
+    glossaryGroup = "";
+    activeGlossaryTermId = "";
+    glossaryResultsExpanded = true;
+    renderGlossary();
+    document.getElementById("glossarySearch")?.focus();
+    return;
+  }
+  const glossaryClause = event.target.closest("[data-glossary-clause]");
+  if (glossaryClause) {
+    activeMunichClauseId = `munich-${glossaryClause.dataset.glossaryClause}`;
+    munichSearchTerm = "";
+    munichResultsExpanded = false;
+    setRoute("munich", "construction");
+    return;
+  }
   if (event.target.closest("[data-lock-questionnaire]")) {
     leaveQuestionnaireFill();renderQuestionnaireGenerator();return;
   }
@@ -11647,6 +11400,7 @@ document.addEventListener("input", (event) => {
 
   if (event.target.id === "glossarySearch") {
     glossarySearchTerm = event.target.value;
+    activeGlossaryTermId = "";
     glossaryResultsExpanded = true;
     window.clearTimeout(glossarySearchTimer);
     glossarySearchTimer = window.setTimeout(renderGlossaryContent, 160);
@@ -11701,6 +11455,15 @@ document.addEventListener("change", (event) => {
 
   if (event.target.id === "munichClauseSelect") {
     setActiveMunichClause(event.target.value);
+    return;
+  }
+
+  if (event.target.id === "glossaryGroup") {
+    window.clearTimeout(glossarySearchTimer);
+    glossaryGroup = event.target.value;
+    activeGlossaryTermId = "";
+    glossaryResultsExpanded = true;
+    renderGlossaryContent();
     return;
   }
 

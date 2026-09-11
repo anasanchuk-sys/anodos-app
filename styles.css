@@ -8490,3 +8490,37 @@ body[data-route="bank-accreditation"] .bank-accreditation-table-shell:focus-visi
 .questionnaire-generator-form input[type="text"] { min-height: 52px; resize: none; font-size: 1rem; }
 .questionnaire-generator-form input[type="text"]:focus { border-color: #337f6d; box-shadow: 0 0 0 2px #337f6d26; }
 .questionnaire-generator-form label > span { font-size: .875rem; }
+
+/* Property glossary: category browsing, connected definitions and source context. */
+.glossary-controls { display: grid; gap: 8px; min-width: 0; }
+.glossary-toolbar { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.glossary-toolbar label { flex: 1; min-width: 0; }
+.glossary-toolbar select {
+  width: 100%; max-width: 100%; height: 36px; padding: 0 8px;
+  border: 1px solid rgba(51, 127, 109, .2); border-radius: 10px;
+  background: var(--paper, #fff); color: var(--navy); font: inherit; font-size: 14px;
+}
+.glossary-toolbar button { flex-shrink: 0; min-height: 36px; font-size: 14px; padding: 0 10px; }
+.glossary-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.reference-workspace-glossary .glossary-english { margin: -5px 0 14px; color: var(--muted); font-size: 15px; line-height: 1.35; }
+.reference-workspace-glossary .law-body p { font-size: 16px; line-height: 1.5; overflow-wrap: anywhere; }
+.reference-workspace-glossary .glossary-related button {
+  display: inline-flex; align-items: center; text-align: left; min-height: 32px; padding: 6px 10px;
+  border: 1px solid rgba(51, 127, 109, .2); border-radius: 14px;
+  background: rgba(245, 249, 250, .9); color: var(--green); font: inherit; font-size: 14px; cursor: pointer;
+}
+.reference-workspace-glossary .glossary-related button:hover { background: rgba(51, 127, 109, .12); }
+.reference-workspace-glossary .glossary-sources { margin-top: 10px; border-top: 1px solid rgba(51, 127, 109, .16); padding-top: 12px; }
+.glossary-sources summary { cursor: pointer; color: var(--green); font-size: 14px; font-weight: 600; }
+.glossary-sources ul { padding-left: 20px; margin: 12px 0; }
+.glossary-sources a, .glossary-source-link { color: var(--green); text-decoration: underline; overflow-wrap: anywhere; font-size: 14px; }
+.glossary-source-link { border: 0; background: none; padding: 0; font-family: inherit; text-align: left; cursor: pointer; }
+.reference-workspace-glossary .glossary-sources p { font-size: 14px; color: var(--muted); margin: 8px 0; }
+.reference-workspace-glossary .glossary-term-select { font-size: 14px; width: 100%; min-width: 0; }
+.reference-workspace-glossary button:focus-visible, .reference-workspace-glossary select:focus-visible,
+.reference-workspace-glossary summary:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+@media (max-width: 430px) {
+  .glossary-toolbar select, .glossary-toolbar button { font-size: 13px; }
+  .reference-workspace-glossary .reference-search-label input { font-size: 16px; }
+  .reference-workspace-glossary .glossary-term-select { max-height: 130px; min-height: 85px; }
+}
