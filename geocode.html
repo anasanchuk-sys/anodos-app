@@ -14,6 +14,7 @@
     <script src="./geocode-config.js?v=1" defer></script>
     <script src="./geocode.js?v=2" defer></script>
     <link rel="stylesheet" href="./site-theme.css?v=3" />
+<link rel="stylesheet" href="./site-language.css?v=1" />
 </head>
   <body class="editorial-tool">
     <header class="site-header">
@@ -36,7 +37,7 @@
       <a href="./?space=products&amp;view=glossary" data-site-view="glossary">Довідники</a>
       <a href="./?space=learning&amp;view=progress" data-site-view="progress">Мій прогрес</a>
     </div>
-    <div class="site-navigation-meta"><span class="site-language" aria-label="Мова: українська">UA</span><a class="site-search-link" href="./?space=products&amp;section=search" data-site-search aria-label="Пошук на сайті"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7.5"/><path d="m16 16 6 6"/></svg></a></div>
+    <div class="site-navigation-meta"><div class="site-language-switch" data-language-switch role="group" aria-label="Мова"><button type="button" data-language="uk" lang="uk" aria-label="Українська" aria-pressed="true">UA</button><span aria-hidden="true">/</span><button type="button" data-language="en" lang="en" aria-label="English" aria-pressed="false">EN</button></div><a class="site-search-link" href="./?space=products&amp;section=search" data-site-search aria-label="Пошук на сайті"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7.5"/><path d="m16 16 6 6"/></svg></a></div>
   </nav>
 </header>
     <main>
@@ -76,6 +77,8 @@
   </div>
   <div class="site-footer-bottom"><span>© 2026 Ανοδος</span><span>Знання та інструменти для роботи зі страхуванням.</span></div>
 </footer>
-<script src="./site-navigation.js?v=2"></script>
+<script src="./site-english.js?v=1"></script>
+<script src="./site-language.js?v=1"></script>
+<script src="./site-navigation.js?v=3"></script>
 </body>
 </html>

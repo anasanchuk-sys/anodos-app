@@ -1,0 +1,14 @@
+/* Two explicit, keyboard-accessible language choices on every site page. */
+.site-language-switch { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+.site-language-switch button { appearance: none; width: auto; min-height: 38px; min-width: 38px; padding: 7px 8px; margin: 0; border: 1px solid transparent; border-radius: 0; background: transparent; color: inherit; font: inherit; font-size: 14px; line-height: 1.2; cursor: pointer; }
+.site-language-switch button[aria-pressed="true"] { border-bottom-color: currentColor; font-weight: 600; }
+.site-language-switch button:hover { background: rgba(255,255,255,.12); }
+.site-language-switch button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.site-language-switch span { opacity: .5; }
+html[lang="en"] .home-hero-card h1 { overflow-wrap: normal; }
+
+html[lang="en"] body[data-route="home"] .home-directory .module-meta::before { content: "Completed "; }
+html[lang="en"] body[data-route="home"] .home-directory .module-card-products .module-card-button::after { content: "Open resources →"; }
+@media (max-width: 759px) {
+  html[lang="en"] body[data-route="home"] .home-directory .module-card-products .module-card-button::after { content: "Open →"; }
+}

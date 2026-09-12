@@ -77,7 +77,9 @@
     if (query.has('space') || query.has('view') || section) {
       go(section === 'search' ? 'products' : space, view, section);
       // Query links initialize navigation once, without reapplying on reload.
-      history.replaceState(null, '', location.pathname + location.hash);
+      const language = query.get('lang');
+      const languageQuery = ['uk', 'en'].includes(language) ? '?lang=' + language : '';
+      history.replaceState(null, '', location.pathname + languageQuery + location.hash);
     }
   }
 })();

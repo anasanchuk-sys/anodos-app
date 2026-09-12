@@ -1,7 +1,10 @@
-const CACHE_NAME = "platform-shell-anodos-pro-gate-20260912";
+const CACHE_NAME = "en-v1-platform-shell-anodos-pro-gate-20260912";
 const ASSETS = [
+  "./site-language.js?v=1",
+  "./site-english.js?v=1",
+  "./site-language.css?v=1",
   "./pro-access.css?v=1",
-  "./site-navigation.js?v=2",
+  "./site-navigation.js?v=3",
   "./hero-background.js?v=2",
   "./assets/backgrounds/anodos-city-poster.jpg?v=1",
   "./site-theme.css?v=3",
@@ -58,7 +61,7 @@ const ASSETS = [
   "./property-review-semantic.js?v=5",
   "./property-review-report.js?v=7",
   "./glossary-data.js?v=1",
-  "./app.js?v=223",
+  "./app.js?v=224",
   "./assets/contract-tests/arx-zusp-053.pdf",
   "./manifest.webmanifest?v=7",
   "./assets/icon.svg?v=7",

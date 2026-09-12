@@ -1,0 +1,13 @@
+/* Shared password prompt for all Anodos Pro tools. */
+@font-face { font-family: "EB Garamond"; font-style: normal; font-weight: 400; font-display: swap; src: url("./assets/fonts/eb-garamond-latin-400.woff2?v=1") format("woff2"); }
+body .anodos-pro-access-title {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px;
+  margin: 18px 0 26px; font: 400 18px/1.4 "Helvetica Neue", Arial, sans-serif; letter-spacing: 0;
+}
+body .anodos-pro-access-title .anodos-pro-access-copy {
+  font: 400 18px/1.4 "Helvetica Neue", Arial, sans-serif; letter-spacing: 0; text-transform: none;
+}
+body .anodos-pro-access-title .anodos-pro-access-brand {
+  color: #8a0303; font: 400 clamp(32px, 5vw, 42px)/1.15 "EB Garamond", Garamond, serif;
+  letter-spacing: 0; text-transform: none; white-space: nowrap;
+}

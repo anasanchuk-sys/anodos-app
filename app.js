@@ -7703,6 +7703,7 @@ const scenarioFrontlineRegions = [
 const scenarioWarTextPattern = /(воєн|війна|війни|ракета|бпла|дрон|обстріл|окупац|бойов)/u;
 
 function scenarioQueryProfile(query = scenarioSearchTerm) {
+  query = window.AnodosLanguage?.expandQuery(query) || query;
   const normalizedQuery = normalizeSemanticText(query);
   const terms = new Set(splitSearchTerms(query).filter((term) => !scenarioGenericTerms.has(term)));
   const labels = new Set();
