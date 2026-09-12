@@ -2,7 +2,7 @@ import {readQualityFile} from './contract-quality-reader.mjs?v=3';
 import {qualityPdfBlob} from './contract-quality-report.mjs?v=3';
 const endpoint='https://anodos-contract-quality.mesquite-wishbone.workers.dev';
 const $=id=>document.getElementById(id),escape=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let files=[],job=null,result=null,busy=false,available=false,pollTimer,run=0;
+let files=[],job=null,result=null,busy=false,available=false,quotaRetryAt=null,pollTimer,run=0;
 const sha=async bytes=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(n=>n.toString(16).padStart(2,'0')).join('');
 function error(message){$('error').textContent=message;$('error').hidden=false;}
 function progress(title,detail=''){$('progress').hidden=false;$('progress-title').textContent=title;$('progress-detail').textContent=detail;}
@@ -18,7 +18,7 @@ for(const event of ['dragover','dragenter'])$('dropzone').addEventListener(event
 $('dropzone').addEventListener('dragleave',()=>$('dropzone').classList.remove('drag'));
 $('dropzone').addEventListener('drop',e=>{e.preventDefault();$('dropzone').classList.remove('drag');add([...e.dataTransfer.files]);});
 function recovery(){location.hash='review='+job.id+'.'+job.token;$('recovery').hidden=false;}
-function setBusy(value){busy=value;$('submit').disabled=value||!available;$('files').disabled=value;}
+function setBusy(value){busy=value;$('submit').disabled=value||!available;$('files').disabled=value;$('submit').textContent=quotaRetryAt?'Додати договір у чергу →':'Отримати оцінку →';}
 function render(r){
  result=r;$('empty').hidden=true;$('result').hidden=false;$('result-panel').classList.add('has-result');
  const section=(title,checks,kind)=>!checks?.length||r.blocked?'':`<section class="report-section"><h3>${escape(title)}<span class="count">${checks.length}</span></h3>${checks.map((c,i)=>`<article class="finding"><h4>${i+1}. ${escape(c.title)}</h4><p>${escape(c.assessment)}</p>${c.impact?`<p>${escape(c.impact)}</p>`:''}${c.recommendation?`<p class="recommendation"><strong>Що погодити:</strong> ${escape(c.recommendation)}</p>`:''}${c.evidence?`<details class="evidence"><summary>Фрагмент договору</summary>${c.evidence.fragments.map(f=>`<blockquote><small>${escape([f.file_name,f.page?'с. '+f.page:'',f.clause?'п. '+f.clause:''].filter(Boolean).join(', '))}</small>${escape(f.quote)}</blockquote>`).join('')}</details>`:''}</article>`).join('')}</section>`;
@@ -32,7 +32,7 @@ async function poll(generation=run){
   if(s.status==='waiting_quota'){const when=s.retryAt?new Date(s.retryAt).toLocaleString('uk-UA',{timeZone:'Europe/Kyiv'}):'після відновлення ліміту';progress('Документ у черзі на перевірку','Денний ліміт хмарного аналізу вичерпано. Документи збережено. Продовжимо автоматично '+when+' за київським часом. Повторно завантажувати файл не потрібно.');pollTimer=setTimeout(()=>poll(generation),60000);return;}
   if(s.status==='failed'){throw new Error(s.error||'Аналіз не завершено.');}
   if(s.status==='uploading'){setBusy(false);$('progress').hidden=true;error('Завантаження не було завершено. Почніть нову перевірку з повним пакетом файлів.');return;}
-  const detail=s.progress?.stage==='reconciling'?`Усі частини прочитано. Звіряємо критерії, винятки та спеціальні умови: ${s.progress.completed} із ${s.progress.total} груп. `:s.progress?.total>1?`Опрацьовано ${s.progress.completed} із ${s.progress.total} частин повного пакета. `:'';
+  const detail=s.progress?.stage==='reconciling'?`Усі частини прочитано. Оцінюємо умови й окремо перевіряємо обґрунтованість висновків: ${s.progress.completed} із ${s.progress.total} груп. `:s.progress?.total>1?`Опрацьовано ${s.progress.completed} із ${s.progress.total} частин повного пакета. `:'';
   progress(s.status==='queued'?'Продовжуємо перевірку':'Читаємо та оцінюємо умови',detail+'Перевірка триває у хмарі. Ви можете повернутися за приватним посиланням.');
   pollTimer=setTimeout(()=>poll(generation),5000);
  }catch(e){if(generation!==run)return;$('progress').hidden=true;setBusy(false);error(e.message+' Якщо з’єднання перервалося, відкрийте збережене посилання ще раз.');}
@@ -53,4 +53,14 @@ $('copy-link').addEventListener('click',async()=>{try{await navigator.clipboard.
 $('new-review').addEventListener('click',()=>{run++;clearTimeout(pollTimer);job=null;result=null;files=[];list();setBusy(false);history.replaceState(null,'',location.pathname);$('result').hidden=true;$('empty').hidden=false;$('result-panel').classList.remove('has-result');$('recovery').hidden=true;$('progress').hidden=true;$('error').hidden=true;});
 const saved=location.hash.match(/^#review=([a-f0-9-]{36})\.([a-f0-9-]{72})$/);if(saved){job={id:saved[1],token:saved[2]};$('recovery').hidden=false;setBusy(true);poll();}
 
-setBusy(busy);fetch(endpoint+"/health",{cache:"no-store",signal:AbortSignal.timeout(15000)}).then(r=>r.json()).then(h=>{available=h.ok&&h.configured&&h.available!==false;setBusy(busy);if(h.available===false)error("Денний ліміт хмарного аналізу вичерпано. Збережені перевірки продовжаться автоматично після його відновлення. Нові завантаження тимчасово призупинено.");else if(!available)error("Сервіс готується до запуску. Завантаження поки недоступне.");}).catch(()=>{error("Сервіс поки недоступний. Документи не передано.");});
+async function refreshAvailability(){
+ try{
+  const response=await fetch(endpoint+'/health',{cache:'no-store',signal:AbortSignal.timeout(15000)});if(!response.ok)throw new Error('health');const h=await response.json();
+  available=Boolean(h.ok&&h.configured);quotaRetryAt=h.available===false?h.retryAt:null;setBusy(busy);
+  const notice=$('queue-notice');notice.hidden=!quotaRetryAt;
+  if(quotaRetryAt)notice.textContent='Зараз черга на хмарний аналіз. Можна зберегти договір уже зараз; перевірка продовжиться після '+new Date(quotaRetryAt).toLocaleString('uk-UA',{timeZone:'Europe/Kyiv'})+' за Києвом. До завершення аналізу оцінка та PDF недоступні.';
+  if(!available)error('Сервіс готується до запуску. Завантаження поки недоступне.');
+ }catch{available=false;setBusy(busy);if(!job)error('Не вдалося перевірити доступність сервісу. Спробуємо знову через хвилину.');}
+ setTimeout(refreshAvailability,60000);
+}
+setBusy(busy);refreshAvailability();
