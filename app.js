@@ -11,8 +11,8 @@ const productTapMovementTolerance = 12;
 const stateCompensationGuideHash = "#state-compensation-guide";
 const contractReviewHash = "#contract-review";
 
-const revealDelay = prefersReducedMotion ? 120 : usesDesktopLaunchSequence ? 3600 : 2850;
-const exitDelay = prefersReducedMotion ? 220 : usesDesktopLaunchSequence ? 4400 : 3420;
+const revealDelay = 0;
+const exitDelay = 0;
 const notebookInsuranceTestUrl = "https://notebooklm.google.com/notebook/b9bd2dcc-74df-4284-9cfd-83b7d6aadc60/artifact/d3dc304c-4890-418f-8a88-f921e30c595f?utm_source=nlm_web_share&utm_medium=google_oo&utm_campaign=art_share_1&utm_content=&utm_smc=nlm_web_share_google_oo_art_share_1_";
 const insuranceLaw = window.insuranceLawData || window.insuranceLaw || { title: "Закон України про страхування", articleCount: 0, entries: [] };
 const munichReClauses = window.munichReClausesData || { title: "Застереження Munich Re", count: 0, clauses: [] };
@@ -2158,6 +2158,10 @@ function renderSpaceShell() {
   const nav = document.querySelector(".bottom-nav");
 
   body.dataset.space = activeSpace;
+  document.querySelectorAll('.site-navigation [data-site-space]').forEach((link) => {
+    if (link.dataset.siteSpace === activeSpace) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  });
 
   if (brandButton) {
     brandButton.setAttribute("aria-label", `Поточний простір: ${definition.label}. Обрати інший простір Anodos`);
@@ -7514,49 +7518,92 @@ function renderQuotationWriting() {
   window.AnodosQuotationWriting.mount(screen, { readDocument: contractReviewReadText });
 }
 
-function renderHome() {
-  if (activeSpace === "learning") {
-    screen.innerHTML = `
-      <section class="space-intro-card primary-tab-card" aria-labelledby="learningSpaceTitle">
-        <div>
-          <p class="eyebrow">Навчання</p>
-          <h1 id="learningSpaceTitle">Навчальні модулі</h1>
-        </div>
-        <span class="space-intro-meta">${lessons.length} тем</span>
-      </section>
-
-      <section class="module-grid primary-tab-list" aria-label="Навчальні модулі">
-        ${lessons.map(renderModuleCard).join("")}
-      </section>
-    `;
-    return;
+const homeHeroSlides = [
+  {
+    label: "Професійне навчання",
+    lines: ["Знання, що", "перетворюються", "на рішення."],
+    copy: "Від основ страхування до впевненої роботи зі складними ризиками.",
+    actions: `<a class="site-button" href="./?space=learning&amp;section=modules" data-site-browse="learning">Почати навчання</a><a class="site-button site-button-secondary" href="./?space=learning&amp;view=progress" data-site-view="progress">Мій прогрес</a>`
+  },
+  {
+    label: "Страхові рішення",
+    lines: ["Кожен ризик", "потребує", "свого рішення."],
+    copy: "Знайдіть потрібне покриття, розберіться в умовах і підготуйте відповідь Клієнту.",
+    actions: `<a class="site-button" href="./?space=products&amp;section=search" data-site-search>Знайти рішення</a><a class="site-button site-button-secondary" href="./?space=products&amp;section=modules" data-site-browse="products">Страхові продукти</a>`
+  },
+  {
+    label: "Робочі інструменти",
+    lines: ["Більше ясності.", "Менше", "рутинної роботи."],
+    copy: "Договори, опитувальники та дослідження компаній в одному робочому просторі.",
+    actions: `<a class="site-button" href="./?section=tools" data-site-scroll="tools">Усі інструменти</a><a class="site-button site-button-secondary" href="./contract-quality.html">Оцінити договір</a>`
   }
+];
 
+function renderHomeHeroContent(index) {
+  const slide = homeHeroSlides[index];
+  return `<p class="hero-category">${slide.label}</p><h1 id="homeHeroTitle">${slide.lines.map(escapeHtml).join("<br>")}</h1><p class="home-hero-copy">${slide.copy}</p><div class="home-hero-actions">${slide.actions}</div>`;
+}
+
+function setHomeHeroSlide(index) {
+  if (!Number.isInteger(index) || index < 0 || index >= homeHeroSlides.length) return;
+  const stage = document.querySelector('.home-stage');
+  if (!stage) return;
+  stage.dataset.slide = String(index);
+  stage.querySelector('[data-hero-content]').innerHTML = renderHomeHeroContent(index);
+  stage.querySelectorAll('[data-hero-slide]').forEach((button) => button.setAttribute('aria-pressed', String(Number(button.dataset.heroSlide) === index)));
+}
+
+function renderHome() {
+  const learning = activeSpace === "learning";
+  const slide = learning ? 0 : 1;
   const hasScenarioQuery = scenarioSearchTerm.trim().length > 0;
   screen.innerHTML = `
-    <section class="scenario-search-panel primary-tab-card primary-tab-action" aria-label="Сценарний пошук">
-      <label class="scenario-search-label" for="scenarioSearch">
-        <input
-          id="scenarioSearch"
-          type="search"
-          aria-label="Опишіть ситуацію Клієнта"
-          autocomplete="off"
-          placeholder="Опишіть ситуацію Клієнта"
-          value="${escapeHtml(scenarioSearchTerm)}"
-        />
-      </label>
-      ${hasScenarioQuery ? "" : `<p class="scenario-hint">Опишіть ситуацію простими словами, а Anodos підкаже, де шукати відповідь.</p>`}
+    <section class="editorial-hero home-stage" data-slide="${slide}" aria-labelledby="homeHeroTitle">
+      <video class="hero-background-video" data-hero-video data-src="./assets/backgrounds/anodos-city.mp4?v=1" poster="./assets/backgrounds/anodos-city-poster.jpg?v=1" muted loop playsinline preload="none" aria-hidden="true" tabindex="-1"></video>
+      <div class="home-stage-inner">
+        <article class="home-hero-card">
+          <div data-hero-content>${renderHomeHeroContent(slide)}</div>
+          <div class="home-hero-controls">
+            <div class="home-slide-selector" role="group" aria-label="Теми першого екрана">
+              ${homeHeroSlides.map((item, index) => `<button type="button" data-hero-slide="${index}" aria-label="${item.label}" aria-pressed="${index === slide}"><span></span></button>`).join("")}
+            </div>
+            <label class="hero-motion-control" title="Зупинити або відновити відео"><input class="hero-motion-toggle" type="checkbox" checked /><span class="hero-motion-symbol" aria-hidden="true"></span><span class="site-sr-only">Рух фону</span></label>
+          </div>
+        </article>
+        <nav class="home-audiences" aria-label="Основні напрями">
+          <a href="./?space=learning&amp;section=modules" data-site-browse="learning"><span>Навчання</span><strong>Розвивайте страхову експертизу</strong><i aria-hidden="true">→</i></a>
+          <a href="./?space=products&amp;section=modules" data-site-browse="products"><span>Страхування</span><strong>Знаходьте рішення для ризиків</strong><i aria-hidden="true">→</i></a>
+          <a href="./?section=tools" data-site-scroll="tools"><span>Інструменти</span><strong>Зосередьтеся на головному</strong><i aria-hidden="true">→</i></a>
+        </nav>
+      </div>
     </section>
-
-    <section class="scenario-results-panel" aria-live="polite">
-      <div id="scenarioSearchResults"></div>
+    ${!learning ? `<section class="home-search-section" id="search" aria-labelledby="scenarioTitle">
+      <div class="home-section-heading"><p class="site-kicker">Від ситуації до рішення</p><h2 id="scenarioTitle">З чим працюємо сьогодні?</h2></div>
+      <div class="scenario-search-panel">
+        <label class="scenario-search-label" for="scenarioSearch"><input id="scenarioSearch" type="search" aria-label="Опишіть ситуацію Клієнта" autocomplete="off" placeholder="Опишіть ситуацію Клієнта" value="${escapeHtml(scenarioSearchTerm)}" /></label>
+        ${hasScenarioQuery ? "" : `<p class="scenario-hint">Опишіть ситуацію простими словами, а Anodos підкаже, де шукати відповідь.</p>`}
+      </div>
+      <section class="scenario-results-panel" aria-live="polite"><div id="scenarioSearchResults"></div></section>
+    </section>` : ""}
+    <section class="home-directory" id="modules" aria-labelledby="homeDirectoryTitle">
+      <header class="home-section-heading"><p class="site-kicker">${learning ? "Від знань до практики" : "Ваш простір рішень"}</p><div><h2 id="homeDirectoryTitle">${learning ? "Навчальні модулі" : "Страхові продукти"}</h2><p>${learning ? "Шість напрямів для розвитку вашої експертизи." : "Матеріали та інструменти для кожного виду страхування."}</p></div></header>
+      <div class="module-grid primary-tab-list" aria-label="${learning ? "Навчальні модулі" : "Страхові продукти"}">${lessons.map(renderModuleCard).join("")}</div>
     </section>
-
-    <section class="module-grid primary-tab-list" aria-label="Страхові продукти">
-      ${lessons.map(renderModuleCard).join("")}
+    <section class="home-tools" id="tools" aria-labelledby="homeToolsTitle">
+      <div class="home-tools-inner">
+        <header class="home-section-heading"><p class="site-kicker">Для щоденної роботи</p><div><h2 id="homeToolsTitle">Ваша увага - на рішеннях.</h2><p>Інструменти Анодус допоможуть із рештою.</p></div></header>
+        <div class="home-tool-grid">
+          <a href="./contract-quality.html"><span class="tool-number">01</span><h3>Оцінка договору</h3><p>Сильні умови, обмеження виплати та конкретні рекомендації.</p><span class="tool-link">Перевірити умови <i aria-hidden="true">→</i></span></a>
+          <a href="./?space=products&amp;view=contract-review" data-site-view="contract-review"><span class="tool-number">02</span><h3>Порівняння договорів</h3><p>Зіставлення покриття, винятків і параметрів страхування.</p><span class="tool-link">Порівняти договори <i aria-hidden="true">→</i></span></a>
+          <a href="./?space=products&amp;view=questionnaire-generator" data-site-view="questionnaire-generator"><span class="tool-number">03</span><h3>Опитувальники</h3><p>Підготовка форм для збору інформації про ризик.</p><span class="tool-link">Підготувати форму <i aria-hidden="true">→</i></span></a>
+          <a href="./geocode.html"><span class="tool-number">04</span><h3>Адреса в GPS</h3><p>Координати об'єкта для оцінки ризику та роботи з картами.</p><span class="tool-link">Знайти координати <i aria-hidden="true">→</i></span></a>
+          <a href="./?space=products&amp;view=bank-accreditation" data-site-view="bank-accreditation"><span class="tool-number">05</span><h3>Акредитація в банках</h3><p>Страховики для заставного майна та вимоги банків.</p><span class="tool-link">Переглянути акредитацію <i aria-hidden="true">→</i></span></a>
+          <a href="./osint.html"><span class="tool-number">06 <span class="tool-pro">ANODOS PRO</span></span><h3>Дослідження компаній</h3><p>Бізнес, власність та активи з посиланнями на джерела.</p><span class="tool-link">Відкрити OSINT <i aria-hidden="true">→</i></span></a>
+        </div>
+      </div>
     </section>
   `;
-  renderScenarioSearchResults();
+  if (!learning) renderScenarioSearchResults();
 }
 
 const scenarioSearchClusters = [

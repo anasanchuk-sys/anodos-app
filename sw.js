@@ -1,5 +1,9 @@
-const CACHE_NAME = "platform-shell-contract-quality-v4";
+const CACHE_NAME = "platform-shell-site-redesign-city-v3-quality-v4";
 const ASSETS = [
+  "./site-navigation.js?v=1",
+  "./hero-background.js?v=2",
+  "./assets/backgrounds/anodos-city-poster.jpg?v=1",
+  "./site-theme.css?v=2",
   "./contract-quality.html",
   "./contract-quality.css?v=3",
   "./contract-quality.mjs?v=4",
@@ -53,7 +57,7 @@ const ASSETS = [
   "./property-review-semantic.js?v=5",
   "./property-review-report.js?v=7",
   "./glossary-data.js?v=1",
-  "./app.js?v=216",
+  "./app.js?v=221",
   "./assets/contract-tests/arx-zusp-053.pdf",
   "./manifest.webmanifest?v=7",
   "./assets/icon.svg?v=7",

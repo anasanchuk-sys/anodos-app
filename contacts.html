@@ -2,15 +2,34 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f9fbff"><meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#0f1e32"><meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://anodos-review-bridge.mesquite-wishbone.workers.dev; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <title>Пошук контактів ДМів - Anodos Pro</title>
   <meta name="description" content="Пошук публічних ділових телефонів та email за ім’ям і назвою компанії. Anodos Pro.">
   <link rel="icon" href="./assets/icon.svg?v=7" type="image/svg+xml">
   <link rel="stylesheet" href="./osint.css?v=5"><link rel="stylesheet" href="./contacts.css?v=1">
+  <link rel="stylesheet" href="./site-theme.css?v=2" />
 </head>
-<body>
-  <header class="top"><a class="brand" href="./">Ανοδος</a><a href="./">До робочих інструментів ↗</a></header>
+<body class="editorial-tool">
+  <header class="site-header">
+  <div class="site-masthead">
+    <a class="site-brand" href="./" data-site-home aria-label="Анодос - головна">
+  <span>Ανοδος</span><svg viewBox="0 0 70 48" aria-hidden="true"><path d="M3 44C23 43 30 32 37 23S50 8 64 4"/><circle cx="65" cy="3" r="2.5"/></svg>
+</a>
+    <p class="site-claim">РОЗУМІТИ. ДІЯТИ. ЗРОСТАТИ.</p>
+    <button class="site-menu-toggle" type="button" data-site-menu aria-controls="siteNavigation" aria-expanded="false" aria-label="Відкрити меню"><span></span><span></span><span></span></button>
+  </div>
+  <nav class="site-navigation" id="siteNavigation" aria-label="Основна навігація">
+    <div class="site-navigation-links">
+      <a href="./?space=learning" data-site-space="learning">Навчання</a>
+      <a href="./?space=products" data-site-space="products">Страхування</a>
+      <a href="./?section=tools">Інструменти</a>
+      <a href="./?space=products&amp;view=glossary" data-site-view="glossary">Довідники</a>
+      <a href="./?space=learning&amp;view=progress" data-site-view="progress">Мій прогрес</a>
+    </div>
+    <div class="site-navigation-meta"><span class="site-language" aria-label="Мова: українська">UA</span><a class="site-search-link" href="./?space=products&amp;section=search" data-site-search aria-label="Пошук на сайті"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7.5"/><path d="m16 16 6 6"/></svg></a></div>
+  </nav>
+</header>
   <main>
     <section id="access-gate" class="workspace access-gate" aria-labelledby="access-title">
       <div class="eyebrow">ПОШУК КОНТАКТІВ ДМІВ <span class="badge anodos-pro-label">ANODOS PRO</span></div>
@@ -45,5 +64,17 @@
     </div>
   </main>
   <script src="./contract-review-config.js?v=6"></script><script src="./contract-review-secure.js?v=1"></script><script src="./contacts.js?v=2"></script>
+<footer class="site-footer">
+  <div class="site-footer-top"><a class="site-brand" href="./" data-site-home aria-label="Анодос - головна">
+  <span>Ανοδος</span><svg viewBox="0 0 70 48" aria-hidden="true"><path d="M3 44C23 43 30 32 37 23S50 8 64 4"/><circle cx="65" cy="3" r="2.5"/></svg>
+</a><button type="button" class="site-back-top" data-site-top aria-label="На початок сторінки">↑</button></div>
+  <div class="site-footer-columns">
+    <div><h2>Навчання</h2><a href="./?space=learning&amp;section=modules" data-site-browse="learning">Навчальні модулі</a><a href="./?space=learning&amp;view=progress" data-site-view="progress">Особистий прогрес</a></div>
+    <div><h2>Страхування</h2><a href="./?space=products&amp;section=modules" data-site-browse="products">Страхові продукти</a><a href="./?space=products&amp;view=law" data-site-view="law">Закон про страхування</a><a href="./?space=products&amp;view=glossary" data-site-view="glossary">Страховий словник</a></div>
+    <div><h2>Інструменти</h2><a href="./contract-quality.html">Оцінка договору</a><a href="./?space=products&amp;view=bank-accreditation" data-site-view="bank-accreditation">Акредитація в банках</a><a href="./geocode.html">Адреса в GPS</a><a href="./?section=tools" data-site-scroll="tools">Усі інструменти</a></div>
+  </div>
+  <div class="site-footer-bottom"><span>© 2026 Ανοδος</span><span>Знання та інструменти для роботи зі страхуванням.</span></div>
+</footer>
+<script src="./site-navigation.js?v=1"></script>
 </body>
 </html>
