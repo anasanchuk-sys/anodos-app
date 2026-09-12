@@ -1,9 +1,14 @@
 /* Shared website navigation; ordinary links also work on standalone tool pages. */
 (() => {
   const isApp = () => typeof setActiveSpace === 'function';
-  const views = new Set(['home', 'law', 'glossary', 'progress', 'bank-accreditation', 'contract-review', 'questionnaire-generator', 'questionnaire-fill']);
+  const views = new Set(['home', 'law', 'glossary', 'progress', 'bank-accreditation', 'contract-review', 'questionnaire-generator', 'questionnaire-fill', 'quotation-writing', 'client-recommendation']);
   const menuButton = document.querySelector('[data-site-menu]');
+  const environment = document.querySelector('[data-site-environment]');
+  const syncHeader = () => document.body.classList.toggle('site-scrolled', window.scrollY > 40);
+  window.addEventListener('scroll', syncHeader, { passive: true });
+  syncHeader();
   const closeMenu = () => {
+    if (environment) environment.open = false;
     document.body.classList.remove('site-menu-open');
     menuButton?.setAttribute('aria-expanded', 'false');
     menuButton?.setAttribute('aria-label', 'Відкрити меню');
@@ -18,6 +23,8 @@
     if (section) jump(section, section === 'search');
   }
   document.addEventListener('click', (event) => {
+    if (!event.target.closest('[data-site-environment]') && environment) environment.open = false;
+    if (event.target.closest('[data-site-environment] summary') && isApp()) setUtilityMenu(false);
     const menu = event.target.closest('[data-site-menu]');
     if (menu) {
       const open = !document.body.classList.contains('site-menu-open');
@@ -53,6 +60,11 @@
     else if (slide) { event.preventDefault(); setHomeHeroSlide(Number(slide.dataset.heroSlide)); }
   });
   document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && environment?.open) {
+      environment.open = false;
+      environment.querySelector('summary').focus();
+      return;
+    }
     if (event.key === 'Escape' && document.body.classList.contains('site-menu-open')) {
       closeMenu(); menuButton?.focus();
     }

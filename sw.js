@@ -1,9 +1,10 @@
-const CACHE_NAME = "platform-shell-site-redesign-city-v3-quality-v4";
+const CACHE_NAME = "platform-shell-anodos-pro-gate-20260912";
 const ASSETS = [
-  "./site-navigation.js?v=1",
+  "./pro-access.css?v=1",
+  "./site-navigation.js?v=2",
   "./hero-background.js?v=2",
   "./assets/backgrounds/anodos-city-poster.jpg?v=1",
-  "./site-theme.css?v=2",
+  "./site-theme.css?v=3",
   "./contract-quality.html",
   "./contract-quality.css?v=3",
   "./contract-quality.mjs?v=4",
@@ -29,7 +30,7 @@ const ASSETS = [
   "./quotation-mail-reader.js?v=1",
   "./quotation-report.js?v=1",
   "./quotation-mail-drop.js?v=2",
-  "./quotation-writing.js?v=3",
+  "./quotation-writing.js?v=4",
   "./law-data.js?v=3",
   "./munich-re-clauses.js?v=1",
   "./sync-config.js?v=1",
@@ -57,7 +58,7 @@ const ASSETS = [
   "./property-review-semantic.js?v=5",
   "./property-review-report.js?v=7",
   "./glossary-data.js?v=1",
-  "./app.js?v=221",
+  "./app.js?v=223",
   "./assets/contract-tests/arx-zusp-053.pdf",
   "./manifest.webmanifest?v=7",
   "./assets/icon.svg?v=7",

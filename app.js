@@ -7248,7 +7248,7 @@ function renderQuestionnaireGenerator() {
     screen.innerHTML = `<section class="questionnaire-generator-workspace">
       <header class="questionnaire-generator-head">
         <button class="module-back" type="button" data-route="home" aria-label="Назад">←</button>
-        <div><p class="anodos-pro-label">ANODOS PRO</p><h1>Автоматичне заповнення опитувальника</h1><p class="hero-copy">Увійдіть за паролем Anodos Pro.</p></div>
+        <div><h1>Автоматичне заповнення опитувальника</h1><p class="anodos-pro-access-title"><span class="anodos-pro-access-copy">введіть пароль</span> <span class="anodos-pro-access-brand">Anodos Pro</span></p></div>
       </header>
       <section class="questionnaire-generator-form-card">
         <form id="questionnaireAccessForm" class="questionnaire-generator-form">
@@ -7553,6 +7553,25 @@ function setHomeHeroSlide(index) {
   stage.querySelectorAll('[data-hero-slide]').forEach((button) => button.setAttribute('aria-pressed', String(Number(button.dataset.heroSlide) === index)));
 }
 
+function renderHomeToolCards() {
+  // Use the menu as the single catalog, including its existing access checks.
+  return [...document.querySelectorAll('[data-utility-menu-panel] .utility-menu-tool')]
+    .filter((tool) => !tool.hidden)
+    .map((tool, index) => {
+      const title = tool.querySelector('strong').textContent;
+      const isPro = Boolean(tool.querySelector('.anodos-pro-label'));
+      const description = isPro ? {
+        'Пошук контактів ДМів': 'Контакти осіб, які ухвалюють рішення, та джерела для перевірки.',
+        'OSINT-аналітика': 'Бізнес, власність та активи компанії з посиланнями на джерела.',
+        'Написання котирувань': 'Підготовка страхових котирувань на основі матеріалів запиту.',
+        'Автоматичне заповнення опитувальника': 'Заповнення форми на основі наданих документів та даних.'
+      }[title] || 'Професійний інструмент Anodos Pro.' : tool.querySelector('small')?.textContent || '';
+      const route = tool.dataset.brandMenuRoute;
+      const href = tool.getAttribute('href') || `./?space=products&view=${encodeURIComponent(route)}`;
+      return `<a href="${escapeHtml(href)}" ${route ? `data-brand-menu-route="${escapeHtml(route)}"` : ''}><span class="tool-number">${String(index + 1).padStart(2, '0')}${isPro ? '<span class="tool-pro anodos-pro-label">ANODOS PRO</span>' : ''}</span><h3>${escapeHtml(title)}</h3><p>${escapeHtml(description)}</p><span class="tool-link">Відкрити інструмент <i aria-hidden="true">→</i></span></a>`;
+    }).join('');
+}
+
 function renderHome() {
   const learning = activeSpace === "learning";
   const slide = learning ? 0 : 1;
@@ -7592,13 +7611,7 @@ function renderHome() {
     <section class="home-tools" id="tools" aria-labelledby="homeToolsTitle">
       <div class="home-tools-inner">
         <header class="home-section-heading"><p class="site-kicker">Для щоденної роботи</p><div><h2 id="homeToolsTitle">Ваша увага - на рішеннях.</h2><p>Інструменти Анодус допоможуть із рештою.</p></div></header>
-        <div class="home-tool-grid">
-          <a href="./contract-quality.html"><span class="tool-number">01</span><h3>Оцінка договору</h3><p>Сильні умови, обмеження виплати та конкретні рекомендації.</p><span class="tool-link">Перевірити умови <i aria-hidden="true">→</i></span></a>
-          <a href="./?space=products&amp;view=contract-review" data-site-view="contract-review"><span class="tool-number">02</span><h3>Порівняння договорів</h3><p>Зіставлення покриття, винятків і параметрів страхування.</p><span class="tool-link">Порівняти договори <i aria-hidden="true">→</i></span></a>
-          <a href="./?space=products&amp;view=questionnaire-generator" data-site-view="questionnaire-generator"><span class="tool-number">03</span><h3>Опитувальники</h3><p>Підготовка форм для збору інформації про ризик.</p><span class="tool-link">Підготувати форму <i aria-hidden="true">→</i></span></a>
-          <a href="./geocode.html"><span class="tool-number">04</span><h3>Адреса в GPS</h3><p>Координати об'єкта для оцінки ризику та роботи з картами.</p><span class="tool-link">Знайти координати <i aria-hidden="true">→</i></span></a>
-          <a href="./?space=products&amp;view=bank-accreditation" data-site-view="bank-accreditation"><span class="tool-number">05</span><h3>Акредитація в банках</h3><p>Страховики для заставного майна та вимоги банків.</p><span class="tool-link">Переглянути акредитацію <i aria-hidden="true">→</i></span></a>
-          <a href="./osint.html"><span class="tool-number">06 <span class="tool-pro">ANODOS PRO</span></span><h3>Дослідження компаній</h3><p>Бізнес, власність та активи з посиланнями на джерела.</p><span class="tool-link">Відкрити OSINT <i aria-hidden="true">→</i></span></a>
+        <div class="home-tool-grid">${renderHomeToolCards()}
         </div>
       </div>
     </section>

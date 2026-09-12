@@ -35,7 +35,8 @@
     <link rel="stylesheet" href="./styles.css?v=197" />
     <link rel="stylesheet" href="./quotation-writing.css?v=2" />
     <link rel="stylesheet" href="./osint-entry.css?v=5" />
-    <link rel="stylesheet" href="./site-theme.css?v=2" />
+    <link rel="stylesheet" href="./site-theme.css?v=3" />
+  <link rel="stylesheet" href="./pro-access.css?v=1" />
 </head>
   <body>
     <div class="splash" id="splash" aria-hidden="true">
@@ -56,13 +57,17 @@
     <a class="site-brand" href="./" data-site-home aria-label="Анодос - головна">
   <span>Ανοδος</span><svg viewBox="0 0 70 48" aria-hidden="true"><path d="M3 44C23 43 30 32 37 23S50 8 64 4"/><circle cx="65" cy="3" r="2.5"/></svg>
 </a>
-    <p class="site-claim">РОЗУМІТИ. ДІЯТИ. ЗРОСТАТИ.</p>
     <button class="site-menu-toggle" type="button" data-site-menu aria-controls="siteNavigation" aria-expanded="false" aria-label="Відкрити меню"><span></span><span></span><span></span></button>
   </div>
   <nav class="site-navigation" id="siteNavigation" aria-label="Основна навігація">
     <div class="site-navigation-links">
-      <a href="./?space=learning" data-site-space="learning">Навчання</a>
-      <a href="./?space=products" data-site-space="products">Страхування</a>
+      <details class="site-environment" data-site-environment>
+        <summary>Середовище <span class="site-chevron" aria-hidden="true">⌄</span></summary>
+        <nav class="site-environment-options" aria-label="Обрати середовище">
+          <a href="./?space=learning" data-site-space="learning">Навчання</a>
+          <a href="./?space=products" data-site-space="products">Страхування</a>
+        </nav>
+      </details>
       <div class="utility-menu-shell">
           <button class="utility-menu-trigger" type="button" data-utility-menu aria-haspopup="menu" aria-expanded="false" aria-label="Відкрити допоміжне меню">
             <span class="utility-menu-label">Інструменти</span>
@@ -181,10 +186,10 @@
     <script src="./quotation-mail-reader.js?v=1"></script>
     <script src="./quotation-report.js?v=1"></script>
     <script src="./quotation-mail-drop.js?v=2"></script>
-    <script src="./quotation-writing.js?v=3"></script>
+    <script src="./quotation-writing.js?v=4"></script>
     <script src="./glossary-data.js?v=1"></script>
     <script src="./hero-background.js?v=2"></script>
-    <script src="./app.js?v=221"></script>
-  <script src="./site-navigation.js?v=1"></script>
+    <script src="./app.js?v=223"></script>
+  <script src="./site-navigation.js?v=2"></script>
 </body>
 </html>

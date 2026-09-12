@@ -8,13 +8,13 @@
   --font-display: "Helvetica Neue", Arial, sans-serif;
   --font-accent: "Times New Roman", Georgia, serif; --font-numeric: var(--font);
   --type-body-size: 16px; --type-body-line: 1.5; --type-display-size: 48px; --type-display-line: 1.12;
-  --site-gutter: clamp(24px, 3.9vw, 72px); --site-blue: #58b4d7;
+  --site-header-offset: 190px; --site-gutter: clamp(24px, 3.9vw, 72px); --site-blue: #58b4d7;
   color: var(--ink); background: #fff; font-family: var(--font);
 }
-html { background: #fff; scroll-behavior: smooth; }
+html { background: #fff; scroll-behavior: smooth; scroll-padding-top: var(--site-header-offset); overflow-x: clip; }
 body, body[data-route], body[data-route="home"].scenario-search-active {
   position: relative; inset: auto; width: 100%; height: auto; min-height: 100svh;
-  margin: 0; color: var(--ink); background: #fff; overflow-x: clip; overflow-y: auto;
+  margin: 0; color: var(--ink); background: #fff; overflow: visible;
   font: 400 16px/1.5 var(--font); touch-action: pan-y; overscroll-behavior: auto;
 }
 button, input, select, textarea { font-family: var(--font); }
@@ -31,7 +31,7 @@ body[data-route] #app.app-shell {
 }
 
 /* The header mirrors the reference's brand row and separate navigation rule. */
-.site-header { position: sticky; top: -128px; z-index: 40; width: 100%; background: var(--navy); color: #fff; }
+.site-header { position: sticky; top: 0; z-index: 40; width: 100%; background: var(--navy); color: #fff; }
 .site-masthead { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 128px; padding: 24px var(--site-gutter); }
 .site-brand { display: inline-flex; align-items: center; gap: 14px; color: inherit; text-decoration: none; white-space: nowrap; }
 .site-brand > span { font: 400 48px/1 "Times New Roman", Georgia, serif; letter-spacing: .015em; }
@@ -41,12 +41,20 @@ body[data-route] #app.app-shell {
 .site-claim { margin: 0; font-size: clamp(17px, 1.8vw, 24px); line-height: 1.2; font-weight: 500; letter-spacing: .015em; }
 .site-navigation { display: flex; justify-content: space-between; align-items: stretch; gap: 24px; min-height: 42px; padding: 0 var(--site-gutter); border-block: 1px solid #ffffff80; }
 .site-navigation-links { display: flex; align-items: stretch; gap: 29px; }
-.site-navigation-links > a, .site-navigation .utility-menu-trigger {
+.site-navigation-links > a, .site-navigation .utility-menu-trigger, .site-environment > summary {
   display: inline-flex; align-items: center; min-height: 41px; padding: 0;
   color: inherit; background: none; border: 0; border-radius: 0; text-decoration: none;
   font: 300 17px/1.3 var(--font); white-space: nowrap;
 }
 .site-navigation-links > a:hover, .site-navigation-links > a[aria-current="page"] { box-shadow: inset 0 -2px #fff; }
+.site-environment { position: relative; }
+.site-environment > summary { display: flex; gap: 8px; cursor: pointer; list-style: none; }
+.site-environment > summary::-webkit-details-marker { display: none; }
+.site-environment[open] > summary { box-shadow: inset 0 -2px #fff; }
+.site-environment-options { position: absolute; top: 100%; left: 0; min-width: 230px; padding: 10px; background: #fff; box-shadow: 0 20px 45px #081c3238; }
+.site-environment-options a { display: flex; align-items: center; justify-content: space-between; min-height: 48px; padding: 12px 16px; color: var(--navy); font: 400 17px/1.4 var(--font); text-decoration: none; }
+.site-environment-options a:hover, .site-environment-options a[aria-current="page"] { background: #edf7fb; }
+.site-environment-options a[aria-current="page"]::after { content: "✓"; color: #007da5; }
 .site-navigation-meta { display: flex; align-items: center; gap: 28px; }
 .site-language { font-size: 14px; font-weight: 300; }
 .site-search-link { display: grid; place-items: center; min-width: 40px; min-height: 40px; color: inherit; }
@@ -70,6 +78,7 @@ body[data-route] #app.app-shell {
 .site-header .utility-menu-tool:hover { background: #edf7fb; }
 .site-header .utility-menu-arrow { color: #007da5; }
 body[data-route="home"] .site-header { background: #091726db; }
+body[data-route="home"].site-scrolled .site-header { background: var(--navy); }
 
 /* Context links stay at the top on working pages, never as a floating app dock. */
 .context-navigation { display: flex; align-items: stretch; gap: 35px; padding: 0 var(--site-gutter); border-bottom: 1px solid var(--line); background: #f3f6f8; }
@@ -167,7 +176,8 @@ body[data-route="home"] .home-directory .module-card-button:focus-visible { outl
 .home-tool-grid > a { display: flex; flex-direction: column; padding: 30px; min-height: 300px; color: var(--navy); background: #fff; text-decoration: none; }
 .home-tool-grid > a:hover { background: #e4f3fa; }
 .tool-number { display: flex; justify-content: space-between; align-items: center; color: #708392; font-size: 13px; margin-bottom: 30px; }
-.tool-pro { font-size: 10px; letter-spacing: .07em; color: #007da5; }
+.tool-pro { font-size: 11px; letter-spacing: .07em; }
+.site-header .utility-menu-tool .anodos-pro-label, .home-tool-grid .tool-pro { color: #c1272d; font-weight: 700; }
 .home-tool-grid h3 { margin: 0 0 14px; font: 400 24px/1.2 var(--font); }
 .home-tool-grid p { margin: 0 0 25px; color: #536578; font: 300 16px/1.5 var(--font); }
 .tool-link { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: auto; color: #007da5; font-size: 14px; }
@@ -234,9 +244,9 @@ body[data-route="bank-accreditation"] .bank-accreditation-workspace { height: au
   .home-stage-inner { max-width: 1660px; margin: auto; }
 }
 @media (max-width: 1050px) and (min-width: 721px) {
-  .site-header .utility-menu { left: -180px; }
+  .site-header .utility-menu { left: -130px; width: min(610px, calc(100vw - 64px)); }
   .site-navigation-links { gap: 19px; }
-  .site-navigation-links > a, .site-navigation .utility-menu-trigger { font-size: 15px; }
+  .site-navigation-links > a, .site-navigation .utility-menu-trigger, .site-environment > summary { font-size: 15px; }
   .home-hero-card { width: min(590px, 66%); }
   .home-hero-actions { gap: 10px; }
   .site-button { padding-inline: 17px; }
@@ -246,7 +256,7 @@ body[data-route="bank-accreditation"] .bank-accreditation-workspace { height: au
   .home-tool-grid > a { padding: 25px; }
 }
 @media (max-width: 720px) {
-  :root { --site-gutter: 22px; }
+  :root { --site-gutter: 22px; --site-header-offset: 106px; }
   .site-header { top: 0; }
   .site-masthead { min-height: 86px; padding-block: 18px; }
   .site-brand { gap: 8px; }
@@ -261,7 +271,8 @@ body[data-route="bank-accreditation"] .bank-accreditation-workspace { height: au
   .site-navigation { display: none; position: absolute; top: 100%; left: 0; width: 100%; padding: 15px 22px 24px; border: 0; background: #0f1e32; max-height: calc(100dvh - 86px); overflow-y: auto; }
   .site-menu-open .site-navigation { display: block; }
   .site-navigation-links { display: flex; flex-direction: column; gap: 0; }
-  .site-navigation-links > a, .site-navigation .utility-menu-trigger { min-height: 54px; width: 100%; padding: 12px 0; border-bottom: 1px solid #ffffff35; font-size: 20px; }
+  .site-navigation-links > a, .site-navigation .utility-menu-trigger, .site-environment > summary { min-height: 54px; width: 100%; padding: 12px 0; border-bottom: 1px solid #ffffff35; font-size: 20px; }
+  .site-environment-options { position: static; box-shadow: none; }
   .site-navigation .utility-menu-shell { display: block; }
   .site-navigation-meta { padding-top: 18px; justify-content: space-between; }
   .site-header .utility-menu { position: static; width: 100%; max-height: none; padding: 15px; overflow: visible; }
