@@ -275,6 +275,7 @@ window.AnodosEnglish = Object.freeze({
   "або перетягніть їх сюди": "or drag them here",
   "Договір і додатки": "Policy and appendices",
   "PDF, Word, Excel, текст або фото. До 8 файлів, 20 МБ кожен, 60 МБ разом. Великі пакети опрацьовуються частинами та отримують єдиний звіт.": "PDF, Word, Excel, text or images. Up to 8 files, 20 MB each, 60 MB in total. Large packages are processed in parts and receive one report.",
+  "Погоджуюсь на аналіз документів": "I agree to document analysis",
   "Погоджуюся на хмарний аналіз документів і передачу їх копій BRITMARK для збереження та перевірки.": "I agree to cloud analysis of the documents and sharing copies with BRITMARK for storage and review.",
   "Як обробляються документи": "How documents are processed",
   "Файли й розпізнаний текст передаються на захищений сервер Cloudflare. Workers AI аналізує текст. Копії завантажуються до приватного архіву BRITMARK, коли комп’ютер доступний. Хмарний аналіз працює незалежно від цього.": "Files and extracted text are sent to a secure Cloudflare server. Workers AI analyses the text. Copies are uploaded to BRITMARK's private archive when its computer is available. Cloud analysis works independently.",
