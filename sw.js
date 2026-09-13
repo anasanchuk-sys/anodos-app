@@ -1,4 +1,4 @@
-const CACHE_NAME = "random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1";
+const CACHE_NAME = "random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1";
 const ASSETS = [
   "./site-language.js?v=2",
   "./site-english.js?v=3",
@@ -9,7 +9,7 @@ const ASSETS = [
   "./assets/backgrounds/anodos-city-poster.jpg?v=1",
   "./site-theme.css?v=3",
   "./contract-quality.html",
-  "./contract-quality.css?v=4",
+  "./contract-quality.css?v=5",
   "./contract-quality.mjs?v=7",
   "./contract-quality-consultation.mjs?v=1",
   "./contract-quality-reader.mjs?v=3",
