@@ -1279,6 +1279,8 @@
           shortQ("Точне призначення об’єкта"),
           shortQ("Адреса"),
           shortQ("Рік будівництва або введення в експлуатацію"),
+          shortQ("Кількість поверхів будівлі"),
+          shortQ("Поверх розташування приміщення"),
           shortQ("Загальна площа", "м²")
         ];
 
@@ -2132,6 +2134,7 @@
         const labels = {found:"Знайдено у джерелі - перевірте актуальність",unknown:"Потрібно уточнити",conflict:"Суперечливі дані",user:"Внесено користувачем"};
         const refs = (question.evidence || []).map(e => e.sourceId).join(", ");
         if (question.answer || question.answerStatus !== "unknown") responseChildren.push(paragraphText(docx, `${labels[question.answerStatus] || "Потрібно уточнити"}${refs ? ` [${refs}]` : ""}`, {size:16,color:"647486",spacing:{after:20,line:230}}));
+        if (question.answerNote && question.answerStatus !== "unknown") responseChildren.push(paragraphText(docx, question.answerNote, {size:16,color:"647486",spacing:{after:20,line:230}}));
       } else if (question.detailsLabel) {
         responseChildren.push(
           paragraphText(docx, question.detailsLabel, {

@@ -89,7 +89,7 @@
     const call=input=>requestWith(client,{...input,capability:cap},{signal:combined});
     try{
       progress('Підключаю сервіс заповнення Anodos...');
-      await call({op:'research',privacyVersion:'anodos-questionnaire-web-v1',payload});
+      await call({op:'research',privacyVersion:'anodos-questionnaire-web-v2',payload});
       while(true){
         combined.throwIfAborted();const state=await call({op:'status'});
         if(state.state==='done')return state.result;

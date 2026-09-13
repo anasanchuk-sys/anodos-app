@@ -7302,7 +7302,7 @@ function renderQuestionnaireGenerator() {
           <button class="primary-action primary-action-wide" type="submit" name="mode" value="${automatic ? "research" : "blank"}" ${questionnaireGeneratorBusy ? "disabled" : ""}>${automatic ? "Знайти й заповнити" : escapeHtml(prepareButtonText)}</button>
           ${questionnaireResearchController ? `<p role="status" data-questionnaire-progress>${escapeHtml(questionnaireResearchProgress)}</p><button class="secondary-action" type="button" data-cancel-questionnaire>Скасувати заповнення</button>` : ""}
         </form>
-        <p class="questionnaire-generator-privacy">${automatic ? "«Знайти й заповнити» передає адресу й опис сервісу Anodos та підключеному вебпошуку (Bing, DuckDuckGo або Brave Search). Результат можна перевірити й відредагувати." : "Порожня форма створюється у браузері без передачі даних."}</p>
+        <p class="questionnaire-generator-privacy">${automatic ? "«Знайти й заповнити» передає адресу й опис сервісу Anodos та підключеному вебпошуку (OpenAI, Brave Search, Bing або DuckDuckGo). Результат можна перевірити й відредагувати." : "Порожня форма створюється у браузері без передачі даних."}</p>
       </section>
 
       ${result ? `
