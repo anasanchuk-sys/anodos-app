@@ -2251,6 +2251,7 @@
 
     let number = 1;
     if (result.research) {
+      if(result.research.objectName)content.push(paragraphText(docx, `Об’єкт: ${result.research.objectName}`, {size:21,bold:true}));
       content.push(paragraphText(docx, `Адреса об’єкта: ${result.research.address}`, {size:21,bold:true}));
       content.push(paragraphText(docx, result.research.foundCount > 0
         ? "Попереднє заповнення з відкритих джерел. Перевірте відповіді, актуальність даних та заповніть поля, які потребують уточнення."

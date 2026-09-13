@@ -20,6 +20,7 @@
     const found=questions.filter(q=>q.answerStatus==='found').length,user=questions.filter(q=>q.answerStatus==='user'&&q.answer).length;
     return `<div class="questionnaire-research-review">
       <p class="questionnaire-research-summary" data-questionnaire-summary>${found ? `${found} з ${questions.length} полів містять знайдені відомості${user?`; ${user} доповнено вами`:''}. Перевірте їх та уточніть решту.` : 'Заповнення не вдалося: у прочитаних джерелах немає відповідей для цього об’єкта. Нижче залишилася форма для ручного заповнення. Уточніть адресу або додайте назву будівлі й повторіть пошук.'}</p>
+      ${research.objectName?`<p><strong>Об’єкт:</strong> ${escape(research.objectName)}</p>`:''}
       <p><strong>Адреса:</strong> ${escape(research.address)}</p>
       ${research.warnings?.length?`<details><summary>Обмеження пошуку (${research.warnings.length})</summary><ul>${research.warnings.map(w=>`<li>${escape(w)}</li>`).join('')}</ul></details>`:''}
       ${result.sections.map(s=>`<section class="questionnaire-research-section"><h3>${escape(s.title)}</h3>${s.questions.map(q=>`

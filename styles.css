@@ -8489,6 +8489,11 @@ body[data-route="bank-accreditation"] .bank-accreditation-table-shell:focus-visi
 .questionnaire-research-review a, .questionnaire-research-review li { overflow-wrap: anywhere; }
 .questionnaire-generator-form input[type="text"] { min-height: 52px; resize: none; font-size: 1rem; }
 .questionnaire-generator-form input[type="text"]:focus { border-color: #337f6d; box-shadow: 0 0 0 2px #337f6d26; }
+.questionnaire-generator-form select { min-height: 48px; width: 100%; padding: .75rem; border: 1px solid #b9c7c2; border-radius: 8px; color: inherit; background: var(--surface, #fff); font: inherit; }
+.questionnaire-generator-form [data-questionnaire-object-choices] { display: grid; gap: 1rem; min-width: 0; border: 1px solid #b9c7c2; border-radius: 8px; padding: 1rem; }
+.questionnaire-generator-form [data-questionnaire-object-choices] label { display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: .65rem; cursor: pointer; }
+.questionnaire-generator-form [data-questionnaire-object-choices] input { grid-row: span 2; width: 18px; height: 18px; accent-color: #337f6d; }
+.questionnaire-generator-form [data-questionnaire-object-choices] label > span { grid-column: 2; overflow-wrap: anywhere; }
 .questionnaire-generator-form label > span { font-size: .875rem; }
 
 /* Property glossary: category browsing, connected definitions and source context. */
