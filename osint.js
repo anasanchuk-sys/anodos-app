@@ -49,7 +49,29 @@
     report={...report,gaps:AnodosOsintReport.gaps(report)};
     result=report;$('result').hidden=false;$('selection').hidden=true;$('result-title').textContent=report.name;$('result-meta').textContent=`${report.sources.length} джерел · ${report.findings.length} висновків із цитатами · ${new Date(report.createdAt).toLocaleDateString('uk-UA')}`;
     const content=$('report-content');content.replaceChildren();content.append(el('p','Попередній аналіз. Наявність цитати підтверджує текст джерела; висновки й актуальність відомостей потребують перевірки.','hint'));
-    for(const [id,title]of report.sections){content.append(el('h3',title));const rows=report.findings.filter(f=>f.section===id);if(!rows.length)content.append(el('p','Недостатньо підтверджених відомостей.','hint'));
+    const focused=report.focus==='insurable-assets-v1';
+    if(focused){
+      const count=report.findings.filter(f=>f.asset).length;
+      $('result-meta').textContent=`Позицій майна: ${count} · Джерел: ${report.sources.length} · ${new Date(report.createdAt).toLocaleDateString('uk-UA')}`;
+      content.append(el('h3','Активи для страхування'),el('p','Портфелі майна та окремі об’єкти можуть перетинатися. Перелік не є повною інвентаризацією.','hint'));
+      if(!count)content.append(el('p','Недостатньо підтверджених відомостей для реєстру майна. Це не означає відсутність активів. Запросіть перелік і документи у бізнесу.','hint'));
+      for(const group of AnodosOsintReport.assetGroups(report)){
+        content.append(el('h3',group.title));
+        for(const f of group.items){
+          const a=f.asset,box=el('article',undefined,'finding asset-finding');
+          box.append(el('h4',a.name),el('p',f.statement));
+          const fields=el('dl',undefined,'asset-fields');
+          for(const [label,value] of AnodosOsintReport.assetFields(a))fields.append(el('dt',label),el('dd',value));
+          box.append(fields,el('p',f.timeNote,'hint'),el('strong','Напрям страхування: '+a.insuranceOption),el('p',a.insuranceBasis,'hint'));
+          if(!a.insuranceCandidate)box.append(el('p','Спочатку підтвердити наявність, право і стан об’єкта. До поточних кандидатів не включено.','hint'));
+          const questions=el('ul');a.questions.forEach(q=>questions.append(el('li',q)));box.append(el('h4','Що запросити для пропозиції'),questions);
+          const proof=el('details');proof.append(el('summary','Докази та джерела'));
+          for(const e of f.evidence){const source=report.sources.find(s=>s.id===e.sourceId);if(e.quote)proof.append(el('blockquote',e.quote+(e.shortened?'…':'')));if(source){const link=el('a',`[${source.id}] ${source.title}`);link.href=source.url;link.target='_blank';link.rel='noopener noreferrer';proof.append(link);}}
+          box.append(proof);content.append(box);
+        }
+      }
+    }
+    for(const [id,title]of report.sections){if(focused&&id==='assets')continue;content.append(el('h3',title));const rows=report.findings.filter(f=>f.section===id);if(!rows.length)content.append(el('p','Недостатньо підтверджених відомостей.','hint'));
       rows.forEach(f=>{const box=el('article',undefined,'finding');box.append(el('span',f.status==='inference'?'Аналітичне припущення':'Твердження джерела',f.status==='inference'?'label inference':'label'),el('p',f.statement),el('p',f.timeNote||'Дата актуальності відомостей не встановлена.','hint'));const details=el('details');details.append(el('summary','Цитати та джерела'));f.evidence.forEach(e=>{const s=report.sources.find(s=>s.id===e.sourceId);if(e.quote)details.append(el('blockquote',e.quote+(e.shortened?'…':'')));if(s){const a=el('a',`[${s.id}] ${s.title}`);a.href=s.url;a.target='_blank';a.rel='noopener noreferrer';details.append(a);}});box.append(details);content.append(box);});
     }
     content.append(el('h3','Що залишилося перевірити'));const gaps=el('ul');report.gaps.forEach(g=>gaps.append(el('li',g)));content.append(gaps);

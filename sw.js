@@ -1,4 +1,4 @@
-const CACHE_NAME = "insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1";
+const CACHE_NAME = "osint-assets-20260913-v1-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1";
 const ASSETS = [
   "./site-language.js?v=2",
   "./site-english.js?v=1",
@@ -23,9 +23,9 @@ const ASSETS = [
   "./geocode-config.js?v=1",
   "./geocode.js?v=2",
   "./osint.html",
-  "./osint.css?v=5",
-  "./osint.js?v=3",
-  "./osint-report.js?v=2",
+  "./osint.css?v=6",
+  "./osint.js?v=4",
+  "./osint-report.js?v=3",
   "./osint-entry.css?v=5",
   "./",
   "./index.html",
