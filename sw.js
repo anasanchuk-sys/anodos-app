@@ -1,7 +1,7 @@
-const CACHE_NAME = "random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1";
+const CACHE_NAME = "random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1";
 const ASSETS = [
   "./site-language.js?v=2",
-  "./site-english.js?v=2",
+  "./site-english.js?v=3",
   "./site-language.css?v=1",
   "./pro-access.css?v=1",
   "./site-navigation.js?v=4",

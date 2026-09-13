@@ -287,6 +287,7 @@ window.AnodosEnglish = Object.freeze({
   "Збережіть його, щоб повернутися до результату протягом 30 днів.": "Save it to return to your result within 30 days.",
   "Перевірити інший договір": "Review another policy",
   "ВАША ОЦІНКА": "YOUR ASSESSMENT",
+  "Ми проаналізуємо ваш договір страхування та підкажемо, на що звернути увагу.": "We will analyse your insurance policy and highlight what to pay attention to.",
   "Умови договору": "Policy terms",
   "простою мовою.": "in plain language.",
   "Висновок міститиме конкретні пояснення та посилання на відповідні фрагменти вашого договору.": "The assessment will include specific explanations and references to relevant passages in your policy.",
