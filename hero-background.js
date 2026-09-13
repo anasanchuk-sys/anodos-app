@@ -4,6 +4,15 @@
   const connection = navigator.connection;
   let motionEnabled = !connection?.saveData;
   const initialized = new WeakSet();
+  const scenes = ['city', 'crosswalk', 'bird', 'bridge', 'forest',
+    'sea', 'meadow', 'clouds', 'mountains', 'rain'];
+  // Pick once per page load, keeping the same scene when the app redraws home.
+  // Avoid an immediate repeat on refresh when session storage is available.
+  let previousScene;
+  try { previousScene = sessionStorage.getItem('anodos-hero-scene'); } catch (_) { /* Storage can be disabled. */ }
+  const candidates = scenes.filter((scene) => scene !== previousScene);
+  const selectedScene = candidates[Math.floor(Math.random() * candidates.length)];
+  try { sessionStorage.setItem('anodos-hero-scene', selectedScene); } catch (_) { /* Random selection still works. */ }
 
   function sync() {
     document.querySelectorAll('[data-hero-video]').forEach((video) => {
@@ -11,6 +20,9 @@
       const toggle = hero.querySelector('.hero-motion-toggle');
       if (!initialized.has(video)) {
         initialized.add(video);
+        video.dataset.scene = selectedScene;
+        video.dataset.src = `./assets/backgrounds/anodos-${selectedScene}.mp4?v=1`;
+        video.poster = `./assets/backgrounds/anodos-${selectedScene}-poster.jpg?v=1`;
         video.muted = true;
         video.defaultPlaybackRate = 0.5;
         video.playbackRate = 0.5;
