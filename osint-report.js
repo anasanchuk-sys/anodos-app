@@ -17,7 +17,8 @@
   ].map(([id,title])=>({id,title,items:report.findings.filter(f=>f.asset?.lane===id)})).filter(group=>group.items.length);
   const assetFields=a=>[
     ['Тип',a.categoryLabel+(a.scope==='group'?' | Сукупність майна, можливий перетин з окремими об’єктами':' | Окремий об’єкт')],
-    ['Локація',a.location||'Не встановлена'],['Юридичний власник',a.owner||'Не встановлений'],
+    ...(a.address?.status==='mobile'?[['Місце базування',a.address.note]]:a.address?.status==='multiple'?[['Адреси об’єктів',a.address.note]]:[['Точна адреса',a.address?.status==='exact'?a.address.text:'Не підтверджена'],['Перевірка адреси',a.address?.status==='exact'?'За джерелом ['+a.address.sourceId+']. Актуальність слід звірити з бізнесом.':a.address?.note||'Окремий пошук точної адреси у цьому звіті не виконувався. Почніть нове дослідження.']]),
+    ...(!a.address||a.address.status!=='exact'?[['Відома локація',a.location||'Не встановлена']]:[]),['Юридичний власник',a.owner||'Не встановлений'],
     ['Оператор',a.operator||'Не встановлений'],['Право на майно',a.relationLabel],['Стан',a.stateLabel],
     ...(a.characteristics?[['Масштаб / характеристики',a.characteristics]]:[])
   ];
