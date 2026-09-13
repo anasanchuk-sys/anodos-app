@@ -1,6 +1,14 @@
-const CACHE_NAME = "my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1";
+const CACHE_NAME = "my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-13759332de90";
 const ASSETS = [
-  "./my-documents.js?v=1",
+  // INSURANCE NEWS ASSETS BEGIN
+  "./news.html",
+  "./insurance-news.css?v=1",
+  "./insurance-news.js?v=1",
+  "./articles/swiss-re-catastrophe-losses-first-half-2026.html",
+  "./articles/ebrd-ese-war-damage-business-assets.html",
+  "./articles/nbu-property-insurance-fourth-quarter-2025.html",
+  // INSURANCE NEWS ASSETS END
+"./my-documents.js?v=1",
   "./my-documents.css?v=1",
   "./site-language.js?v=2",
   "./site-english.js?v=4",
@@ -137,6 +145,18 @@ self.addEventListener("fetch", (event) => {
 
   if (event.request.headers.has("range")) {
     event.respondWith(rangeResponse(event.request));
+    return;
+  }
+
+  // Insurance news: cache the actual document, never the home fallback.
+  if (url.origin === self.location.origin && (url.pathname === "/news.html" || url.pathname.startsWith("/articles/") || url.pathname === "/insurance-news.xml")) {
+    event.respondWith(fetch(new Request(event.request, { cache: "reload" })).then((response) => {
+      if (response.ok) {
+        const copy = response.clone();
+        event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy)));
+      }
+      return response;
+    }).catch(async () => (await caches.match(event.request, { ignoreSearch: true })) || new Response("Матеріал недоступний офлайн. Підключіться до інтернету.", { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } })));
     return;
   }
 
