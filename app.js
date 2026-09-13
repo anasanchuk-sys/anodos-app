@@ -154,14 +154,7 @@ document.addEventListener("contextmenu", (event) => {
 });
 
 document.addEventListener("touchmove", (event) => {
-  const isBlockedHomeScroll = isHomeRoute() && !isScenarioSearchActive();
-  if (isBlockedHomeScroll || event.touches?.length > 1) {
-    event.preventDefault();
-  }
-}, { passive: false });
-
-document.addEventListener("wheel", (event) => {
-  if (isHomeRoute() && !isScenarioSearchActive()) {
+  if (event.touches?.length > 1) {
     event.preventDefault();
   }
 }, { passive: false });
