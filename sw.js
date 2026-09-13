@@ -1,4 +1,4 @@
-const CACHE_NAME = "home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6";
+const CACHE_NAME = "questionnaire-search-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6";
 const ASSETS = [
   "./site-language.js?v=1",
   "./site-english.js?v=1",
@@ -61,7 +61,7 @@ const ASSETS = [
   "./property-review-semantic.js?v=5",
   "./property-review-report.js?v=7",
   "./glossary-data.js?v=1",
-  "./app.js?v=225",
+  "./app.js?v=226",
   "./assets/contract-tests/arx-zusp-053.pdf",
   "./manifest.webmanifest?v=7",
   "./assets/icon.svg?v=7",
