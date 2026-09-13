@@ -1,9 +1,18 @@
-const CACHE_NAME = "osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-13759332de90";
+const CACHE_NAME = "osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-fa96de8eb6e7";
 const ASSETS = [
   // INSURANCE NEWS ASSETS BEGIN
   "./news.html",
   "./insurance-news.css?v=1",
   "./insurance-news.js?v=1",
+  "./articles/eca-war-risk-insurance-and-premium-compensation-2026.html",
+  "./articles/ebrd-urgf-war-risk-reinsurance-ukraine-2025.html",
+  "./articles/ukraine-rdna5-reconstruction-and-insured-values.html",
+  "./articles/munich-re-july-2026-renewals-property-pricing.html",
+  "./articles/property-accumulation-one-event-many-losses.html",
+  "./articles/parametric-flood-insurance-trigger-and-basis-risk.html",
+  "./articles/property-risk-engineering-before-insurance-renewal.html",
+  "./articles/extreme-heat-property-and-business-interruption.html",
+  "./articles/drones-property-surveys-and-insurance-claims.html",
   "./articles/swiss-re-catastrophe-losses-first-half-2026.html",
   "./articles/ebrd-ese-war-damage-business-assets.html",
   "./articles/nbu-property-insurance-fourth-quarter-2025.html",
