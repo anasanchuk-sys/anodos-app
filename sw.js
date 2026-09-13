@@ -1,10 +1,10 @@
-const CACHE_NAME = "questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6";
+const CACHE_NAME = "insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6";
 const ASSETS = [
-  "./site-language.js?v=1",
+  "./site-language.js?v=2",
   "./site-english.js?v=1",
   "./site-language.css?v=1",
   "./pro-access.css?v=1",
-  "./site-navigation.js?v=3",
+  "./site-navigation.js?v=4",
   "./hero-background.js?v=2",
   "./assets/backgrounds/anodos-city-poster.jpg?v=1",
   "./site-theme.css?v=3",
@@ -61,7 +61,7 @@ const ASSETS = [
   "./property-review-semantic.js?v=5",
   "./property-review-report.js?v=7",
   "./glossary-data.js?v=1",
-  "./app.js?v=228",
+  "./app.js?v=229",
   "./assets/contract-tests/arx-zusp-053.pdf",
   "./manifest.webmanifest?v=7",
   "./assets/icon.svg?v=7",

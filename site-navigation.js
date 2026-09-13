@@ -47,14 +47,14 @@
     const search = event.target.closest('[data-site-search]');
     const scroll = event.target.closest('[data-site-scroll]');
     const slide = event.target.closest('[data-hero-slide]');
-    if (home) { event.preventDefault(); go('learning'); }
+    if (home) { event.preventDefault(); go('products'); }
     else if (space) { event.preventDefault(); go(space.dataset.siteSpace); }
     else if (view && views.has(view.dataset.siteView)) { event.preventDefault(); go(view.dataset.siteView === 'progress' ? 'learning' : 'products', view.dataset.siteView); }
     else if (browse) { event.preventDefault(); go(browse.dataset.siteBrowse, 'home', 'modules'); }
     else if (search) { event.preventDefault(); go('products', 'home', 'search'); }
     else if (scroll) {
       event.preventDefault(); closeMenu();
-      if (!document.getElementById(scroll.dataset.siteScroll)) setActiveSpace('learning');
+      if (!document.getElementById(scroll.dataset.siteScroll)) setActiveSpace('products');
       jump(scroll.dataset.siteScroll);
     }
     else if (slide) { event.preventDefault(); setHomeHeroSlide(Number(slide.dataset.heroSlide)); }
@@ -71,7 +71,7 @@
   });
   if (isApp()) {
     const query = new URLSearchParams(location.search);
-    const space = query.get('space') === 'products' ? 'products' : 'learning';
+    const space = query.get('space') === 'learning' ? 'learning' : 'products';
     const view = views.has(query.get('view')) ? query.get('view') : 'home';
     const section = ['modules', 'tools', 'search'].includes(query.get('section')) ? query.get('section') : '';
     if (query.has('space') || query.has('view') || section) {

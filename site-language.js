@@ -7,10 +7,14 @@
   const dictionary = window.AnodosEnglish || {};
   const storageKey = 'anodos-language';
   const supported = value => value === 'en' || value === 'uk';
-  const requested = new URLSearchParams(location.search).get('lang');
-  let saved;
-  try { saved = localStorage.getItem(storageKey); } catch { /* Storage may be disabled. */ }
-  let language = supported(requested) ? requested : supported(saved) ? saved : 'uk';
+  // Start each opened or refreshed document in Ukrainian, even after choosing EN.
+  let language = 'uk';
+  try { localStorage.setItem(storageKey, language); } catch { /* Storage may be disabled. */ }
+  const initialUrl = new URL(location.href);
+  if (initialUrl.searchParams.has('lang')) {
+    initialUrl.searchParams.set('lang', language);
+    history.replaceState(history.state, '', initialUrl.pathname + initialUrl.search + initialUrl.hash);
+  }
   const originals = new WeakMap();
   const attributes = new WeakMap();
   const translatableAttributes = ['aria-label', 'placeholder', 'title', 'alt'];
@@ -160,8 +164,5 @@
     const button = event.target.closest('[data-language]');
     if (button) setLanguage(button.dataset.language);
   });
-  if (supported(requested)) {
-    try { localStorage.setItem(storageKey, language); } catch { /* Optional. */ }
-  }
   apply();
 })();

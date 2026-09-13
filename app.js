@@ -1955,7 +1955,8 @@ let clientRecommendationBrokerNote = "";
 let clientRecommendationError = "";
 let clientRecommendationDownloadMessage = "";
 let clientRecommendationBusy = false;
-let activeSpace = normalizeActiveSpace(localStorage.getItem(activeSpaceKey));
+// Every full page load starts in Insurance; manual switching remains available.
+let activeSpace = "products";
 let contractReviewFiles = [];
 let contractReviewResult = null;
 let contractReviewCopyMessage = "";
@@ -2003,7 +2004,7 @@ function writeJson(key, value) {
 }
 
 function normalizeActiveSpace(value) {
-  return value === "products" ? "products" : "learning";
+  return value === "learning" ? "learning" : "products";
 }
 
 function stateCompensationGuideIsActive() {
