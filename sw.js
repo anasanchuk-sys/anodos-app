@@ -1,4 +1,4 @@
-const CACHE_NAME = "en-v1-platform-shell-anodos-pro-gate-20260912";
+const CACHE_NAME = "logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912";
 const ASSETS = [
   "./site-language.js?v=1",
   "./site-english.js?v=1",
