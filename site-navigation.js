@@ -1,7 +1,7 @@
 /* Shared website navigation; ordinary links also work on standalone tool pages. */
 (() => {
   const isApp = () => typeof setActiveSpace === 'function';
-  const views = new Set(['home', 'law', 'glossary', 'progress', 'bank-accreditation', 'contract-review', 'questionnaire-generator', 'questionnaire-fill', 'quotation-writing', 'client-recommendation']);
+  const views = new Set(['home', 'law', 'glossary', 'progress', 'documents', 'bank-accreditation', 'contract-review', 'questionnaire-generator', 'questionnaire-fill', 'quotation-writing', 'client-recommendation']);
   const menuButton = document.querySelector('[data-site-menu]');
   const environment = document.querySelector('[data-site-environment]');
   const syncHeader = () => document.body.classList.toggle('site-scrolled', window.scrollY > 40);

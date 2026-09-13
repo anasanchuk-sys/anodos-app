@@ -2154,6 +2154,16 @@ function renderSpaceShell() {
   const nav = document.querySelector(".bottom-nav");
 
   body.dataset.space = activeSpace;
+  const personalNav = document.querySelector('[data-site-personal]');
+  if (personalNav) {
+    const learning = activeSpace === 'learning';
+    personalNav.dataset.siteView = learning ? 'progress' : 'documents';
+    personalNav.href = learning ? './?space=learning&view=progress' : './?space=products&view=documents';
+    personalNav.textContent = learning ? 'Мій прогрес' : 'Мої документи';
+    if (route === personalNav.dataset.siteView) personalNav.setAttribute('aria-current', 'page');
+    else personalNav.removeAttribute('aria-current');
+  }
+
   document.querySelectorAll('.site-navigation [data-site-space]').forEach((link) => {
     if (link.dataset.siteSpace === activeSpace) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
@@ -6487,6 +6497,11 @@ function render() {
 
   if (route === "editor") {
     renderEditor(getLesson());
+    return;
+  }
+
+  if (route === "documents") {
+    window.AnodosDocuments.mount(screen);
     return;
   }
 

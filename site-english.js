@@ -5,6 +5,7 @@ window.AnodosEnglish = Object.freeze({
   "Інструменти": "Tools",
   "Довідники": "References",
   "Мій прогрес": "My progress",
+  "Мої документи": "My documents",
   "Середовище": "Workspace",
   "Обрати середовище": "Choose workspace",
   "РОЗУМІТИ. ДІЯТИ. ЗРОСТАТИ.": "UNDERSTAND. ACT. GROW.",
