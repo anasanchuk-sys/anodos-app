@@ -1,4 +1,4 @@
-const CACHE_NAME = "home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912";
+const CACHE_NAME = "home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6";
 const ASSETS = [
   "./site-language.js?v=1",
   "./site-english.js?v=1",
@@ -10,9 +10,9 @@ const ASSETS = [
   "./site-theme.css?v=3",
   "./contract-quality.html",
   "./contract-quality.css?v=3",
-  "./contract-quality.mjs?v=4",
+  "./contract-quality.mjs?v=6",
   "./contract-quality-reader.mjs?v=3",
-  "./contract-quality-report.mjs?v=3",
+  "./contract-quality-report.mjs?v=6",
   "./contacts.html",
   "./contacts.css?v=1",
   "./contacts.js?v=2",

@@ -1,5 +1,5 @@
 import {readQualityFile} from './contract-quality-reader.mjs?v=3';
-import {qualityPdfBlob} from './contract-quality-report.mjs?v=3';
+import {qualityPdfBlob} from './contract-quality-report.mjs?v=6';
 const endpoint='https://anodos-contract-quality.mesquite-wishbone.workers.dev';
 const $=id=>document.getElementById(id),escape=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let files=[],job=null,result=null,busy=false,available=false,quotaRetryAt=null,pollTimer,run=0;
@@ -32,7 +32,7 @@ async function poll(generation=run){
   if(s.status==='waiting_quota'){const when=s.retryAt?new Date(s.retryAt).toLocaleString('uk-UA',{timeZone:'Europe/Kyiv'}):'після відновлення ліміту';progress('Документ у черзі на перевірку','Денний ліміт хмарного аналізу вичерпано. Документи збережено. Продовжимо автоматично '+when+' за київським часом. Повторно завантажувати файл не потрібно.');pollTimer=setTimeout(()=>poll(generation),60000);return;}
   if(s.status==='failed'){throw new Error(s.error||'Аналіз не завершено.');}
   if(s.status==='uploading'){setBusy(false);$('progress').hidden=true;error('Завантаження не було завершено. Почніть нову перевірку з повним пакетом файлів.');return;}
-  const detail=s.progress?.stage==='reconciling'?`Усі частини прочитано. Оцінюємо умови й окремо перевіряємо обґрунтованість висновків: ${s.progress.completed} із ${s.progress.total} груп. `:s.progress?.total>1?`Опрацьовано ${s.progress.completed} із ${s.progress.total} частин повного пакета. `:'';
+  const detail=s.progress?.stage==='details'?'Уточнюємо основні дані договору для шапки звіту. ':s.progress?.stage==='reconciling'?`Усі частини прочитано. Оцінюємо умови й окремо перевіряємо обґрунтованість висновків: ${s.progress.completed} із ${s.progress.total} груп. `:s.progress?.total>1?`Опрацьовано ${s.progress.completed} із ${s.progress.total} частин повного пакета. `:'';
   progress(s.status==='queued'?'Продовжуємо перевірку':'Читаємо та оцінюємо умови',detail+'Перевірка триває у хмарі. Ви можете повернутися за приватним посиланням.');
   pollTimer=setTimeout(()=>poll(generation),5000);
  }catch(e){if(generation!==run)return;$('progress').hidden=true;setBusy(false);error(e.message+' Якщо з’єднання перервалося, відкрийте збережене посилання ще раз.');}
