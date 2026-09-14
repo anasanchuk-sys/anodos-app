@@ -1,11 +1,13 @@
-const CACHE_NAME = "hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-fa96de8eb6e7";
+const CACHE_NAME = "hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-efa955f96bcc";
 const ASSETS = [
-  "./hero-spotlight.js?v=1",
-  "./hero-spotlight.css?v=1",
   // INSURANCE NEWS ASSETS BEGIN
   "./news.html",
   "./insurance-news.css?v=1",
   "./insurance-news.js?v=1",
+  "./articles/ukraine-insurance-market-first-half-2026.html",
+  "./articles/swiss-re-data-centres-property-risk-2026.html",
+  "./articles/munich-re-non-peak-perils-property-losses-2026.html",
+  "./articles/eiopa-insurance-guarantee-schemes-advice-2026.html",
   "./articles/eca-war-risk-insurance-and-premium-compensation-2026.html",
   "./articles/ebrd-urgf-war-risk-reinsurance-ukraine-2025.html",
   "./articles/ukraine-rdna5-reconstruction-and-insured-values.html",
@@ -19,6 +21,8 @@ const ASSETS = [
   "./articles/ebrd-ese-war-damage-business-assets.html",
   "./articles/nbu-property-insurance-fourth-quarter-2025.html",
   // INSURANCE NEWS ASSETS END
+"./hero-spotlight.js?v=1",
+  "./hero-spotlight.css?v=1",
 "./my-documents.js?v=1",
   "./my-documents.css?v=1",
   "./site-language.js?v=2",
