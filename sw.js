@@ -1,4 +1,4 @@
-const CACHE_NAME = "quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-fa96de8eb6e7";
+const CACHE_NAME = "quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-fa96de8eb6e7";
 const ASSETS = [
   // INSURANCE NEWS ASSETS BEGIN
   "./news.html",
@@ -29,11 +29,11 @@ const ASSETS = [
   "./site-theme.css?v=3",
   "./contract-quality.html",
   "./contract-quality.css?v=5",
-  "./contract-quality.mjs?v=9",
+  "./contract-quality.mjs?v=10",
   "./contract-quality-consultation.mjs?v=1",
   "./contract-quality-reader.mjs?v=4",
   "./contract-quality-pdf-tables.mjs?v=1",
-  "./contract-quality-report.mjs?v=6",
+  "./contract-quality-report.mjs?v=7",
   "./contacts.html",
   "./contacts.css?v=1",
   "./contacts.js?v=2",

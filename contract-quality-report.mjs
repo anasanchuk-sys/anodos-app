@@ -15,13 +15,13 @@ export function buildQualityPdf(result,{britmark,anodos}){
   {text:new Date(result.createdAt).toLocaleDateString('uk-UA')+' · Файлів у перевірці: '+(result.sourceFiles?.length||0)+'. '+clean(result.scope),fontSize:9,color:muted,margin:[0,0,0,10]},
   {text:'Висновок сформовано автоматично за завантаженими документами. Він може містити пропуски. Перед зміною договору звірте рекомендації з оригіналом і погодьте їх зі страховим фахівцем. Запропоновані розширення можуть вплинути на премію.',fontSize:8,color:muted,lineHeight:1.2,margin:[0,0,0,14]}];
  function section(title,checks,kind){if(!checks?.length||result.blocked)return;checks.forEach((c,i)=>{
-  const blocks=[{text:(i+1)+'. '+clean(c.title),fontSize:12,bold:true,color:kind==='good'?green:ink,margin:[0,0,0,6]},
-   {text:clean(c.assessment),lineHeight:1.22,margin:[0,0,0,6]}];
-  if(c.impact)blocks.push({text:clean(c.impact),lineHeight:1.22,margin:[0,0,0,6]});
-  if(c.recommendation)blocks.push({text:'Що погодити: '+clean(c.recommendation),color:green,bold:true,lineHeight:1.22,margin:[0,2,0,7]});
+  const blocks=[{text:(i+1)+'. '+clean(c.title),fontSize:12,bold:true,color:kind==='good'?green:ink,margin:[0,0,0,5]},
+   {text:clean(c.assessment),lineHeight:1.18,margin:[0,0,0,5]}];
+  if(c.impact)blocks.push({text:clean(c.impact),lineHeight:1.18,margin:[0,0,0,5]});
+  if(c.recommendation)blocks.push({text:'Що погодити: '+clean(c.recommendation),color:green,bold:true,lineHeight:1.18,margin:[0,2,0,7]});
   const introduction=blocks.splice(0,2);if(i===0)introduction.unshift({text:title,fontSize:14,bold:true,color:ink,margin:[0,14,0,10]});
   blocks.unshift({unbreakable:true,stack:introduction});
-  content.push({stack:blocks,margin:[0,0,0,13],id:'check-'+c.id});
+  content.push({stack:blocks,margin:[0,0,0,9],id:'check-'+c.id});
  });}
  section('Що варто покращити',result.issues,'change');section('Що вже працює на вашу користь',result.strengths,'good');section('Встановлені умови',result.observations,'info');if(result.unknown?.length&&!result.blocked){result.unknown.forEach((c,i)=>content.push({stack:[{unbreakable:true,stack:[...(i===0?[{text:'Що потрібно уточнити',fontSize:14,bold:true,margin:[0,14,0,8]}]:[]),{text:clean(c.title),bold:true},{text:clean(c.assessment),margin:[0,3,0,0]}]}],fontSize:9,lineHeight:1.2,margin:[0,0,0,9],id:'check-'+c.id}));}
  if(result.warnings?.length)content.push({text:result.warnings.map(clean).join('\n'),fontSize:9,color:muted,lineHeight:1.2,margin:[0,8,0,0]});
