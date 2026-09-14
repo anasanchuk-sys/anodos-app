@@ -1,4 +1,4 @@
-import {readQualityFile} from './contract-quality-reader.mjs?v=3';
+import {readQualityFile} from './contract-quality-reader.mjs?v=4';
 import {qualityPdfBlob} from './contract-quality-report.mjs?v=6';
 import {consultationMarkup,mountConsultation} from './contract-quality-consultation.mjs?v=1';
 const endpoint='https://anodos-contract-quality.mesquite-wishbone.workers.dev';

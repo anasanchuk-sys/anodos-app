@@ -1,4 +1,5 @@
 // Reused from the existing Anodos parser; isolated from application UI.
+import {pdfTableText} from './contract-quality-pdf-tables.mjs?v=1';
 let contractReviewPdfModulePromise=null;
 const contractReviewFileExtension=name=>String(name||"").toLowerCase().match(/\.[a-z0-9]+$/)?.[0]||"";
 function contractReviewDecodeEntities(value) {
@@ -191,6 +192,8 @@ async function contractReviewReadPdf(fileRecord) {
           const imageOps = new Set(Object.entries(pdfjs.OPS).filter(([name]) => /paint.*Image|paintXObject/.test(name)).map(([, value]) => value));
           const operators = await page.getOperatorList();
           imageOcr = operators.fnArray.some((operation) => imageOps.has(operation));
+          const tableText = pdfTableText(content, operators, pdfjs.OPS);
+          if (tableText) text += '\n' + tableText;
         }
         let blank = false;
         if (visibleCharacters < 32 || imageOcr) {
@@ -657,6 +660,7 @@ async function contractReviewReadText(fileRecord) {
 
 
 export async function readQualityFile(file){const record={name:file.name,file,requireCompleteReading:true};const result=await contractReviewReadText(record);if(!result.text?.trim())throw new Error(result.status||"Документ не прочитано");const warnings=[...(record.extractionWarnings||[])];if(/\.doc$/i.test(file.name))warnings.push("Старий DOC прочитано як текст; повноту колонтитулів, вбудованих об’єктів і правок потрібно перевірити за DOCX або PDF.");if(record.hasUnresolvedRevisions)warnings.push("Word містить непогоджені правки: перевірено поточну редакцію; остаточну версію потрібно підтвердити.");if(record.hasComments)warnings.push("Word містить коментарі; вони не є погодженими умовами.");if(record.ocrPages)warnings.push("Частину тексту розпізнано OCR; звірте цифри й формулювання зі сканом.");return {name:file.name,text:result.text,warnings};}
+export {contractReviewPdfPageText};
 // Research helper: potential removals are not proof of accepted changes.
 export function inspectLegacyContract(bytes){
  const word=contractReviewReadOleStream(bytes,'WordDocument');if(!word||word.length<426)throw new Error('Invalid legacy Word');
