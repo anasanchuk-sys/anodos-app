@@ -69,3 +69,77 @@ Existing night city: see [source](anodos-city-SOURCE.md).
 - Download: https://assets.mixkit.co/videos/18312/18312-1080.mp4
 - License: https://mixkit.co/license/#videoFree
 
+
+## Library expansion - 2026-09-14
+
+Ten additional landscape clips, native Full HD 1920x1080. H.264 CRF 19, slow preset, maximum 8 Mb/s, up to 12 seconds, no audio, faststart. Playback remains 0.35x. Item-page commercial-use permission checked on 2026-09-14.
+
+### Річка з висоти
+
+- File: anodos-river.mp4
+- Source: https://mixkit.co/free-stock-video/aerial-view-of-a-large-river-43605/
+- Download: https://assets.mixkit.co/videos/43605/43605-1080.mp4
+- License: https://mixkit.co/license/#videoFree
+
+### Лісовий водоспад
+
+- File: anodos-waterfall.mp4
+- Source: https://mixkit.co/free-stock-video/waterfall-in-forest-2213/
+- Download: https://assets.mixkit.co/videos/2213/2213-1080.mp4
+- License: https://mixkit.co/license/#videoFree
+
+### Лебеді на воді
+
+- File: anodos-swans.mp4
+- Source: https://mixkit.co/free-stock-video/swans-swimming-on-the-banks-of-a-river-4682/
+- Download: https://assets.mixkit.co/videos/4682/4682-1080.mp4
+- License: https://mixkit.co/license/#videoFree
+
+### Вітрильник на заході сонця
+
+- File: anodos-sailboat.mp4
+- Source: https://mixkit.co/free-stock-video/view-of-the-horizon-in-the-sea-while-a-sailboat-4477/
+- Download: https://assets.mixkit.co/videos/4477/4477-1080.mp4
+- License: https://mixkit.co/license/#videoFree
+
+### Чайки над лагуною
+
+- File: anodos-seagulls.mp4
+- Source: https://mixkit.co/free-stock-video/seagulls-flying-over-lagoon-101191/
+- Download: https://assets.mixkit.co/1pq0lgz1ujgfckkqq5xjnmv7uuwm
+- License: https://mixkit.co/license/#videoFree
+
+### Поле соняшників
+
+- File: anodos-sunflowers.mp4
+- Source: https://mixkit.co/free-stock-video/gigantic-field-of-sunflowers-on-a-sunny-day-4881/
+- Download: https://assets.mixkit.co/videos/4881/4881-1080.mp4
+- License: https://mixkit.co/license/#videoFree
+
+### Засніжені сосни
+
+- File: anodos-snow.mp4
+- Source: https://mixkit.co/free-stock-video/pine-branches-in-winter-3311/
+- Download: https://assets.mixkit.co/videos/3311/3311-1080.mp4
+- License: https://mixkit.co/license/#videoFree
+
+### Міська гавань у тумані
+
+- File: anodos-harbor.mp4
+- Source: https://mixkit.co/free-stock-video/coast-in-a-city-covered-by-fog-3299/
+- Download: https://assets.mixkit.co/videos/3299/3299-1080.mp4
+- License: https://mixkit.co/license/#videoFree
+
+### Зелений каньйон
+
+- File: anodos-canyon.mp4
+- Source: https://mixkit.co/free-stock-video/fly-over-a-huge-canyon-covered-in-vegetation-41401/
+- Download: https://assets.mixkit.co/videos/41401/41401-1080.mp4
+- License: https://mixkit.co/license/#videoFree
+
+### Плавна подорож річкою
+
+- File: anodos-raft.mp4
+- Source: https://mixkit.co/free-stock-video/raft-going-slowly-down-a-river-1218/
+- Download: https://assets.mixkit.co/videos/1218/1218-1080.mp4
+- License: https://mixkit.co/license/#videoFree

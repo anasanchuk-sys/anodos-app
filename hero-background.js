@@ -5,7 +5,8 @@
   let motionEnabled = !connection?.saveData;
   const initialized = new WeakSet();
   const scenes = ['city', 'crosswalk', 'bird', 'bridge', 'forest',
-    'sea', 'meadow', 'clouds', 'mountains', 'rain'];
+    'sea', 'meadow', 'clouds', 'mountains', 'rain',
+    'river', 'waterfall', 'swans', 'sailboat', 'seagulls', 'sunflowers', 'snow', 'harbor', 'canyon', 'raft'];
   // Pick once per page load, keeping the same scene when the app redraws home.
   // Avoid an immediate repeat on refresh when session storage is available.
   let previousScene;
