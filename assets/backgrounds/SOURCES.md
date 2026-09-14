@@ -143,3 +143,12 @@ Ten additional landscape clips, native Full HD 1920x1080. H.264 CRF 19, slow pre
 - Source: https://mixkit.co/free-stock-video/raft-going-slowly-down-a-river-1218/
 - Download: https://assets.mixkit.co/videos/1218/1218-1080.mp4
 - License: https://mixkit.co/license/#videoFree
+
+## Риби біля природного рифу - 2026-09-14
+
+- File: anodos-fish.mp4
+- Source: https://mixkit.co/free-stock-video/reef-with-fish-swimming-4418/
+- Download: https://assets.mixkit.co/videos/4418/4418-1080.mp4
+- License: https://mixkit.co/license/#videoFree
+- Item page describes wild fish swimming underwater by a reef; commercial-use permission verified on 2026-09-14.
+- Derivative: 1920x1080, 12 seconds, H.264 CRF 19, slow preset, max 8 Mb/s, faststart, no audio; 0.35x playback.
