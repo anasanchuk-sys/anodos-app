@@ -7593,18 +7593,20 @@ function renderHome() {
   const slide = learning ? 0 : 1;
   const hasScenarioQuery = scenarioSearchTerm.trim().length > 0;
   screen.innerHTML = `
-    <section class="editorial-hero home-stage" data-slide="${slide}" aria-labelledby="homeHeroTitle">
+    <section class="editorial-hero home-stage" data-slide="${slide}" aria-label="Anodos">
       <video class="hero-background-video" data-hero-video data-src="./assets/backgrounds/anodos-city.mp4?v=1" poster="./assets/backgrounds/anodos-city-poster.jpg?v=1" muted loop playsinline preload="none" aria-hidden="true" tabindex="-1"></video>
       <div class="home-stage-inner">
-        <article class="home-hero-card">
-          <div data-hero-content>${renderHomeHeroContent(slide)}</div>
-          <div class="home-hero-controls">
-            <div class="home-slide-selector" role="group" aria-label="Теми першого екрана">
-              ${homeHeroSlides.map((item, index) => `<button type="button" data-hero-slide="${index}" aria-label="${item.label}" aria-pressed="${index === slide}"><span></span></button>`).join("")}
-            </div>
+        <div class="home-feature-zone">
+          <article class="home-hero-card" data-spotlight-card translate="no">
+            <button class="spotlight-close" data-spotlight-close type="button" aria-label="Закрити картку й переглядати відео">×</button>
+            <div data-hero-content><p class="hero-category">Anodos</p><h1 id="homeHeroTitle">Відкривайте нові можливості</h1><p class="home-hero-copy">Статті, інструменти та ідеї для вашої роботи.</p></div>
+            <div class="spotlight-controls"><span data-spotlight-hint>Відкривайте Anodos</span><button data-spotlight-next type="button">Наступне →</button></div>
+          </article>
+          <div class="spotlight-video-controls">
+            <button class="spotlight-restore" data-spotlight-restore type="button" translate="no" hidden>Показати картку</button>
             <label class="hero-motion-control" title="Зупинити або відновити відео"><input class="hero-motion-toggle" type="checkbox" checked /><span class="hero-motion-symbol" aria-hidden="true"></span><span class="site-sr-only">Рух фону</span></label>
           </div>
-        </article>
+        </div>
         <nav class="home-audiences" aria-label="Основні напрями">
           <a href="./?space=learning&amp;section=modules" data-site-browse="learning"><span>Навчання</span><strong>Розвивайте страхову експертизу</strong><i aria-hidden="true">→</i></a>
           <a href="./?space=products&amp;section=modules" data-site-browse="products"><span>Страхування</span><strong>Знаходьте рішення для ризиків</strong><i aria-hidden="true">→</i></a>
@@ -7632,6 +7634,7 @@ function renderHome() {
       </div>
     </section>
   `;
+  window.AnodosSpotlight.mount(screen.querySelector('.home-stage'));
   if (!learning) renderScenarioSearchResults();
 }
 

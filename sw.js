@@ -1,5 +1,7 @@
-const CACHE_NAME = "quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-fa96de8eb6e7";
+const CACHE_NAME = "hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-fa96de8eb6e7";
 const ASSETS = [
+  "./hero-spotlight.js?v=1",
+  "./hero-spotlight.css?v=1",
   // INSURANCE NEWS ASSETS BEGIN
   "./news.html",
   "./insurance-news.css?v=1",
@@ -82,7 +84,7 @@ const ASSETS = [
   "./property-review-semantic.js?v=5",
   "./property-review-report.js?v=7",
   "./glossary-data.js?v=1",
-  "./app.js?v=230",
+  "./app.js?v=233",
   "./assets/contract-tests/arx-zusp-053.pdf",
   "./manifest.webmanifest?v=7",
   "./assets/icon.svg?v=7",
