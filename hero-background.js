@@ -21,11 +21,11 @@
       if (!initialized.has(video)) {
         initialized.add(video);
         video.dataset.scene = selectedScene;
-        video.dataset.src = `./assets/backgrounds/anodos-${selectedScene}.mp4?v=1`;
-        video.poster = `./assets/backgrounds/anodos-${selectedScene}-poster.jpg?v=1`;
+        video.dataset.src = `./assets/backgrounds/anodos-${selectedScene}.mp4?v=2`;
+        video.poster = `./assets/backgrounds/anodos-${selectedScene}-poster.jpg?v=2`;
         video.muted = true;
-        video.defaultPlaybackRate = 0.5;
-        video.playbackRate = 0.5;
+        video.defaultPlaybackRate = 0.35;
+        video.playbackRate = 0.35;
         video.addEventListener('error', () => hero.classList.remove('hero-video-ready'));
       }
       toggle.checked = motionEnabled && !reducedMotion.matches;

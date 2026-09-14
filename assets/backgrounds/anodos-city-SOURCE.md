@@ -6,6 +6,6 @@ Download: https://assets.mixkit.co/videos/4340/4340-1080.mp4
 License: Mixkit Stock Video Free License, https://mixkit.co/license/#videoFree
 The item page explicitly permits commercial and personal use. Verified 2026-09-12.
 
-Local derivative: anodos-city.mp4, 1600x900 H.264, no audio, CRF 25, faststart.
+Local derivative: anodos-city.mp4, 1920x1080 H.264, no audio, CRF 19, maximum bitrate 8 Mb/s, faststart.
 Poster: anodos-city-poster.jpg, first frame of the same footage.
 Original footage shows Manhattan at night with moving road traffic and lit buildings.

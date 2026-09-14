@@ -1,4 +1,4 @@
-const CACHE_NAME = "osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-fa96de8eb6e7";
+const CACHE_NAME = "hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-fa96de8eb6e7";
 const ASSETS = [
   // INSURANCE NEWS ASSETS BEGIN
   "./news.html",
@@ -24,8 +24,8 @@ const ASSETS = [
   "./site-language.css?v=1",
   "./pro-access.css?v=1",
   "./site-navigation.js?v=5",
-  "./hero-background.js?v=3",
-  "./assets/backgrounds/anodos-city-poster.jpg?v=1",
+  "./hero-background.js?v=4",
+  "./assets/backgrounds/anodos-city-poster.jpg?v=2",
   "./site-theme.css?v=3",
   "./contract-quality.html",
   "./contract-quality.css?v=5",

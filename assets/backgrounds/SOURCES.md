@@ -2,7 +2,7 @@
 
 Verified 2026-09-13. All selected item pages explicitly allow commercial and personal use under the [Mixkit Stock Video Free License](https://mixkit.co/license/#videoFree).
 
-Local derivatives: H.264, 1600x900, no audio, faststart, up to 12 seconds. Playback at 0.5x. Only the selected clip is requested; videos are not precached.
+Local derivatives: H.264, 1920x1080, no audio, faststart, up to 12 seconds. Playback at 0.35x. Re-encoded from the original 1080p downloads on 2026-09-14 with H.264 CRF 19 and an 8 Mb/s maximum bitrate. Only the selected clip is requested; videos are not precached.
 
 Existing night city: see [source](anodos-city-SOURCE.md).
 
