@@ -1,9 +1,12 @@
-const CACHE_NAME = "spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-efa955f96bcc";
+const CACHE_NAME = "spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-83a02c61d13d";
 const ASSETS = [
   // INSURANCE NEWS ASSETS BEGIN
   "./news.html",
   "./insurance-news.css?v=1",
   "./insurance-news.js?v=1",
+  "./articles/marine-cargo-rerouting-and-port-accumulation-2026.html",
+  "./articles/insurance-linked-loans-disaster-debt-payments-2026.html",
+  "./articles/europe-wildfire-property-location-risk-2026.html",
   "./articles/ukraine-insurance-market-first-half-2026.html",
   "./articles/swiss-re-data-centres-property-risk-2026.html",
   "./articles/munich-re-non-peak-perils-property-losses-2026.html",
