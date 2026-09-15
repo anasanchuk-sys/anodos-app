@@ -25,7 +25,7 @@
     {id:'learning',title:'Наступний крок у вашій експертизі',titleEn:'Take the next step in your expertise',copy:'Навчальні модулі, практичні матеріали й тести допоможуть систематизувати знання.',copyEn:'Learning modules, practical materials and tests help organise your knowledge.',href:'./?space=learning&section=modules',browse:'learning'},
     {id:'contacts',title:'Знайдіть потрібну людину в компанії',titleEn:'Find the right person at a company',copy:'Пошук контактів осіб, які ухвалюють рішення, із джерелами для перевірки.',copyEn:'Find decision makers’ contacts, with sources you can verify.',href:'./contacts.html',pro:true},
     {id:'osint',title:'Побачте бізнес за назвою компанії',titleEn:'Understand the business behind a company name',copy:'Дослідіть бізнес, власність та активи компанії за допомогою OSINT-аналітики.',copyEn:'Explore a company’s business, ownership and assets with OSINT analysis.',href:'./osint.html',pro:true}
-  ].map(item => ({...item,kind:'feature',href:item.href || './?space=products&view='+item.view}));
+  ].filter(item => !item.pro).map(item => ({...item,kind:'feature',href:item.href || './?space=products&view='+item.view}));
   const key='anodos-spotlight-history-v1';
   let current, pool=features, closed=false, history={};
   try {history=JSON.parse(sessionStorage.getItem(key)||'{}')||{};} catch (_) {}
