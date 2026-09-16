@@ -1,152 +1,142 @@
-/* Keep the player outside #screen so in-app navigation preserves playback. */
+/* Native audio stays outside #screen and survives navigation between app views. */
 (() => {
   'use strict';
   if (document.querySelector('[data-focus-music]')) return;
-  const videoId = 'qwosU7e9mqc';
+  const audioUrl = new URL('./assets/audio/dream-culture-kevin-macleod.mp3', document.currentScript.src).href;
   const copy = {
-    uk: {
-      button: 'Музика для концентрації', title: 'Час зосередитися',
-      start: 'Увімкнути музику', stop: 'Вимкнути музику',
-      subtitle: 'Фонова музика для роботи й навчання',
-      close: 'Вимкнути музику й закрити', frame: 'YouTube - музика для концентрації',
-      hint: 'Пауза та гучність - у плеєрі. Якщо музика не почалася, натисніть ▶.',
-      link: 'Відкрити в YouTube ↗',
-      loading: 'Завантаження плеєра…',
-      unavailable: 'Плеєр не завантажився. Спробуйте відкрити музику в YouTube за посиланням нижче.',
-      offline: 'Для відтворення музики потрібне з’єднання з інтернетом.'
-    },
-    en: {
-      button: 'Focus music', title: 'Time to focus',
-      start: 'Play focus music', stop: 'Stop music',
-      subtitle: 'Background music for work and learning',
-      close: 'Stop music and close', frame: 'YouTube - focus music',
-      hint: 'Pause and volume are in the player. If music has not started, press ▶.',
-      link: 'Open in YouTube ↗',
-      loading: 'Loading player…',
-      unavailable: 'The player has not loaded. Try opening the music in YouTube using the link below.',
-      offline: 'An internet connection is needed to play music.'
-    }
+    uk: {start: 'Увімкнути музику', stop: 'Вимкнути музику', loading: 'Завантаження музики…',
+      volume: 'Гучність музики', error: 'Не вдалося завантажити музику. Перевірте з’єднання та спробуйте ще раз.'},
+    en: {start: 'Play focus music', stop: 'Stop music', loading: 'Loading music…',
+      volume: 'Music volume', error: 'Could not load music. Check your connection and try again.'}
   };
   const root = document.createElement('aside');
   root.className = 'focus-music';
   root.dataset.focusMusic = '';
-  // This component handles its own language updates without reloading the iframe.
   root.setAttribute('translate', 'no');
-  root.innerHTML = `
-    <section class="focus-music-panel" id="focusMusicPanel" aria-labelledby="focusMusicTitle" hidden>
-      <div class="focus-music-heading">
-        <div><h2 id="focusMusicTitle" data-focus-copy="title"></h2><p data-focus-copy="subtitle"></p></div>
-        <button class="focus-music-close" type="button"><span aria-hidden="true">×</span></button>
-      </div>
-      <div class="focus-music-video"></div>
-      <div class="focus-music-details">
-        <p class="focus-music-status" role="status" hidden></p>
-        <p data-focus-copy="hint"></p>
-        <p class="focus-music-offline" role="status" data-focus-copy="offline" hidden></p>
-        <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank" rel="noopener noreferrer" data-focus-copy="link"></a>
-      </div>
-    </section>
-    <button class="focus-music-toggle" type="button" aria-controls="focusMusicPanel" aria-expanded="false">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v-3a8 8 0 0 1 16 0v3M4 13h3v7H4a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2Zm16 0h-3v7h3a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2Z"/></svg>
-      <span data-focus-copy="button"></span>
-    </button>`;
+  const audio = document.createElement('audio');
+  audio.preload = 'none';
+  audio.loop = true;
+  audio.hidden = true;
+  audio.volume = .25;
+  try {
+    const saved = localStorage.getItem('anodos-focus-volume');
+    if (saved !== null && Number.isFinite(Number(saved))) audio.volume = Math.max(0, Math.min(1, Number(saved)));
+  } catch { /* Browser storage is optional. */ }
+  const floating = createControls();
+  root.append(audio, floating);
   document.body.append(root);
-  const panel = root.querySelector('.focus-music-panel');
-  const toggle = root.querySelector('.focus-music-toggle');
-  const close = root.querySelector('.focus-music-close');
-  const video = root.querySelector('.focus-music-video');
-  const status = root.querySelector('.focus-music-status');
-  let loadingTimer;
-  let loadingState = '';
+  let wanted = false, loading = false, failed = false, generation = 0, loadingTimer;
   const language = () => document.documentElement.lang === 'en' ? 'en' : 'uk';
-  function localize() {
-    const text = copy[language()];
-    root.setAttribute('aria-label', text.button);
-    root.querySelectorAll('[data-focus-copy]').forEach(el => { el.textContent = text[el.dataset.focusCopy]; });
-    close.setAttribute('aria-label', text.close);
-    toggle.setAttribute('aria-label', panel.hidden ? text.button : text.close);
-    const frame = video.querySelector('iframe');
-    if (frame) frame.title = text.frame;
-    status.hidden = !loadingState;
-    status.textContent = text[loadingState] || '';
-    syncHomeControl();
+
+  function createControls() {
+    const group = document.createElement('div');
+    group.className = 'focus-music-controls';
+    group.setAttribute('translate', 'no');
+    group.innerHTML = '<button class="focus-music-button" type="button" aria-pressed="false"><span aria-hidden="true">♫</span><span data-focus-label></span></button><input class="focus-music-volume" type="range" min="0" max="100" step="1" hidden><span class="focus-music-error" role="status" hidden></span>';
+    group.querySelector('button').addEventListener('click', () => wanted ? stop() : start());
+    group.querySelector('input').addEventListener('input', event => {
+      audio.volume = Number(event.target.value) / 100;
+      try { localStorage.setItem('anodos-focus-volume', String(audio.volume)); } catch { /* Optional. */ }
+      paint();
+    });
+    return group;
   }
-  function syncHomeControl() {
+  function paintGroup(group) {
+    const text = copy[language()];
+    const button = group.querySelector('button');
+    const label = group.querySelector('[data-focus-label]');
+    const next = loading ? text.loading : wanted ? text.stop : text.start;
+    if (label.textContent !== next) label.textContent = next;
+    button.setAttribute('aria-pressed', String(wanted));
+    button.setAttribute('aria-label', wanted ? text.stop : text.start);
+    const volume = group.querySelector('input');
+    volume.hidden = !wanted;
+    volume.value = String(Math.round(audio.volume * 100));
+    volume.setAttribute('aria-label', text.volume);
+    volume.title = text.volume;
+    const status = group.querySelector('[role="status"]');
+    status.hidden = !failed;
+    const error = failed ? text.error : '';
+    if (status.textContent !== error) status.textContent = error;
+  }
+  function syncHome() {
     const controls = document.querySelector('.spotlight-video-controls');
     if (!controls) return;
     const zone = controls.closest('.home-feature-zone');
-    // Keep music visible above the rotating card, including on a phone.
     if (zone && zone.firstElementChild !== controls) zone.prepend(controls);
-    let button = controls.querySelector('[data-focus-music-home]');
-    if (!button) {
-      button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'focus-music-home';
-      button.dataset.focusMusicHome = '';
-      button.setAttribute('translate', 'no');
-      button.setAttribute('aria-controls', 'focusMusicPanel');
-      button.innerHTML = '<span aria-hidden="true">♫</span><span data-focus-home-label></span>';
-      button.addEventListener('click', () => panel.hidden ? open() : stop());
-      controls.prepend(button);
+    let group = controls.querySelector('[data-focus-music-home]');
+    if (!group) {
+      group = createControls();
+      group.dataset.focusMusicHome = '';
+      controls.prepend(group);
     }
-    const label = copy[language()][panel.hidden ? 'start' : 'stop'];
-    const span = button.querySelector('[data-focus-home-label]');
-    if (span.textContent !== label) span.textContent = label;
-    button.setAttribute('aria-expanded', String(!panel.hidden));
+    paintGroup(group);
   }
-  function updateConnection() {
-    root.querySelector('.focus-music-offline').hidden = navigator.onLine;
+  function paint() {
+    paintGroup(floating);
+    syncHome();
+  }
+  function clearLoading() {
+    clearTimeout(loadingTimer);
+    loading = false;
   }
   function stop() {
-    // Removing the browsing context stops audio, including a still-loading embed.
-    video.replaceChildren();
-    clearTimeout(loadingTimer);
-    loadingState = '';
-    panel.hidden = true;
-    toggle.setAttribute('aria-expanded', 'false');
-    localize();
-    (document.querySelector('[data-focus-music-home]') || toggle).focus({preventScroll: true});
+    ++generation;
+    wanted = false;
+    failed = false;
+    clearLoading();
+    audio.pause();
+    paint();
   }
-  function open() {
-    panel.hidden = false;
-    toggle.setAttribute('aria-expanded', 'true');
-    const frame = document.createElement('iframe');
-    const url = new URL(`https://www.youtube.com/embed/${videoId}`);
-    url.search = new URLSearchParams({autoplay: '1', controls: '1', playsinline: '1',
-      loop: '1', playlist: videoId, rel: '0', hl: language()}).toString();
-    frame.title = copy[language()].frame;
-    frame.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
-    frame.allowFullscreen = true;
-    frame.referrerPolicy = 'strict-origin-when-cross-origin';
-    frame.width = '380';
-    frame.height = '214';
-    loadingState = 'loading';
-    frame.addEventListener('load', () => {
-      if (!frame.isConnected) return;
-      clearTimeout(loadingTimer);
-      loadingState = '';
-      localize();
-    }, {once: true});
-    frame.src = url.href;
-    video.replaceChildren(frame);
-    loadingTimer = setTimeout(() => {
-      loadingState = 'unavailable';
-      localize();
-    }, 15000);
-    localize();
-    updateConnection();
-    close.focus({preventScroll: true});
+  function fail() {
+    ++generation;
+    wanted = false;
+    clearLoading();
+    audio.pause();
+    failed = true;
+    paint();
   }
-  toggle.addEventListener('click', () => panel.hidden ? open() : stop());
-  close.addEventListener('click', stop);
-  root.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && !panel.hidden) { event.preventDefault(); stop(); }
+  function start() {
+    const attempt = ++generation;
+    wanted = true;
+    loading = true;
+    failed = false;
+    // No audio request or playback before the visitor presses the button.
+    if (!audio.hasAttribute('src')) audio.src = audioUrl;
+    else if (audio.error) audio.load();
+    loadingTimer = setTimeout(() => { if (attempt === generation && wanted) fail(); }, 25000);
+    paint();
+    audio.play().then(() => {
+      if (attempt !== generation) return;
+      if (!wanted) { audio.pause(); return; }
+      clearLoading();
+      paint();
+    }).catch(() => { if (attempt === generation && wanted) fail(); });
+  }
+  audio.addEventListener('playing', () => {
+    if (!wanted) { audio.pause(); return; }
+    clearLoading();
+    paint();
   });
-  window.addEventListener('anodos:languagechange', localize);
-  window.addEventListener('online', updateConnection);
-  window.addEventListener('offline', updateConnection);
+  audio.addEventListener('pause', () => {
+    if (!audio.paused) return;
+    wanted = false;
+    clearLoading();
+    paint();
+  });
+  audio.addEventListener('error', fail);
+  audio.addEventListener('volumechange', paint);
+  window.addEventListener('anodos:languagechange', paint);
   const screen = document.getElementById('screen');
-  if (screen) new MutationObserver(syncHomeControl).observe(screen, {childList: true, subtree: true});
-  localize();
-  updateConnection();
+  if (screen) new MutationObserver(syncHome).observe(screen, {childList: true, subtree: true});
+  // Attribution accompanies the track without interrupting listening.
+  const footer = document.querySelector('.site-footer');
+  if (footer) {
+    const credit = document.createElement('p');
+    credit.className = 'focus-music-credit';
+    credit.setAttribute('translate', 'no');
+    credit.innerHTML = '♫ <a href="https://incompetech.com/music/royalty-free/index.html?isrc=USUAN1300046" target="_blank" rel="noopener noreferrer">Dream Culture - Kevin MacLeod (incompetech.com)</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>';
+    footer.append(credit);
+  }
+  paint();
 })();
