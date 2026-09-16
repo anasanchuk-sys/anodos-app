@@ -1,11 +1,10 @@
-const CACHE_NAME = "focus-music-20260916-v3-spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-83a02c61d13d";
+const CACHE_NAME = "focus-music-20260916-v3-spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-3f282a2f7516";
 const ASSETS = [
-  "./focus-music.js?v=3",
-  "./focus-music.css?v=3",
   // INSURANCE NEWS ASSETS BEGIN
   "./news.html",
   "./insurance-news.css?v=1",
   "./insurance-news.js?v=1",
+  "./articles/parametric-heat-insurance-triggers-and-response-2026.html",
   "./articles/marine-cargo-rerouting-and-port-accumulation-2026.html",
   "./articles/insurance-linked-loans-disaster-debt-payments-2026.html",
   "./articles/europe-wildfire-property-location-risk-2026.html",
@@ -26,6 +25,8 @@ const ASSETS = [
   "./articles/ebrd-ese-war-damage-business-assets.html",
   "./articles/nbu-property-insurance-fourth-quarter-2025.html",
   // INSURANCE NEWS ASSETS END
+"./focus-music.js?v=3",
+  "./focus-music.css?v=3",
 "./hero-spotlight.js?v=2",
   "./hero-spotlight.css?v=1",
 "./my-documents.js?v=1",
