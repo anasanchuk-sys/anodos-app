@@ -7604,7 +7604,6 @@ function renderHome() {
           </article>
           <div class="spotlight-video-controls">
             <button class="spotlight-restore" data-spotlight-restore type="button" translate="no" hidden>Показати картку</button>
-            <label class="hero-motion-control" title="Зупинити або відновити відео"><input class="hero-motion-toggle" type="checkbox" checked /><span class="hero-motion-symbol" aria-hidden="true"></span><span class="site-sr-only">Рух фону</span></label>
           </div>
         </div>
         <nav class="home-audiences" aria-label="Основні напрями">

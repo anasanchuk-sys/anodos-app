@@ -1,4 +1,4 @@
-const CACHE_NAME = "focus-music-20260916-v3-spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-3f282a2f7516";
+const CACHE_NAME = "focus-music-20260916-v4-spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-3f282a2f7516";
 const ASSETS = [
   // INSURANCE NEWS ASSETS BEGIN
   "./news.html",
@@ -25,8 +25,8 @@ const ASSETS = [
   "./articles/ebrd-ese-war-damage-business-assets.html",
   "./articles/nbu-property-insurance-fourth-quarter-2025.html",
   // INSURANCE NEWS ASSETS END
-"./focus-music.js?v=3",
-  "./focus-music.css?v=3",
+"./focus-music.js?v=4",
+  "./focus-music.css?v=4",
 "./hero-spotlight.js?v=2",
   "./hero-spotlight.css?v=1",
 "./my-documents.js?v=1",
@@ -36,7 +36,7 @@ const ASSETS = [
   "./site-language.css?v=1",
   "./pro-access.css?v=1",
   "./site-navigation.js?v=5",
-  "./hero-background.js?v=6",
+  "./hero-background.js?v=7",
   "./assets/backgrounds/anodos-city-poster.jpg?v=2",
   "./site-theme.css?v=3",
   "./contract-quality.html",
@@ -94,7 +94,7 @@ const ASSETS = [
   "./property-review-semantic.js?v=5",
   "./property-review-report.js?v=7",
   "./glossary-data.js?v=1",
-  "./app.js?v=233",
+  "./app.js?v=234",
   "./assets/contract-tests/arx-zusp-053.pdf",
   "./manifest.webmanifest?v=7",
   "./assets/icon.svg?v=7",

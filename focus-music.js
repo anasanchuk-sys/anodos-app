@@ -32,7 +32,7 @@
     const group = document.createElement('div');
     group.className = 'focus-music-controls';
     group.setAttribute('translate', 'no');
-    group.innerHTML = '<button class="focus-music-button" type="button" aria-pressed="false"><span aria-hidden="true">♫</span><span data-focus-label></span></button><input class="focus-music-volume" type="range" min="0" max="100" step="1" hidden><span class="focus-music-error" role="status" hidden></span>';
+    group.innerHTML = '<button class="focus-music-button" type="button" aria-pressed="false"><span class="focus-music-symbol" aria-hidden="true"></span></button><input class="focus-music-volume" type="range" min="0" max="100" step="1" hidden><span class="focus-music-error" role="status" hidden></span>';
     group.querySelector('button').addEventListener('click', () => wanted ? stop() : start());
     group.querySelector('input').addEventListener('input', event => {
       audio.volume = Number(event.target.value) / 100;
@@ -44,11 +44,10 @@
   function paintGroup(group) {
     const text = copy[language()];
     const button = group.querySelector('button');
-    const label = group.querySelector('[data-focus-label]');
-    const next = loading ? text.loading : wanted ? text.stop : text.start;
-    if (label.textContent !== next) label.textContent = next;
     button.setAttribute('aria-pressed', String(wanted));
     button.setAttribute('aria-label', wanted ? text.stop : text.start);
+    button.setAttribute('aria-busy', String(loading));
+    button.title = loading ? text.loading : wanted ? text.stop : text.start;
     const volume = group.querySelector('input');
     volume.hidden = !wanted;
     volume.value = String(Math.round(audio.volume * 100));
