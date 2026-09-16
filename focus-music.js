@@ -6,6 +6,7 @@
   const copy = {
     uk: {
       button: 'Музика для концентрації', title: 'Час зосередитися',
+      start: 'Увімкнути музику', stop: 'Вимкнути музику',
       subtitle: 'Фонова музика для роботи й навчання',
       close: 'Вимкнути музику й закрити', frame: 'YouTube - музика для концентрації',
       hint: 'Пауза та гучність - у плеєрі. Якщо музика не почалася, натисніть ▶.',
@@ -16,6 +17,7 @@
     },
     en: {
       button: 'Focus music', title: 'Time to focus',
+      start: 'Play focus music', stop: 'Stop music',
       subtitle: 'Background music for work and learning',
       close: 'Stop music and close', frame: 'YouTube - focus music',
       hint: 'Pause and volume are in the player. If music has not started, press ▶.',
@@ -67,6 +69,30 @@
     if (frame) frame.title = text.frame;
     status.hidden = !loadingState;
     status.textContent = text[loadingState] || '';
+    syncHomeControl();
+  }
+  function syncHomeControl() {
+    const controls = document.querySelector('.spotlight-video-controls');
+    if (!controls) return;
+    const zone = controls.closest('.home-feature-zone');
+    // Keep music visible above the rotating card, including on a phone.
+    if (zone && zone.firstElementChild !== controls) zone.prepend(controls);
+    let button = controls.querySelector('[data-focus-music-home]');
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'focus-music-home';
+      button.dataset.focusMusicHome = '';
+      button.setAttribute('translate', 'no');
+      button.setAttribute('aria-controls', 'focusMusicPanel');
+      button.innerHTML = '<span aria-hidden="true">♫</span><span data-focus-home-label></span>';
+      button.addEventListener('click', () => panel.hidden ? open() : stop());
+      controls.prepend(button);
+    }
+    const label = copy[language()][panel.hidden ? 'start' : 'stop'];
+    const span = button.querySelector('[data-focus-home-label]');
+    if (span.textContent !== label) span.textContent = label;
+    button.setAttribute('aria-expanded', String(!panel.hidden));
   }
   function updateConnection() {
     root.querySelector('.focus-music-offline').hidden = navigator.onLine;
@@ -79,7 +105,7 @@
     panel.hidden = true;
     toggle.setAttribute('aria-expanded', 'false');
     localize();
-    toggle.focus({preventScroll: true});
+    (document.querySelector('[data-focus-music-home]') || toggle).focus({preventScroll: true});
   }
   function open() {
     panel.hidden = false;
@@ -119,6 +145,8 @@
   window.addEventListener('anodos:languagechange', localize);
   window.addEventListener('online', updateConnection);
   window.addEventListener('offline', updateConnection);
+  const screen = document.getElementById('screen');
+  if (screen) new MutationObserver(syncHomeControl).observe(screen, {childList: true, subtree: true});
   localize();
   updateConnection();
 })();

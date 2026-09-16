@@ -8,6 +8,30 @@
   text-align: left;
 }
 .focus-music [hidden] { display: none !important; }
+body[data-route="home"] .focus-music-toggle { display: none; }
+.home-feature-zone .spotlight-video-controls {
+  position: static !important;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin: 0 0 16px;
+}
+.focus-music-home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid #ffffff80;
+  border-radius: 4px;
+  background: #102336ed;
+  color: #fff;
+  font: 500 14px/1.4 "IBM Plex Sans", sans-serif;
+  cursor: pointer;
+}
+.focus-music-home:hover { background: #244e72; }
+.focus-music-home[aria-expanded="true"] { background: #245776; }
+.focus-music-home:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
 .focus-music button { cursor: pointer; font: inherit; }
 .focus-music-toggle {
   display: flex;
