@@ -1,0 +1,56 @@
+.focus-music {
+  position: fixed;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 45;
+  color: #0f1e32;
+  font-family: "IBM Plex Sans", sans-serif;
+  text-align: left;
+}
+.focus-music [hidden] { display: none !important; }
+.focus-music button { cursor: pointer; font: inherit; }
+.focus-music-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  margin: 0 0 0 auto;
+  padding: 11px 16px;
+  border: 1px solid #ffffff50;
+  border-radius: 24px;
+  background: #0f1e32;
+  color: #fff;
+  box-shadow: 0 4px 20px #06132326;
+  font-size: 14px !important;
+  line-height: 1.4;
+}
+.focus-music-toggle:hover { background: #193b5e; }
+.focus-music-toggle[aria-expanded="true"] { border-color: #749bbc; }
+.focus-music-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; flex: none; }
+.focus-music-panel {
+  width: min(380px, calc(100vw - 32px));
+  max-height: calc(100dvh - 100px);
+  overflow: auto;
+  margin-bottom: 10px;
+  background: #fff;
+  border: 1px solid #dbe2e8;
+  border-radius: 12px;
+  box-shadow: 0 12px 48px #06132333;
+}
+.focus-music-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 16px 12px 14px 18px; }
+.focus-music-heading h2 { margin: 0; color: #0f1e32; font: 500 20px/1.3 "IBM Plex Sans", sans-serif; letter-spacing: -.3px; }
+.focus-music-heading p { margin: 4px 0 0; color: #526375; font-size: 12px; line-height: 1.5; }
+.focus-music-close { flex: none; display: grid; place-items: center; width: 36px; height: 36px; min-height: 36px; padding: 0; border: 0; border-radius: 50%; background: #f0f4f7; color: #0f1e32; font-size: 26px !important; line-height: 1; }
+.focus-music-close:hover { background: #e0e9ef; }
+.focus-music-video { background: #0f1e32; }
+.focus-music-video iframe { display: block; width: 100%; height: auto; min-height: 200px; aspect-ratio: 16 / 9; border: 0; }
+.focus-music-details { padding: 12px 18px 16px; }
+.focus-music-details p { margin: 0 0 10px; color: #526375; font-size: 12px; line-height: 1.5; }
+.focus-music-details a { color: #165e91; font-size: 13px; text-underline-offset: 3px; }
+.focus-music-details .focus-music-offline { color: #924a16; }
+.focus-music :is(button, a):focus-visible { outline: 3px solid #5298d4; outline-offset: 3px; }
+@media (max-width: 599px) {
+  .focus-music { right: max(16px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); }
+  .focus-music-toggle { min-height: 44px; padding: 10px 14px; }
+}
+@media print { .focus-music { display: none; } }
