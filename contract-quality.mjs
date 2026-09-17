@@ -1,7 +1,7 @@
 import {readQualityFile} from './contract-quality-reader.mjs?v=4';
 import {qualityPdfBlob,qualityReportSummary} from './contract-quality-report.mjs?v=8';
 import {consultationMarkup,mountConsultation} from './contract-quality-consultation.mjs?v=1';
-import {createQualityAccess} from './contract-quality-access.mjs?v=1';
+import {createQualityAccess} from './contract-quality-access.mjs?v=2';
 const endpoint='https://anodos-contract-quality.mesquite-wishbone.workers.dev';
 const $=id=>document.getElementById(id),escape=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let files=[],job=null,result=null,busy=false,available=false,quotaRetryAt=null,pollTimer,run=0;

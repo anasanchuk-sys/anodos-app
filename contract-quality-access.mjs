@@ -33,13 +33,13 @@ export function createQualityAccess({endpoint,onUnlock,onLock}){
   event.preventDefault();const password=$('access-password').value.trim();if(!password)return;
   $('access-submit').disabled=true;message('');pending||=randomToken();write({token:pending,pending:true});
   try{const value=await request('/access/open',{password,token:pending});const token=pending;pending=null;accept(value,token);}
-  catch(e){if(e.status){pending=null;write(null);}message(e.message||'Не вдалося відкрити доступ. Спробуйте ще раз.');}
+  catch(e){if(e.status&&e.status<500){pending=null;write(null);}message(e.message||'Не вдалося відкрити доступ. Спробуйте ще раз.');}
   finally{$('access-submit').disabled=false;$('access-password').value='';}
  });
  $('access-lock').addEventListener('click',async()=>{
   $('access-lock').disabled=true;
   try{await request('/access/close',{token:ensure()});lock();}
-  catch(e){if(e.status===401)lock(e.message);else{$('access-status').textContent='Не вдалося завершити сеанс. Спробуйте ще раз.';}}
+  catch(e){if(e.status===401)lock(e.message);else{$('error').textContent='Не вдалося завершити сеанс. Спробуйте ще раз.';$('error').hidden=false;}}
   finally{$('access-lock').disabled=false;}
  });
  window.addEventListener('storage',event=>{if(event.key===STORAGE&&session&&read()?.token!==session.token)lock('Сеанс завершено в іншій вкладці.');});
