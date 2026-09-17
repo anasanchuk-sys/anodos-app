@@ -1,5 +1,11 @@
 /* Reviewed English UI catalogue. Source documents retain their original language. */
 window.AnodosEnglish = Object.freeze({
+  "Зауваження до договору": "Policy findings",
+  "У звіті виділено умови, які варто покращити, та виявлені неточності. Для кожного зауваження пояснюємо можливий вплив на страхове покриття або виплату.": "The report highlights terms that could be improved and identified inaccuracies, explaining their potential effect on coverage or payment.",
+  "За підтвердженими умовами конкретних зауважень не виявлено. Окремі питання потребують уточнення за документами.": "No specific issues were identified in the confirmed terms. Some questions require clarification from the documents.",
+  "Автоматична оцінка може містити пропуски. Звірте зауваження з оригіналом договору.": "The automated assessment may contain omissions. Check the findings against the original policy.",
+  "Умови, які варто покращити, та виявлені помилки у вашому договорі.": "Terms that could be improved and errors identified in your policy.",
+  "Завантажте страховий договір, отримайте оцінку умов і PDF із зауваженнями BRITMARK.": "Upload an insurance policy for an assessment of its terms and a PDF with BRITMARK findings.",
   "Навчання": "Learning",
   "Страхування": "Insurance",
   "Інструменти": "Tools",
