@@ -1,4 +1,4 @@
-const CACHE_NAME = "quality-findings-only-20260917-v1-focus-music-20260916-v4-spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-d0d78e66cc59";
+const CACHE_NAME = "quality-access-20260917-v1-quality-findings-only-20260917-v1-focus-music-20260916-v4-spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-d0d78e66cc59";
 const ASSETS = [
   // INSURANCE NEWS ASSETS BEGIN
   "./news.html",
@@ -33,7 +33,7 @@ const ASSETS = [
 "./my-documents.js?v=1",
   "./my-documents.css?v=1",
   "./site-language.js?v=2",
-  "./site-english.js?v=5",
+  "./site-english.js?v=6",
   "./site-language.css?v=1",
   "./pro-access.css?v=1",
   "./site-navigation.js?v=5",
@@ -41,8 +41,9 @@ const ASSETS = [
   "./assets/backgrounds/anodos-city-poster.jpg?v=2",
   "./site-theme.css?v=3",
   "./contract-quality.html",
-  "./contract-quality.css?v=5",
-  "./contract-quality.mjs?v=11",
+  "./contract-quality.css?v=6",
+  "./contract-quality.mjs?v=12",
+  "./contract-quality-access.mjs?v=1",
   "./contract-quality-consultation.mjs?v=1",
   "./contract-quality-reader.mjs?v=4",
   "./contract-quality-pdf-tables.mjs?v=1",

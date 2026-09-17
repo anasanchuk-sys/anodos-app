@@ -1,15 +1,18 @@
 import {readQualityFile} from './contract-quality-reader.mjs?v=4';
 import {qualityPdfBlob,qualityReportSummary} from './contract-quality-report.mjs?v=8';
 import {consultationMarkup,mountConsultation} from './contract-quality-consultation.mjs?v=1';
+import {createQualityAccess} from './contract-quality-access.mjs?v=1';
 const endpoint='https://anodos-contract-quality.mesquite-wishbone.workers.dev';
 const $=id=>document.getElementById(id),escape=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let files=[],job=null,result=null,busy=false,available=false,quotaRetryAt=null,pollTimer,run=0;
+const access=createQualityAccess({endpoint,onUnlock(){if(job){setBusy(true);void poll();}},onLock(){run++;clearTimeout(pollTimer);result=null;$('result').replaceChildren();$('result').hidden=true;$('empty').hidden=false;$('result-panel').classList.remove('has-result');$('progress').hidden=true;setBusy(false);}});
 const sha=async bytes=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(n=>n.toString(16).padStart(2,'0')).join('');
 function error(message){$('error').textContent=message;$('error').hidden=false;}
 function progress(title,detail=''){$('progress').hidden=false;$('progress-title').textContent=title;$('progress-detail').textContent=detail;}
 async function api(path,{method='GET',json,bytes,token=job?.token}={}){
- const r=await fetch(endpoint+path,{method,cache:'no-store',headers:{...(token?{Authorization:'Bearer '+token}:{}),...(json?{'Content-Type':'application/json'}:{})},body:json?JSON.stringify(json):bytes,signal:AbortSignal.timeout(90000)});
- const v=await r.json();if(!r.ok)throw new Error(v.error||'Сервіс тимчасово недоступний.');return v;
+ const accessToken=access.ensure();
+ const r=await fetch(endpoint+path,{method,cache:'no-store',headers:{'X-Anodos-Access':accessToken,...(token?{Authorization:'Bearer '+token}:{}),...(json?{'Content-Type':'application/json'}:{})},body:json?JSON.stringify(json):bytes,signal:AbortSignal.timeout(90000)});
+ const v=await r.json();if(r.status===401)access.lock(v.error);if(!r.ok)throw new Error(v.error||'Сервіс тимчасово недоступний.');access.ensure();return v;
 }
 function list(){$('file-list').innerHTML=files.map((f,i)=>`<li><span>${escape(f.name)}<br><small>${(f.size/1048576).toFixed(2)} МБ</small></span><button type="button" data-remove="${i}" aria-label="Прибрати ${escape(f.name)}">×</button></li>`).join('');}
 function add(items){if(busy)return;const next=[...files,...items];if(next.length>8){error('Додайте не більше 8 файлів.');return;}if(next.some(f=>f.size<1||f.size>20*1048576)||next.reduce((n,f)=>n+f.size,0)>60*1048576){error('Кожен файл має бути непорожнім, до 20 МБ; увесь пакет до 60 МБ.');return;}if(new Set(next.map(f=>f.name)).size!==next.length){error('Файли мають однакову назву. Перейменуйте їх перед завантаженням.');return;}files=next;$('error').hidden=true;list();}
@@ -25,7 +28,7 @@ function render(r){
  const section=(title,checks,kind)=>!checks?.length||r.blocked?'':`<section class="report-section"><h3>${escape(title)}<span class="count">${checks.length}</span></h3>${checks.map((c,i)=>`<article class="finding"><h4>${i+1}. ${escape(c.title)}</h4><p>${escape(c.assessment)}</p>${c.impact?`<p>${escape(c.impact)}</p>`:''}${c.evidence?`<details class="evidence"><summary>Фрагмент договору</summary>${c.evidence.fragments.map(f=>`<blockquote><small>${escape([f.file_name,f.page?'с. '+f.page:'',f.clause?'п. '+f.clause:''].filter(Boolean).join(', '))}</small>${escape(f.quote)}</blockquote>`).join('')}</details>`:''}</article>`).join('')}</section>`;
  $('result').innerHTML=`<span class="eyebrow">ВАША ОЦІНКА</span><h2>${escape(r.verdict)}</h2><p>${escape(qualityReportSummary(r))}</p><div class="result-actions"><button class="download" id="download-pdf" type="button">Скачати PDF ↓</button></div>${!r.blocked?consultationMarkup():''}<p class="scope">${escape(r.scope)} Підтверджено цитатами: ${escape(r.coverage?.supported||0)} із ${escape(r.coverage?.total||0)} критеріїв.</p>${section('Зауваження до договору',r.issues,'change')}${section('Що потрібно уточнити',r.unknown,'unclear')}${r.warnings?.length?`<section class="report-section"><h3>Межі перевірки</h3>${r.warnings.map(w=>`<p class="hint">${escape(w)}</p>`).join('')}</section>`:''}<p class="hint" style="margin-top:22px">Автоматична оцінка може містити пропуски. Звірте зауваження з оригіналом договору.</p>`;
  if(!r.blocked){const reviewJob={...job};mountConsultation($('result'),options=>api('/jobs/'+reviewJob.id+'/consultation',{...options,token:reviewJob.token}));}
- $('download-pdf').addEventListener('click',async e=>{e.target.disabled=true;try{const blob=await qualityPdfBlob(result),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='BRITMARK_оцінка_договору.pdf';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}catch(err){error(err.message);}finally{e.target.disabled=false;}});
+ $('download-pdf').addEventListener('click',async e=>{e.target.disabled=true;try{await access.verify();const blob=await qualityPdfBlob(result);access.ensure();const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='BRITMARK_оцінка_договору.pdf';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}catch(err){error(err.message);}finally{e.target.disabled=false;}});
 }
 async function poll(generation=run){
  if(generation!==run||!job)return;
@@ -44,7 +47,8 @@ $('review-form').addEventListener('submit',async e=>{
  setBusy(true);$('error').hidden=true;$('result').hidden=true;$('empty').hidden=false;clearTimeout(pollTimer);run++;const generation=run;
  try{
   const docs=[],manifest=[];
-  for(const f of files){progress('Читаємо '+f.name,'Залишайте сторінку відкритою під час розпізнавання та завантаження. Скановані документи потребують більше часу.');docs.push(await readQualityFile(f));manifest.push({name:f.name,size:f.size,sha256:await sha(await f.arrayBuffer())});}
+  access.ensure();
+  for(const f of files){progress('Читаємо '+f.name,'Залишайте сторінку відкритою під час розпізнавання та завантаження. Скановані документи потребують більше часу.');docs.push(await readQualityFile(f));if(generation!==run)return;manifest.push({name:f.name,size:f.size,sha256:await sha(await f.arrayBuffer())});}
   if(docs.reduce((n,d)=>n+d.text.length,0)>4000000)throw new Error('Пакет перевищує 4 мільйони символів. Розділіть незалежні договори на окремі перевірки; текст не обрізано.');
   job=await api('/jobs',{method:'POST',json:{files:manifest,consent:'cloud-and-britmark-archive-v1'},token:null});
   for(let i=0;i<files.length;i++){const file=files[i];for(let start=0,j=0;start<file.size;start+=job.chunkSize,j++){progress('Зберігаємо '+file.name,Math.round(start/file.size*100)+'%');const bytes=await file.slice(start,start+job.chunkSize).arrayBuffer();await api('/jobs/'+job.id+'/chunks/'+i+'/'+j,{method:'PUT',bytes});}}
@@ -53,7 +57,7 @@ $('review-form').addEventListener('submit',async e=>{
 });
 $('copy-link').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(location.href);$('copy-link').textContent='Посилання скопійовано';}catch{error('Не вдалося скопіювати. Збережіть адресу цієї сторінки з адресного рядка.');}});
 $('new-review').addEventListener('click',()=>{run++;clearTimeout(pollTimer);job=null;result=null;files=[];list();setBusy(false);history.replaceState(null,'',location.pathname);$('result').hidden=true;$('empty').hidden=false;$('result-panel').classList.remove('has-result');$('recovery').hidden=true;$('progress').hidden=true;$('error').hidden=true;});
-const saved=location.hash.match(/^#review=([a-f0-9-]{36})\.([a-f0-9-]{72})$/);if(saved){job={id:saved[1],token:saved[2]};$('recovery').hidden=false;setBusy(true);poll();}
+const saved=location.hash.match(/^#review=([a-f0-9-]{36})\.([a-f0-9-]{72})$/);if(saved){job={id:saved[1],token:saved[2]};$('recovery').hidden=false;}
 
 async function refreshAvailability(){
  try{
@@ -65,4 +69,4 @@ async function refreshAvailability(){
  }catch{available=false;setBusy(busy);if(!job)error('Не вдалося перевірити доступність сервісу. Спробуємо знову через хвилину.');}
  setTimeout(refreshAvailability,60000);
 }
-setBusy(busy);refreshAvailability();
+setBusy(busy);refreshAvailability();void access.start();
