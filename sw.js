@@ -1,4 +1,4 @@
-const CACHE_NAME = "quality-access-20260917-v2-quality-findings-only-20260917-v1-focus-music-20260916-v4-spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-3616b0601ed3";
+const CACHE_NAME = "contract-check-link-20260918-v1-quality-access-20260917-v2-quality-findings-only-20260917-v1-focus-music-20260916-v4-spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-3616b0601ed3";
 const ASSETS = [
   // INSURANCE NEWS ASSETS BEGIN
   "./news.html",
@@ -45,6 +45,7 @@ const ASSETS = [
   "./hero-background.js?v=7",
   "./assets/backgrounds/anodos-city-poster.jpg?v=2",
   "./site-theme.css?v=3",
+  "./check/index.html",
   "./contract-quality.html",
   "./contract-quality.css?v=6",
   "./contract-quality.mjs?v=13",
@@ -190,7 +191,10 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (event.request.mode === "navigate") {
-    const fallback = url.pathname.endsWith("/geocode.html") ? "./geocode.html" : "./index.html";
+    const isContractCheck = url.pathname === "/check" || url.pathname === "/check/" || url.pathname === "/check/index.html";
+    const fallback = isContractCheck ? "./check/index.html"
+      : url.pathname === "/contract-quality.html" ? "./contract-quality.html"
+      : url.pathname.endsWith("/geocode.html") ? "./geocode.html" : "./index.html";
     event.respondWith(fetch(new Request(event.request, { cache: "reload" })).catch(() => caches.match(fallback)));
     return;
   }
