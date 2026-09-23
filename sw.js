@@ -1,9 +1,12 @@
-const CACHE_NAME = "contract-check-link-20260918-v1-quality-access-20260917-v2-quality-findings-only-20260917-v1-focus-music-20260916-v4-spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-bde6cc54dbde";
+const CACHE_NAME = "contract-check-link-20260918-v1-quality-access-20260917-v2-quality-findings-only-20260917-v1-focus-music-20260916-v4-spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-422a14d6a57d";
 const ASSETS = [
   // INSURANCE NEWS ASSETS BEGIN
   "./news.html",
   "./insurance-news.css?v=1",
   "./insurance-news.js?v=1",
+  "./articles/marsh-broker-workbench-ai-placement-approval-2026.html",
+  "./articles/lititz-guidewire-ai-agent-knowledge-version-control-2026.html",
+  "./articles/ukraine-war-risk-business-seminar-24-september-2026.html",
   "./articles/mosaic-halo-ai-broker-submissions-and-quote-controls-2026.html",
   "./articles/construction-claims-ai-preparation-marsh-australia-2026.html",
   "./articles/ukraine-first-loss-war-damage-proposal-september-2026.html",
