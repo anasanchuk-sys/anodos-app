@@ -1,9 +1,10 @@
-const CACHE_NAME = "contract-check-link-20260918-v1-quality-access-20260917-v2-quality-findings-only-20260917-v1-focus-music-20260916-v4-spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-e9f352167e1d";
+const CACHE_NAME = "contract-check-link-20260918-v1-quality-access-20260917-v2-quality-findings-only-20260917-v1-focus-music-20260916-v4-spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-33839a7f2a27";
 const ASSETS = [
   // INSURANCE NEWS ASSETS BEGIN
   "./news.html",
   "./insurance-news.css?v=1",
   "./insurance-news.js?v=1",
+  "./articles/swiss-re-lse-connected-risks-broker-dependency-map-2026.html",
   "./articles/insurify-muse-ai-quotes-coverage-context-2026.html",
   "./articles/vertafore-agentic-agency-policy-check-human-approval-2026.html",
   "./articles/esas-ai-cyber-accumulation-provider-dependencies-2026.html",
