@@ -38,6 +38,7 @@ window.AnodosEnglish = Object.freeze({
   "Навчання": "Learning",
   "Страхування": "Insurance",
   "Інструменти": "Tools",
+  "Інструменти Anodos Pro": "Anodos Pro tools",
   "Довідники": "References",
   "Мій прогрес": "My progress",
   "Мої документи": "My documents",

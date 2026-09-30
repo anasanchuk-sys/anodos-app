@@ -77,6 +77,18 @@ body[data-route] #app.app-shell {
 .site-header .utility-menu-tool small { color: #536578; font: 400 12px/1.4 var(--font); opacity: 1; }
 .site-header .utility-menu-tool:hover { background: #edf7fb; }
 .site-header .utility-menu-arrow { color: #007da5; }
+.menu-pro-word { color: #c1272d; }
+.site-header .utility-menu-trigger .menu-pro-word { color: #ff5a5f; }
+@media (min-width: 721px) {
+  .site-header .utility-pro-shell .utility-menu { left: auto; right: 0; width: min(520px, calc(100vw - 80px)); }
+}
+@media (min-width: 721px) and (max-width: 1100px) {
+  .site-navigation { position: relative; }
+  .site-navigation-links { flex-wrap: wrap; gap: 0 19px; }
+  .site-header .utility-menu-shell { position: static; }
+  .site-header .utility-menu-shell .utility-menu { left: var(--site-gutter); right: auto; }
+  .site-header .utility-pro-shell .utility-menu { left: auto; right: var(--site-gutter); }
+}
 body[data-route="home"] .site-header { background: #091726db; }
 body[data-route="home"].site-scrolled .site-header { background: var(--navy); }
 

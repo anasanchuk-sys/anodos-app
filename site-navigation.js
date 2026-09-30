@@ -9,6 +9,7 @@
   syncHeader();
   const closeMenu = () => {
     if (environment) environment.open = false;
+    if (isApp()) setUtilityMenu(false);
     document.body.classList.remove('site-menu-open');
     menuButton?.setAttribute('aria-expanded', 'false');
     menuButton?.setAttribute('aria-label', 'Відкрити меню');
@@ -28,6 +29,7 @@
     const menu = event.target.closest('[data-site-menu]');
     if (menu) {
       const open = !document.body.classList.contains('site-menu-open');
+      if (!open && isApp()) setUtilityMenu(false);
       document.body.classList.toggle('site-menu-open', open);
       menu.setAttribute('aria-expanded', String(open));
       menu.setAttribute('aria-label', open ? 'Закрити меню' : 'Відкрити меню');
@@ -60,6 +62,7 @@
     else if (slide) { event.preventDefault(); setHomeHeroSlide(Number(slide.dataset.heroSlide)); }
   });
   document.addEventListener('keydown', (event) => {
+    if (event.defaultPrevented) return;
     if (event.key === 'Escape' && environment?.open) {
       environment.open = false;
       environment.querySelector('summary').focus();

@@ -2222,8 +2222,16 @@ function setBrandMenu(open) {
   }
 }
 
+function setUtilityProMenu(open) {
+  const button = document.querySelector("[data-utility-pro-menu]");
+  const panel = document.getElementById("anodosProMenu");
+  button?.setAttribute("aria-expanded", String(Boolean(open)));
+  if (panel) panel.hidden = !open;
+}
+
 function setUtilityMenu(open) {
   utilityMenuOpen = Boolean(open);
+  setUtilityProMenu(false);
   const button = document.querySelector("[data-utility-menu]");
   const panel = document.querySelector("[data-utility-menu-panel]");
   if (button) {
@@ -7571,7 +7579,7 @@ function setHomeHeroSlide(index) {
 
 function renderHomeToolCards() {
   // Use the menu as the single catalog, including its existing access checks.
-  return [...document.querySelectorAll('[data-utility-menu-panel] .utility-menu-tool')]
+  return [...document.querySelectorAll('[data-utility-menu-panel] .utility-menu-tool, #anodosProMenu .utility-menu-tool')]
     .filter((tool) => !tool.hidden)
     .map((tool, index) => {
       const title = tool.querySelector('strong').textContent;
@@ -10822,6 +10830,18 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
+  const utilityProButton = event.target.closest("[data-utility-pro-menu]");
+  if (utilityProButton) {
+    event.preventDefault();
+    const open = utilityProButton.getAttribute("aria-expanded") !== "true";
+    setCompassOpen(false);
+    setBrandMenu(false);
+    setUtilityMenu(false);
+    setUtilityProMenu(open);
+    if (open) window.requestAnimationFrame(() => document.querySelector("#anodosProMenu [role='menuitem']")?.focus());
+    return;
+  }
+
   if (utilityMenuButton) {
     event.preventDefault();
     setCompassOpen(false);
@@ -10848,6 +10868,7 @@ document.addEventListener("click", async (event) => {
   if (utilityMenuOpen && !event.target.closest(".utility-menu-shell")) {
     setUtilityMenu(false);
   }
+  if (!event.target.closest(".utility-pro-shell")) setUtilityProMenu(false);
 
   if (bankAccreditationCell) {
     showBankAccreditationEvidence(bankAccreditationCell);
@@ -11987,7 +12008,15 @@ document.addEventListener("submit", async (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+  const proButton = document.querySelector("[data-utility-pro-menu]");
+  if (event.key === "Escape" && proButton?.getAttribute("aria-expanded") === "true") {
+    event.preventDefault();
+    setUtilityProMenu(false);
+    proButton.focus();
+    return;
+  }
   if (event.key === "Escape" && utilityMenuOpen) {
+    event.preventDefault();
     setUtilityMenu(false);
     document.querySelector("[data-utility-menu]")?.focus();
     return;
