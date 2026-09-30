@@ -1,7 +1,7 @@
 (function(){
   'use strict';
-  const $=id=>document.getElementById(id),config=globalThis.ANODOS_CONTRACT_REVIEW_CONFIG,crypt=globalThis.AnodosReviewCrypto,key='anodos-osint-session-v1';
-  let transport=null,capability='',polling=false,busy=false,result=null,selected='',generation=0,accessPassword='';
+  const $=id=>document.getElementById(id),config=globalThis.ANODOS_CONTRACT_REVIEW_CONFIG,crypt=globalThis.AnodosReviewCrypto,profile=document.body.dataset.research==='company-profile',key=profile?'anodos-company-profile-session-v1':'anodos-osint-session-v1';
+  let transport=null,capability='',polling=false,busy=false,result=null,selected='',generation=0,accessPassword='',preparedPdf=null;
   const showError=e=>{$('error').textContent=e.message||String(e);$('error').hidden=false;};
   function setBusy(value,message){busy=value;$('search').disabled=value;$('website-run').disabled=value;$('research').disabled=value||!selected;$('query').disabled=value;$('status-box').hidden=!message;$('status-text').textContent=message||'';$('cancel').hidden=!value;$('reset-session').hidden=value||(!transport&&!$('error').textContent);}
   function save(value){try{sessionStorage.setItem(key,JSON.stringify(value));}catch{}}
@@ -44,8 +44,9 @@
       copy.append(el('strong',row.name),el('small',row.description));const link=el('a','Відкрити джерело');link.href=row.url;link.target='_blank';link.rel='noopener noreferrer';copy.append(link);label.append(radio,copy);$('candidates').append(label);
     });$('research').disabled=true;
   }
-  function renderReport(report){
+  async function renderReport(report){
     if(report.qualityChecked!==true)throw new Error('Звіт ще не пройшов контроль змісту. Почніть нове дослідження після оновлення сервісу.');
+    if(profile){$('download').disabled=true;setBusy(true,'Готую односторінковий PDF');preparedPdf=await AnodosCompanyProfile.blob(report);$('download').disabled=false;setBusy(false,'Аналітику та PDF завершено. Завантажте файл нижче.');}
     report={...report,gaps:AnodosOsintReport.gaps(report)};
     result=report;$('result').hidden=false;$('selection').hidden=true;$('result-title').textContent=report.name;$('result-meta').textContent=`${report.sources.length} джерел · ${report.findings.length} висновків із цитатами · ${new Date(report.createdAt).toLocaleDateString('uk-UA')}`;
     const content=$('report-content');content.replaceChildren();content.append(el('p','Попередній аналіз. Наявність цитати підтверджує текст джерела; висновки й актуальність відомостей потребують перевірки.','hint'));
@@ -81,19 +82,19 @@
   async function poll(){
     if(polling)return;polling=true;const own=generation;
     try{while(own===generation){const state=await transport.rpc({op:'status'});if(own!==generation)return;
-      if(state.state==='done'){setBusy(false,'Дослідження завершено. PDF готовий до завантаження.');renderReport(state.result);return;}
+      if(state.state==='done'){setBusy(false,'Дослідження завершено. PDF готовий до завантаження.');await renderReport(state.result);return;}
       if(state.state==='selection'){setBusy(false,'');candidates(state.candidates||[]);return;}
       if(['error','cancelled'].includes(state.state)){setBusy(false,'');throw new Error(state.error||'Дослідження зупинено.');}
       if(state.state==='ready'){setBusy(false,'');return;}
       setBusy(true,state.progress?.message||'Дослідження триває');await new Promise(r=>setTimeout(r,4000));
     }}catch(e){setBusy(false,'');showError(e);}finally{polling=false;}
   }
-  $('search-form').addEventListener('submit',async event=>{event.preventDefault();if(busy||!check())return;if(result){transport=null;capability='';result=null;sessionStorage.removeItem(key);}$('error').hidden=true;$('selection').hidden=true;$('result').hidden=true;try{setBusy(true,'Підключаюся до сервісу Anodos');await connect();await transport.rpc({op:'search',query:$('query').value});await poll();}catch(e){setBusy(false,'');showError(e);}});
-  async function start(id){if(busy||!check())return;$('error').hidden=true;try{const website=$('website').value.trim();if(website&&!/^https:\/\//i.test(website))throw new Error('Вкажіть HTTPS-адресу сайту.');if(id==='website'&&!website)throw new Error('Додайте сайт компанії.');setBusy(true,'Готую дослідження');await connect();await transport.rpc({op:'research',candidateId:id,website,name:$('query').value});await poll();}catch(e){setBusy(false,'');showError(e);}}
+  $('search-form').addEventListener('submit',async event=>{event.preventDefault();if(busy||!check())return;if(result){transport=null;capability='';result=null;sessionStorage.removeItem(key);}$('error').hidden=true;$('selection').hidden=true;$('result').hidden=true;try{setBusy(true,'Підключаюся до сервісу Anodos');await connect();await transport.rpc({op:'search',query:$('query').value,...(profile?{focus:'company-profile-a4-v1'}:{})});await poll();}catch(e){setBusy(false,'');showError(e);}});
+  async function start(id){if(busy||!check())return;$('error').hidden=true;try{const website=$('website').value.trim();if(website&&!/^https:\/\//i.test(website))throw new Error('Вкажіть HTTPS-адресу сайту.');if(id==='website'&&!website)throw new Error('Додайте сайт компанії.');setBusy(true,'Готую дослідження');await connect();await transport.rpc({op:'research',candidateId:id,website,name:$('query').value,...(profile?{focus:'company-profile-a4-v1'}:{})});await poll();}catch(e){setBusy(false,'');showError(e);}}
   $('research').addEventListener('click',()=>start(selected));$('website-run').addEventListener('click',()=>start('website'));
   $('cancel').addEventListener('click',async()=>{try{await transport.rpc({op:'cancel'});}catch(e){showError(e);}});
-  $('download').addEventListener('click',async()=>{const button=$('download');button.disabled=true;try{const blob=await AnodosOsintReport.blob(result),url=URL.createObjectURL(blob),a=el('a');a.href=url;a.download=`Anodos_OSINT_${result.name.replace(/[^\p{L}\p{N} _.-]/gu,'_').slice(0,80)}.pdf`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}catch(e){showError(e);}finally{button.disabled=false;}});
-  function reset(){generation++;transport=null;capability='';result=null;selected='';sessionStorage.removeItem(key);$('result').hidden=true;$('selection').hidden=true;$('error').hidden=true;$('error').textContent='';setBusy(false,'');$('query').focus();}
+  $('download').addEventListener('click',async()=>{const button=$('download');button.disabled=true;try{const blob=profile?(preparedPdf||await AnodosCompanyProfile.blob(result)):await AnodosOsintReport.blob(result),url=URL.createObjectURL(blob),a=el('a');a.href=url;a.download=`${profile?'Аналітика':'Anodos_OSINT'}_${result.name.replace(/[^\p{L}\p{N} _.-]/gu,'_').slice(0,80)}.pdf`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}catch(e){showError(e);}finally{button.disabled=false;}});
+  function reset(){generation++;transport=null;capability='';result=null;preparedPdf=null;selected='';sessionStorage.removeItem(key);$('result').hidden=true;$('selection').hidden=true;$('error').hidden=true;$('error').textContent='';setBusy(false,'');$('query').focus();}
   $('new-search').addEventListener('click',reset);$('reset-session').addEventListener('click',reset);
   $('access-form').addEventListener('submit',async event=>{
     event.preventDefault();const button=$('access-submit');if(button.disabled||!$('access-form').reportValidity())return;
@@ -106,7 +107,7 @@
       transport=t;capability=opened.capability;accessPassword=password;$('access-password').value='';
       $('query').value=saved?.query||'';save({...t.data,capability,query:$('query').value,...(saved?.report?{report:saved.report}:{})});
       $('access-gate').hidden=true;$('private-tool').hidden=false;$('query').focus();
-      if(saved?.report){try{renderReport(saved.report);}catch(e){sessionStorage.removeItem(key);showError(e);}}
+      if(saved?.report){try{await renderReport(saved.report);}catch(e){sessionStorage.removeItem(key);showError(e);}}
       else if(saved){setBusy(true,'Відновлюю стан дослідження');await poll();}
     }catch(e){transport=null;capability='';accessPassword='';$('access-error').textContent=e.message||'Не вдалося перевірити пароль.';$('access-error').hidden=false;$('access-password').select();}
     finally{button.disabled=false;$('access-status').hidden=true;}

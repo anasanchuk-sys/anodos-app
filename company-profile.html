@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0f1e32"><meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://anodos-review-bridge.mesquite-wishbone.workers.dev; img-src 'self' data: blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
-  <title>OSINT компанії - Anodos</title>
-  <meta name="description" content="Пошук активів бізнесу для страхування: об’єкти, локації, права на майно та PDF з джерелами.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' blob: https://anodos-review-bridge.mesquite-wishbone.workers.dev; img-src 'self' data: blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <title>Аналітика компанії у PDF - Ανοδος</title>
+  <meta name="description" content="Компанія, юридична особа, код або сайт: аналітика діяльності, власників, активів і географії в одному PDF A4.">
   <link rel="icon" href="./assets/icon.svg?v=7" type="image/svg+xml"><link rel="stylesheet" href="./osint.css?v=6">
   <link rel="stylesheet" href="./site-theme.css?v=3" />
   <link rel="stylesheet" href="./pro-access.css?v=1" />
 <link rel="stylesheet" href="./site-language.css?v=1" />
 <link rel="stylesheet" href="./my-documents.css?v=1" />
 </head>
-<body class="editorial-tool">
+<body class="editorial-tool" data-research="company-profile">
   <header class="site-header">
   <div class="site-masthead">
     <a class="site-brand" href="./" data-site-home aria-label="Анодос - головна">
@@ -39,7 +39,7 @@
 </header>
   <main>
     <section id="access-gate" class="workspace access-gate" aria-labelledby="access-title">
-      <div class="eyebrow">OSINT-АНАЛІТИКА</div>
+      <div class="eyebrow">АНАЛІТИКА КОМПАНІЇ</div>
       <h1 id="access-title" class="anodos-pro-access-title"><span class="anodos-pro-access-copy">введіть пароль</span> <span class="anodos-pro-access-brand">Anodos Pro</span></h1>
       <form id="access-form">
         <label for="access-password">Пароль</label>
@@ -50,30 +50,30 @@
     </section>
     <div id="private-tool" hidden>
     <div class="eyebrow">ДОСЛІДЖЕННЯ КОМПАНІЙ <span class="badge anodos-pro-label">ANODOS PRO</span></div>
-    <h1>OSINT-аналітика</h1>
-    <p class="intro">Знаходимо майно бізнесу для страхування: виробництва, склади, обладнання, запаси й транспорт. Результат - PDF з активами, підтвердженими адресами та відомостями про права на майно.</p>
+    <h1>Аналітика компанії</h1>
+    <p class="intro">Введіть назву, код, сайт або короткий опис компанії. Дослідимо її діяльність, власників, активи та географію і підготуємо один PDF на сторінку A4.</p>
     <section class="workspace" aria-labelledby="search-title">
       <form id="search-form">
         <h2 id="search-title">Яку компанію дослідити?</h2>
-        <label for="query">Назва компанії або групи</label>
-        <div class="search-row"><input id="query" name="query" minlength="2" maxlength="160" placeholder="Наприклад, Кернел або Метінвест" required autocomplete="organization"><button id="search" type="submit">Знайти компанію <span aria-hidden="true">→</span></button></div>
+        <label for="query">Назва, юридична особа, код ЄДРПОУ, сайт або опис</label>
+        <div class="search-row"><input id="query" name="query" minlength="2" maxlength="160" placeholder="Наприклад, РІЕЛ, 45247629 або riel.ua" required autocomplete="organization"><button id="search" type="submit">Знайти компанію <span aria-hidden="true">→</span></button></div>
         <details id="website-details"><summary>Додати сайт компанії</summary><label for="website">Публічна HTTPS-адреса</label><input id="website" type="url" placeholder="https://company.ua" maxlength="2000"><p class="hint">Сайт допоможе уточнити компанію або дослідити її, якщо назву не знайдено.</p><button id="website-run" class="secondary" type="button">Дослідити цей сайт</button></details>
         <label class="consent"><input type="checkbox" id="consent" required><span>Погоджуюся на пошук назви у відкритих джерелах та обробку й збереження дослідження на сервері Anodos.</span></label>
-        <p class="hint">Пошук починається з Вікіпедії або наданого сайту. Пріоритет читання - сторінки про активи та звітність компанії. Додатково система шукає адреси конкретних активів у вебі. ЄДРПОУ та платні реєстри поки не підключені.</p>
+        <p class="hint">Спочатку оберіть потрібну компанію серед знайдених джерел. Код ЄДРПОУ використовується для вебпошуку; прямого доступу до платних реєстрів немає. Якщо відомостей недостатньо, це буде зазначено у звіті.</p>
       </form>
       <div id="status-box" class="status" hidden role="status" aria-live="polite"><span id="status-text"></span><button id="cancel" class="text-button" type="button" hidden>Зупинити</button></div>
       <div id="error" class="error" hidden role="alert"></div>
       <button id="reset-session" class="secondary" type="button" hidden>Новий пошук</button>
-      <section id="selection" hidden aria-labelledby="selection-title"><h2 id="selection-title">Оберіть саме потрібну компанію</h2><p class="hint">Перевірте опис: пошук також може знаходити людей або однойменні організації.</p><div id="candidates"></div><button id="research" type="button" disabled>Почати дослідження</button></section>
+      <section id="selection" hidden aria-labelledby="selection-title"><h2 id="selection-title">Оберіть саме потрібну компанію</h2><p class="hint">Перевірте опис: пошук також може знаходити людей або однойменні організації.</p><div id="candidates"></div><button id="research" type="button" disabled>Дослідити та створити PDF</button></section>
     </section>
-    <section id="result" class="workspace" hidden aria-labelledby="result-title"><div class="result-top"><div><span class="eyebrow">ПОПЕРЕДНІЙ ЗВІТ</span><h2 id="result-title"></h2><p id="result-meta" class="hint"></p></div><button id="download" type="button">Завантажити PDF ↓</button></div><div id="report-content"></div><button id="new-search" class="secondary" type="button">Новий пошук</button></section>
-    <section class="scope"><div><h2>Що потрапить у PDF</h2><p>Насамперед - реєстр майна: об’єкт, точна фізична адреса, власник або оператор, джерело, можливий напрям страхування та що запросити для пропозиції. Далі - бізнес, юридичні особи й ризики.</p></div><div><h2>Як читати результат</h2><p>Власність, оренда й експлуатація розділені. Місто чи область не вважаються точною адресою. Юридична адреса компанії не підміняє адресу активу. Невідомі адреси та власники позначені прямо. Напрями страхування попередні; реєстр не гарантує повноти й потребує звірки з бізнесом.</p></div></section>
-    <p class="footnote">Обробка виконується на комп’ютері оператора Anodos і залежить від його доступності. Залишайте цю вкладку відкритою. Дослідження може тривати кілька хвилин; PDF зберігайте на свій пристрій.</p>
+    <section id="result" class="workspace" hidden aria-labelledby="result-title"><div class="result-top"><div><span class="eyebrow">ПОПЕРЕДНІЙ ЗВІТ</span><h2 id="result-title"></h2><p id="result-meta" class="hint"></p></div><button id="download" type="button">Завантажити PDF · 1 сторінка ↓</button></div><details><summary>Переглянути висновки, докази та межі дослідження</summary><div id="report-content"></div></details><button id="new-search" class="secondary" type="button">Новий пошук</button></section>
+    <section class="scope"><div><h2>Що потрапить у PDF</h2><p>Одна сторінка A4: хто це і чим займається, юридична структура та керівництво, активи й географія, короткий висновок і посилання на джерела.</p></div><div><h2>Як читати результат</h2><p>Твердження джерел відділені від аналітичних припущень. Проєкти під брендом не прирівнюються до власного майна; баланс однієї юрособи не видається за активи всієї групи. Повні висновки та докази можна розгорнути на сторінці.</p></div></section>
+    <p class="footnote">Для роботи потрібен доступний сервіс Anodos. Залишайте цю вкладку відкритою. Дослідження може тривати кілька хвилин; PDF зберігайте на свій пристрій.</p>
     </div>
   </main>
   <script src="./contract-review-config.js?v=6"></script><script src="./contract-review-secure.js?v=1"></script>
   <script src="./assets/vendor/pdfmake.min.js?v=1"></script><script src="./assets/vendor/vfs_fonts.js?v=1"></script>
-  <script src="./osint-report.js?v=5"></script><script src="./osint.js?v=5"></script>
+  <script src="./osint-report.js?v=5"></script><script src="./company-profile-font.js?v=1"></script><script src="./company-profile-pdf.js?v=1"></script><script src="./osint.js?v=5"></script>
 <footer class="site-footer">
   <div class="site-footer-top"><a class="site-brand" href="./" data-site-home aria-label="Анодос - головна">
   <span>Ανοδος</span>
@@ -85,9 +85,9 @@
   </div>
   <div class="site-footer-bottom"><span>© 2026 Ανοδος</span><span>Знання та інструменти для роботи зі страхуванням.</span></div>
 </footer>
-<script src="./site-english.js?v=4"></script>
+<script src="./site-english.js?v=7"></script>
 <script src="./site-language.js?v=2"></script>
-<script src="./my-documents.js?v=1"></script>
+<script src="./my-documents.js?v=2"></script>
 <script src="./site-navigation.js?v=5"></script>
 </body>
 </html>

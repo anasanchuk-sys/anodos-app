@@ -1,4 +1,4 @@
-const CACHE_NAME = "contract-check-link-20260918-v1-quality-access-20260917-v2-quality-findings-only-20260917-v1-focus-music-20260916-v4-spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-31a83f256252";
+const CACHE_NAME = "company-profile-20260930-v1-contract-check-link-20260918-v1-quality-access-20260917-v2-quality-findings-only-20260917-v1-focus-music-20260916-v4-spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-31a83f256252";
 const ASSETS = [
   // INSURANCE NEWS ASSETS BEGIN
   "./news.html",
@@ -52,10 +52,10 @@ const ASSETS = [
   "./focus-music.css?v=4",
 "./hero-spotlight.js?v=2",
   "./hero-spotlight.css?v=1",
-"./my-documents.js?v=1",
+"./my-documents.js?v=2",
   "./my-documents.css?v=1",
   "./site-language.js?v=2",
-  "./site-english.js?v=6",
+  "./site-english.js?v=7",
   "./site-language.css?v=1",
   "./pro-access.css?v=1",
   "./site-navigation.js?v=5",
@@ -81,7 +81,10 @@ const ASSETS = [
   "./geocode.js?v=2",
   "./osint.html",
   "./osint.css?v=6",
-  "./osint.js?v=4",
+  "./osint.js?v=5",
+  "./company-profile.html",
+  "./company-profile-pdf.js?v=1",
+  "./company-profile-font.js?v=1",
   "./osint-report.js?v=5",
   "./osint-entry.css?v=5",
   "./",
@@ -119,7 +122,7 @@ const ASSETS = [
   "./property-review-semantic.js?v=5",
   "./property-review-report.js?v=7",
   "./glossary-data.js?v=1",
-  "./app.js?v=234",
+  "./app.js?v=235",
   "./assets/contract-tests/arx-zusp-053.pdf",
   "./manifest.webmanifest?v=7",
   "./assets/icon.svg?v=7",

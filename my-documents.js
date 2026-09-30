@@ -52,7 +52,7 @@
   }
   // Capture only exports from insurance tools, leaving learning/admin exports alone.
   const routes = new Set(['contract-review','questionnaire-generator','questionnaire-fill','quotation-writing','client-recommendation']);
-  const pages = new Set(['contract-quality.html','contacts.html','osint.html']);
+  const pages = new Set(['contract-quality.html','contacts.html','osint.html','company-profile.html']);
   document.addEventListener('click', event => {
     const link = event.target.closest?.('a[download]');
     if (!link || link.hasAttribute('data-document-copy') || !link.href.startsWith('blob:')) return;

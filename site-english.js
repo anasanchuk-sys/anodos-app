@@ -1,5 +1,17 @@
 /* Reviewed English UI catalogue. Source documents retain their original language. */
 window.AnodosEnglish = Object.freeze({
+  "Аналітика компанії": "Company analysis",
+  "АНАЛІТИКА КОМПАНІЇ": "COMPANY ANALYSIS",
+  "Назва, юридична особа, код ЄДРПОУ, сайт або опис": "Company or legal name, registration code, website or description",
+  "Наприклад, РІЕЛ, 45247629 або riel.ua": "For example, RIEL, 45247629 or riel.ua",
+  "Дослідити та створити PDF": "Research and create PDF",
+  "Завантажити PDF · 1 сторінка ↓": "Download PDF \u00b7 1 page \u2193",
+  "Переглянути висновки, докази та межі дослідження": "View findings, evidence and research limitations",
+  "Діяльність, власники, активи та географія в одному PDF на сторінку A4.": "Business, owners, assets and locations in a one-page A4 PDF.",
+  "Введіть назву, код, сайт або короткий опис компанії. Дослідимо її діяльність, власників, активи та географію і підготуємо один PDF на сторінку A4.": "Enter a company name, code, website or short description. We will research its business, owners, assets and locations and prepare a one-page A4 PDF.",
+  "Одна сторінка A4: хто це і чим займається, юридична структура та керівництво, активи й географія, короткий висновок і посилання на джерела.": "One A4 page: business, legal structure and management, assets and locations, a brief conclusion and source links.",
+  "Для роботи потрібен доступний сервіс Anodos. Залишайте цю вкладку відкритою. Дослідження може тривати кілька хвилин; PDF зберігайте на свій пристрій.": "The Anodos service must be available. Keep this tab open. Research may take several minutes; save the PDF to your device.",
+
   "ДОСТУП ДО ПЕРЕВІРКИ": "ACCESS TO POLICY REVIEW",
   "Введіть пароль": "Enter your password",
   "Скористайтеся одноразовим шестизначним паролем або паролем": "Use a six-digit one-time password or your",
