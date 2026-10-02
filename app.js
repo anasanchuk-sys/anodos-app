@@ -7583,14 +7583,8 @@ function renderHomeToolCards() {
     .filter((tool) => !tool.hidden)
     .map((tool, index) => {
       const title = tool.querySelector('strong').textContent;
-      const isPro = Boolean(tool.querySelector('.anodos-pro-label'));
-      const description = isPro ? {
-        'Пошук контактів ДМів': 'Контакти осіб, які ухвалюють рішення, та джерела для перевірки.',
-        'Аналітика компанії': 'Діяльність, власники, активи та географія в одному PDF на сторінку A4.',
-        'OSINT-аналітика': 'Бізнес, власність та активи компанії з посиланнями на джерела.',
-        'Написання котирувань': 'Підготовка страхових котирувань на основі матеріалів запиту.',
-        'Автоматичне заповнення опитувальника': 'Заповнення форми на основі наданих документів та даних.'
-      }[title] || 'Професійний інструмент Anodos Pro.' : tool.querySelector('small')?.textContent || '';
+      const isPro = Boolean(tool.closest('#anodosProMenu'));
+      const description = tool.querySelector('small')?.textContent || '';
       const route = tool.dataset.brandMenuRoute;
       const href = tool.getAttribute('href') || `./?space=products&view=${encodeURIComponent(route)}`;
       return `<a href="${escapeHtml(href)}" ${route ? `data-brand-menu-route="${escapeHtml(route)}"` : ''}><span class="tool-number">${String(index + 1).padStart(2, '0')}${isPro ? '<span class="tool-pro anodos-pro-label">ANODOS PRO</span>' : ''}</span><h3>${escapeHtml(title)}</h3><p>${escapeHtml(description)}</p><span class="tool-link">Відкрити інструмент <i aria-hidden="true">→</i></span></a>`;

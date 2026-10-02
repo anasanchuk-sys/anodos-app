@@ -1,6 +1,9 @@
 /* Reviewed English UI catalogue. Source documents retain their original language. */
 window.AnodosEnglish = Object.freeze({
   "Аналітика компанії": "Company analysis",
+  "Anodos Pro проаналізує компанію, дослідить її активи та географію їх розміщення, знайде ключових контактних осіб і публічно доступні дані для зв’язку.": "Anodos Pro will analyse the company, research its assets and their locations, and identify key contacts and publicly available contact details.",
+  "Anodos створить опитувальник для страхування майна вашого клієнта та заповнить його публічно доступними даними.": "Anodos will create a property insurance questionnaire for your client and complete it with publicly available information.",
+  "Anodos підготує котирування у форматі PDF на основі пропозицій страхових компаній.": "Anodos will prepare a PDF quotation based on offers from insurance companies.",
   "АНАЛІТИКА КОМПАНІЇ": "COMPANY ANALYSIS",
   "Назва, юридична особа, код ЄДРПОУ, сайт або опис": "Company or legal name, registration code, website or description",
   "Наприклад, РІЕЛ, 45247629 або riel.ua": "For example, RIEL, 45247629 or riel.ua",

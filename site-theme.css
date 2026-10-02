@@ -71,6 +71,8 @@ body[data-route] #app.app-shell {
   background: #fff; color: var(--navy); box-shadow: 0 20px 45px #081c3238; backdrop-filter: none;
 }
 .site-header .utility-menu:not([hidden]) { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+.site-header .utility-pro-shell .utility-menu:not([hidden]) { grid-template-columns: minmax(0, 1fr); }
+.site-header .utility-menu-tool[hidden] { display: none; }
 .site-header .utility-menu-title { grid-column: 1 / -1; margin: 0 0 14px; opacity: 1; color: #536578; font: 400 13px/1.4 var(--font); letter-spacing: 0; }
 .site-header .utility-menu-tool { padding: 15px 2px; min-height: 80px; border-bottom: 1px solid var(--line); border-radius: 0; background: none; }
 .site-header .utility-menu-tool strong { color: var(--navy); font: 400 17px/1.25 var(--font); }
