@@ -77,7 +77,8 @@
     const config=scope.ANODOS_CONTRACT_REVIEW_CONFIG,crypt=scope.AnodosReviewCrypto;
     if(!scope.crypto?.subtle||!crypt||!config?.macPublicKey)throw new Error('Оновіть Anodos для заповнення опитувальника.');
     const client=await crypt.client(config.macPublicKey,config.macKeyId);
-    const opened=await requestWith(client,{op:'open',kind:'questionnaire',password});password='';
+    const credentials=password?{password}:{proAccess:await scope.AnodosProAccess.token()};
+    const opened=await requestWith(client,{op:'open',kind:'questionnaire',...credentials});password='';delete credentials.password;
     if(own!==revision){await requestWith(client,{op:'close',capability:opened.capability},{cleanup:true}).catch(()=>{});return;}
     if(!opened.capability||!Number.isFinite(opened.expiresAt))throw new Error('Не вдалося підтвердити доступ Anodos Pro.');
     transport=client;capability=opened.capability;expiresAt=opened.expiresAt;

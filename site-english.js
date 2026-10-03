@@ -1,5 +1,14 @@
 /* Reviewed English UI catalogue. Source documents retain their original language. */
 window.AnodosEnglish = Object.freeze({
+  "Один вхід для всіх трьох інструментів.": "One sign-in for all three tools.",
+  "Відкрити доступ": "Unlock access",
+  "Доступ Anodos Pro відкрито.": "Anodos Pro access is unlocked.",
+  "Оберіть інструмент, щоб почати роботу.": "Choose a tool to get started.",
+  "Вийти з Anodos Pro": "Sign out of Anodos Pro",
+  "Відкриваю інструмент Anodos Pro...": "Opening your Anodos Pro tool...",
+  "Сеанс Anodos Pro завершено. Введіть пароль ще раз.": "Your Anodos Pro session has ended. Enter your password again.",
+  "Введіть пароль Anodos Pro.": "Enter your Anodos Pro password.",
+  "Не вдалося підтвердити доступ Anodos Pro.": "Unable to confirm Anodos Pro access.",
   "Аналітика компанії": "Company analysis",
   "Anodos Pro проаналізує компанію, дослідить її активи та географію їх розміщення, знайде ключових контактних осіб і публічно доступні дані для зв’язку.": "Anodos Pro will analyse the company, research its assets and their locations, and identify key contacts and publicly available contact details.",
   "Anodos створить опитувальник для страхування майна вашого клієнта та заповнить його публічно доступними даними.": "Anodos will create a property insurance questionnaire for your client and complete it with publicly available information.",

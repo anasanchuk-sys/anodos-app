@@ -7236,7 +7236,9 @@ function renderContractReviewComparison() {
   `;
 }
 
+let questionnaireProAttempted = false;
 function leaveQuestionnaireFill() {
+  questionnaireProAttempted = false;
   if (!questionnaireFillActive) return;
   questionnaireFillActive = false;
   ++questionnaireResearchGeneration;
@@ -7264,6 +7266,21 @@ function renderQuestionnaireGenerator() {
     questionnaireGeneratorResult = null;
     questionnaireGeneratorError = "";
     questionnaireFillActive = true;
+  }
+  if (automatic && !window.AnodosQuestionnaireResearch?.authorized() && window.AnodosProAccess?.authorized() && !questionnaireProAttempted) {
+    questionnaireProAttempted = true;
+    const own = ++questionnaireResearchGeneration;
+    questionnaireGeneratorBusy = true;
+    screen.innerHTML = '<section class="questionnaire-generator-workspace"><p role="status">Відкриваю інструмент Anodos Pro...</p></section>';
+    void window.AnodosQuestionnaireResearch.unlock().catch(error => {
+      if (own === questionnaireResearchGeneration) questionnaireGeneratorError = error.message;
+    }).finally(() => {
+      if (own === questionnaireResearchGeneration && route === "questionnaire-fill") {
+        questionnaireGeneratorBusy = false;
+        renderQuestionnaireGenerator();
+      }
+    });
+    return;
   }
   if (automatic && !window.AnodosQuestionnaireResearch?.authorized()) {
     screen.innerHTML = `<section class="questionnaire-generator-workspace">
@@ -12113,3 +12130,10 @@ if ("serviceWorker" in navigator && window.location.protocol !== "file:") {
       .catch(() => {});
   });
 }
+
+window.addEventListener("anodos:pro-access", event => {
+  if (route !== "questionnaire-fill") return;
+  if (!event.detail.authorized) leaveQuestionnaireFill();
+  questionnaireProAttempted = false;
+  renderQuestionnaireGenerator();
+});

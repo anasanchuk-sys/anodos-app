@@ -42,7 +42,8 @@
       const config=scope.ANODOS_CONTRACT_REVIEW_CONFIG;
       if(!scope.crypto?.subtle||!config?.macPublicKey||!scope.AnodosReviewCrypto)throw new Error('Відкрийте Anodos через HTTPS і оновіть сторінку.');
       const client=await scope.AnodosReviewCrypto.client(config.macPublicKey,config.macKeyId);
-      const opened=await rpcWith(client,{op:'open',kind:'quotation',password});
+      const credentials=password?{password}:{proAccess:await scope.AnodosProAccess.token()};
+      const opened=await rpcWith(client,{op:'open',kind:'quotation',...credentials});delete credentials.password;
       if(own!==generation)return;
       if(!opened?.capability)throw new Error('Не вдалося підтвердити приватний доступ.');
       transport=client;capability=opened.capability;expiresAt=Number(opened.expiresAt)||Date.now()+55*60000;status='';
@@ -196,7 +197,7 @@
         else if(['quotationClient','quotationTitle','quotationPasted'].includes(event.target.id)){readInputs();if(event.target.id==='quotationPasted'&&state.report){state.report=null;confirmed=false;update();}}
       });
       element.addEventListener('click',event=>{
-        if(event.target.closest('[data-quotation-lock]')){leave();render();return;}
+        if(event.target.closest('[data-quotation-lock]')){scope.AnodosProAccess?.logout();leave();render();return;}
         if(event.target.closest('[data-quotation-cancel]')){void cancel();return;}
         if(event.target.closest('[data-quotation-download]')){void download();return;}
         const button=event.target.closest('[data-quotation-remove]');if(button&&authorized()&&!busy){readInputs();state.files.splice(Number(button.dataset.quotationRemove),1);if(!state.files.length){state.intakeWarnings=[];state.warnings=[];}state.report=null;confirmed=false;status='';update();}
@@ -204,8 +205,13 @@
     }
     if(!dragAttached){dragAttached=true;for(const name of ['dragenter','dragover','dragleave','drop'])(scope.document||element).addEventListener(name,handleDrag,true);}
     if(transport&&!authorized())locked();render();
+    if(!authorized()&&scope.AnodosProAccess?.authorized())void unlock();
   }
   scope.addEventListener?.('pagehide',()=>{locked();if(active())render();});
   scope.addEventListener?.('pageshow',event=>{if(event.persisted){locked();if(active())render();}});
+  scope.addEventListener?.('anodos:pro-access',event=>{
+    if(!event.detail.authorized){leave();update();}
+    else if(active()&&!authorized())void unlock();
+  });
   scope.AnodosQuotationWriting=Object.freeze({mount,leave});
 })(globalThis);

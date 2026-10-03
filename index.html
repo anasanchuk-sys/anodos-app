@@ -35,7 +35,7 @@
     <link rel="stylesheet" href="./styles.css?v=198" />
     <link rel="stylesheet" href="./quotation-writing.css?v=2" />
     <link rel="stylesheet" href="./osint-entry.css?v=5" />
-    <link rel="stylesheet" href="./site-theme.css?v=7" />
+    <link rel="stylesheet" href="./site-theme.css?v=8" />
   <link rel="stylesheet" href="./pro-access.css?v=1" />
 <link rel="stylesheet" href="./site-language.css?v=1" />
 <link rel="stylesheet" href="./my-documents.css?v=1" />
@@ -116,10 +116,11 @@
           </div>
         </div>
       <div class="utility-menu-shell utility-pro-shell">
-            <button class="utility-menu-trigger" type="button" data-utility-pro-menu aria-haspopup="menu" aria-expanded="false" aria-controls="anodosProMenu">
-              <span class="utility-menu-label">Інструменти <span translate="no">Anodos <span class="menu-pro-word">Pro</span></span></span><span class="site-chevron" aria-hidden="true">⌄</span>
+            <button class="utility-menu-trigger" type="button" data-utility-pro-menu aria-haspopup="dialog" aria-expanded="false" aria-controls="anodosProMenu">
+              <span class="utility-menu-label" translate="no">Anodos <span class="menu-pro-word">Pro</span></span><span class="site-chevron" aria-hidden="true">⌄</span>
             </button>
-            <div class="utility-menu" id="anodosProMenu" role="menu" aria-label="Інструменти Anodos Pro" hidden>
+            <div class="utility-menu" id="anodosProMenu" role="dialog" aria-label="Anodos Pro" hidden>
+            <div class="pro-tools" role="menu" aria-label="Інструменти Anodos Pro">
             <p class="utility-menu-title">Інструменти <span translate="no">Anodos <span class="menu-pro-word">Pro</span></span></p>
             <a class="utility-menu-tool osint-menu-link" role="menuitem" href="./company-profile.html">
               <span><strong>Аналітика компанії</strong><small>Anodos Pro проаналізує компанію, дослідить її активи та географію їх розміщення, знайде ключових контактних осіб і публічно доступні дані для зв’язку.</small></span>
@@ -147,6 +148,23 @@
               <span><strong>OSINT-аналітика</strong><small class="anodos-pro-label">ANODOS PRO</small></span>
               <span class="utility-menu-arrow" aria-hidden="true">→</span>
             </a>
+            </div>
+            <section class="pro-access-panel" aria-labelledby="anodosProAccessTitle">
+              <p class="utility-menu-title" id="anodosProAccessTitle">Введіть пароль <span translate="no">Anodos <span class="menu-pro-word">Pro</span></span></p>
+              <form id="anodosProAccessForm">
+                <label for="anodosProPassword">Пароль Anodos Pro</label>
+                <input id="anodosProPassword" name="password" type="password" autocomplete="current-password" required maxlength="256" placeholder="Введіть пароль" />
+                <button class="pro-access-submit" type="submit">Відкрити доступ <span aria-hidden="true">→</span></button>
+                <p class="pro-access-note">Один вхід для всіх трьох інструментів.</p>
+              </form>
+              <p id="anodosProAccessStatus" class="pro-access-note" role="status" hidden>Перевіряю пароль</p>
+              <p id="anodosProAccessError" class="pro-access-error" role="alert" hidden></p>
+              <div id="anodosProUnlocked" hidden>
+                <p class="pro-access-success" role="status">Доступ Anodos Pro відкрито.</p>
+                <p class="pro-access-note">Оберіть інструмент, щоб почати роботу.</p>
+                <button class="pro-access-submit" type="button" data-pro-logout>Вийти з Anodos Pro</button>
+              </div>
+            </section>
           </div>
         </div>
 
@@ -187,14 +205,15 @@
     <script src="./assets/vendor/tesseract/tesseract.min.js?v=1"></script>
     <script src="./contract-file-reader.js?v=2"></script>
     <script src="./questionnaire-generator.js?v=14"></script>
-    <script src="./questionnaire-research.js?v=5"></script>
+    <script src="./questionnaire-research.js?v=20261003"></script>
     <script src="./client-recommendation.js?v=1"></script>
-    <script src="./bank-accreditation-data.js?v=9"></script>
-    <script src="./contract-tests-data.js?v=5"></script>
+    <script type="application/anodos-member" data-member-src="./bank-accreditation-data.js?v=9"></script>
+    <script type="application/anodos-member" data-member-src="./contract-tests-data.js?v=5"></script>
     <script src="./property-review.js?v=3"></script>
     <script src="./contract-review-config.js?v=6"></script>
     <script src="./property-review-semantic.js?v=5"></script>
     <script src="./contract-review-secure.js?v=1"></script>
+    <script src="./pro-access.js?v=1"></script>
     <script src="./local-review/result.js?v=1"></script>
     <script src="./contract-review-mac.js?v=3"></script>
     <script src="./contract-review-workflow.js?v=1"></script>
@@ -204,12 +223,13 @@
     <script src="./quotation-mail-reader.js?v=1"></script>
     <script src="./quotation-report.js?v=1"></script>
     <script src="./quotation-mail-drop.js?v=2"></script>
-    <script src="./quotation-writing.js?v=4"></script>
+    <script src="./quotation-writing.js?v=5"></script>
     <script src="./glossary-data.js?v=1"></script>
     <script src="./hero-background.js?v=7"></script>
     <script src="./hero-spotlight.js?v=2"></script>
-    <script src="./app.js?v=238"></script>
-  <script src="./site-english.js?v=9"></script>
+
+    <script src="./app.js?v=239"></script>
+  <script src="./site-english.js?v=10"></script>
 <script src="./site-language.js?v=2"></script>
 <script src="./my-documents.js?v=2"></script>
 <script src="./site-navigation.js?v=7"></script>
