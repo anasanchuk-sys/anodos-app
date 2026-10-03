@@ -1,8 +1,8 @@
 (function(){
   'use strict';
   const $=id=>document.getElementById(id),config=globalThis.ANODOS_CONTRACT_REVIEW_CONFIG,crypt=globalThis.AnodosReviewCrypto,profile=document.body.dataset.research==='company-profile',key=profile?'anodos-company-profile-session-v1':'anodos-osint-session-v1';
-  let transport=null,capability='',polling=false,busy=false,result=null,selected='',generation=0,accessPassword='',preparedPdf=null;
-  const showError=e=>{$('error').textContent=e.message||String(e);$('error').hidden=false;};
+  let transport=null,capability='',polling=false,busy=false,result=null,selected='',generation=0,accessPassword='',preparedPdf=null,researchQuery='';
+  const showError=e=>{if(profile)$('search-form').hidden=false;$('error').textContent=e.message||String(e);$('error').hidden=false;if(profile)$('error').scrollIntoView({block:'center'});};
   function setBusy(value,message){busy=value;$('search').disabled=value;$('website-run').disabled=value;$('research').disabled=value||!selected;$('query').disabled=value;$('status-box').hidden=!message;$('status-text').textContent=message||'';$('cancel').hidden=!value;$('reset-session').hidden=value||(!transport&&!$('error').textContent);}
   function save(value){try{sessionStorage.setItem(key,JSON.stringify(value));}catch{}}
   async function client(saved){
@@ -33,7 +33,8 @@
     const credentials=accessPassword?{password:accessPassword}:{proAccess:await window.AnodosProAccess.token()};
     const t=await client();const opened=await t.rpc({op:'open',kind:'osint',privacyVersion:'anodos-osint-public-v1',...credentials});capability=opened.capability;transport=t;save({...t.data,capability,query:$('query').value});
   }
-  function check(){if(!$('consent').checked){$('consent').reportValidity();return false;}if(!$('query').reportValidity())return false;return true;}
+  function check(){if(!profile&&!$('consent').checked){$('consent').reportValidity();return false;}if(!$('query').reportValidity())return false;return true;}
+  function saveSearch(){if(transport)save({...transport.data,capability,query:researchQuery});}
   const el=(tag,content,cls)=>{const node=document.createElement(tag);if(content!==undefined)node.textContent=String(content).replace(/[\u2010-\u2015]/g,'-');if(cls)node.className=cls;return node;};
   function candidates(rows){
     $('candidates').replaceChildren();$('selection').hidden=false;selected='';
@@ -77,7 +78,8 @@
     }
     content.append(el('h3','Що залишилося перевірити'));const gaps=el('ul');report.gaps.forEach(g=>gaps.append(el('li',g)));content.append(gaps);
     const info=el('details');info.append(el('summary','Межі дослідження та недоступні джерела'),el('p',report.coverage,'hint'));report.unavailable.forEach(s=>info.append(el('p',`${s.url}: ${s.reason}`,'hint')));content.append(info);
-    if(transport)save({...transport.data,capability,query:$('query').value,report});
+    if(transport)save({...transport.data,capability,query:researchQuery||$('query').value,report});
+    if(profile){$('search-form').hidden=true;$('result').scrollIntoView({block:'start'});}
   }
   async function poll(){
     if(polling)return;polling=true;const own=generation;
@@ -86,15 +88,32 @@
       if(state.state==='selection'){setBusy(false,'');candidates(state.candidates||[]);return;}
       if(['error','cancelled'].includes(state.state)){setBusy(false,'');throw new Error(state.error||'Дослідження зупинено.');}
       if(state.state==='ready'){setBusy(false,'');return;}
+      if(profile&&state.phase==='research'){$('search-form').hidden=true;$('selection').hidden=true;}
       setBusy(true,state.progress?.message||'Дослідження триває');await new Promise(r=>setTimeout(r,4000));
     }}catch(e){setBusy(false,'');showError(e);}finally{polling=false;}
   }
-  $('search-form').addEventListener('submit',async event=>{event.preventDefault();if(busy||!check())return;if(result){transport=null;capability='';result=null;sessionStorage.removeItem(key);}$('error').hidden=true;$('selection').hidden=true;$('result').hidden=true;try{setBusy(true,'Підключаюся до сервісу Anodos');await connect();await transport.rpc({op:'search',query:$('query').value,...(profile?{focus:'company-profile-a4-v1'}:{})});await poll();}catch(e){setBusy(false,'');showError(e);}});
-  async function start(id){if(busy||!check())return;$('error').hidden=true;try{const website=$('website').value.trim();if(website&&!/^https:\/\//i.test(website))throw new Error('Вкажіть HTTPS-адресу сайту.');if(id==='website'&&!website)throw new Error('Додайте сайт компанії.');setBusy(true,'Готую дослідження');await connect();await transport.rpc({op:'research',candidateId:id,website,name:$('query').value,...(profile?{focus:'company-profile-a4-v1'}:{})});await poll();}catch(e){setBusy(false,'');showError(e);}}
+  $('search-form').addEventListener('submit',async event=>{event.preventDefault();if(busy||!check())return;if(result){transport=null;capability='';result=null;sessionStorage.removeItem(key);}$('error').hidden=true;$('selection').hidden=true;$('result').hidden=true;try{researchQuery=$('query').value.trim();selected='';setBusy(true,'Підключаюся до сервісу Anodos');await connect();saveSearch();await transport.rpc({op:'search',query:researchQuery,...(profile?{focus:'company-profile-a4-v1'}:{})});await poll();}catch(e){setBusy(false,'');showError(e);}});
+  async function start(id){
+    if(busy)return;
+    // The selected candidate belongs to the server's saved search. Revalidating
+    // the search field here used to bounce restored Safari tabs to an empty input.
+    if((!profile||id==='website')&&!check())return;
+    $('error').hidden=true;
+    try{
+      if(!id)throw new Error('Оберіть компанію зі списку.');
+      const website=$('website').value.trim();
+      if(website&&!/^https:\/\//i.test(website))throw new Error('Вкажіть HTTPS-адресу сайту.');
+      if(id==='website'&&!website)throw new Error('Додайте сайт компанії.');
+      const name=id==='website'?$('query').value.trim():researchQuery||$('query').value.trim();
+      setBusy(true,'Готую дослідження');await connect();
+      if(profile){$('search-form').hidden=true;$('selection').hidden=true;$('status-box').scrollIntoView({block:'center'});}
+      await transport.rpc({op:'research',candidateId:id,website,name,...(profile?{focus:'company-profile-a4-v1'}:{})});await poll();
+    }catch(e){setBusy(false,'');showError(e);}
+  }
   $('research').addEventListener('click',()=>start(selected));$('website-run').addEventListener('click',()=>start('website'));
   $('cancel').addEventListener('click',async()=>{try{await transport.rpc({op:'cancel'});}catch(e){showError(e);}});
   $('download').addEventListener('click',async()=>{const button=$('download');button.disabled=true;try{const blob=profile?(preparedPdf||await AnodosCompanyProfile.blob(result)):await AnodosOsintReport.blob(result),url=URL.createObjectURL(blob),a=el('a');a.href=url;a.download=`${profile?'Аналітика':'Anodos_OSINT'}_${result.name.replace(/[^\p{L}\p{N} _.-]/gu,'_').slice(0,80)}.pdf`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}catch(e){showError(e);}finally{button.disabled=false;}});
-  function reset(){generation++;transport=null;capability='';result=null;preparedPdf=null;selected='';sessionStorage.removeItem(key);$('result').hidden=true;$('selection').hidden=true;$('error').hidden=true;$('error').textContent='';setBusy(false,'');$('query').focus();}
+  function reset(){generation++;transport=null;capability='';result=null;preparedPdf=null;selected='';researchQuery='';$('search-form').hidden=false;sessionStorage.removeItem(key);$('result').hidden=true;$('selection').hidden=true;$('error').hidden=true;$('error').textContent='';setBusy(false,'');$('query').focus();}
   $('new-search').addEventListener('click',reset);$('reset-session').addEventListener('click',reset);
   async function unlockAccess(password){
     const button=$('access-submit');if(button.disabled)return;
@@ -106,7 +125,7 @@
       const credentials=password?{password}:{proAccess:await window.AnodosProAccess.token()};
       const opened=await t.rpc({op:'open',kind:'osint',privacyVersion:'anodos-osint-public-v1',...credentials});delete credentials.password;
       transport=t;capability=opened.capability;accessPassword=password||'';$('access-password').value='';
-      $('query').value=saved?.query||'';save({...t.data,capability,query:$('query').value,...(saved?.report?{report:saved.report}:{})});
+      researchQuery=saved?.query||'';$('query').value=researchQuery;save({...t.data,capability,query:$('query').value,...(saved?.report?{report:saved.report}:{})});
       $('access-gate').hidden=true;$('private-tool').hidden=false;$('query').focus();
       if(saved?.report){try{await renderReport(saved.report);}catch(e){sessionStorage.removeItem(key);showError(e);}}
       else if(saved){setBusy(true,'Відновлюю стан дослідження');await poll();}
