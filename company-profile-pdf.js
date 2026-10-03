@@ -7,7 +7,7 @@
     if(report?.qualityChecked!==true||report?.focus!=='company-profile-a4-v1'||!Array.isArray(report.findings)||!report.findings.length)throw new Error('Немає завершеної аналітики для PDF.');
     const sources=new Map((report.sources||[]).filter(s=>safe(s.url)).map(s=>[s.id,s]));
     const findings=report.findings.filter(f=>f.evidence?.length&&f.evidence.every(e=>sources.has(e.sourceId)));
-    if(!findings.some(f=>f.section==='business'))throw new Error('Недостатньо джерел про діяльність компанії.');
+    if(!findings.some(f=>['business','structure'].includes(f.section)))throw new Error('Недостатньо джерел для ідентифікації компанії.');
     const chosen=[],blocks=[];let budget=3300;
     const take=(id,count=1)=>{const rows=[];for(const f of findings.filter(f=>f.section===id).slice(0,count)){if(text(f.statement).length>budget)continue;rows.push(f);chosen.push(f);budget-=text(f.statement).length;}return rows;};
     blocks.push({id:'business',title:'Хто це і чим займається',rows:take('business')});
@@ -26,10 +26,11 @@
       {text:text(report.name),fontSize:22,bold:true,color:'#142F50',margin:[0,10,0,4]},
       {text:'Діяльність, активи та географія',fontSize:12,color:'#142F50',margin:[0,0,0,9]},
       {canvas:[{type:'line',x1:0,y1:0,x2:521.28,y2:0,lineWidth:1.5,lineColor:blue}]}];
+    if(!selected.blocks[0].rows.length)content.push({text:'Частковий профіль: юридичну особу підтверджено; опис діяльності потребує уточнення.',fontSize:9,color:'#7A561E',margin:[0,7,0,0]});
     for(const b of selected.blocks.slice(0,4)){content.push(heading(b.title),...(b.rows.length?b.rows.map(claim):[{text:missing,color:'#627185'}]));}
-    content.push(heading('Активи та їх розташування'));
+    content.push(heading('Активи та місця діяльності'));
     if(selected.assets.length){
-      const rows=[[{text:'Об’єкт / портфель',bold:true},{text:'Локація, право та стан за джерелом',bold:true}]];
+      const rows=[[{text:'Об’єкт / локація',bold:true},{text:'Локація, право та стан за джерелом',bold:true}]];
       for(const f of selected.assets){const a=f.asset;rows.push([{text:text(a.name),bold:true},{text:[text(a.address?.status==='exact'?a.address.text:a.location||'Локацію не встановлено')+'. ',text(a.relationLabel||'Право на майно не встановлено')+'. ',text(a.stateLabel||'Стан не встановлено')+'. ',{text:'['+refs(f).join(', ')+']'+(f.sourceYear?' · '+f.sourceYear:' · дата не встановлена'),color:blue}]}]);}
       content.push({table:{headerRows:1,widths:[145,'*'],body:rows},fontSize:size-0.3,layout:{hLineWidth:()=>0.4,vLineWidth:()=>0,hLineColor:()=> '#D9E2EB',fillColor:i=>i===0?'#F0F5F9':null,paddingLeft:()=>7,paddingRight:()=>7,paddingTop:()=>5,paddingBottom:()=>5}});
     }else content.push({text:'Конкретні активи та локації не підтверджені. Це не означає відсутність майна.',color:'#627185'});
