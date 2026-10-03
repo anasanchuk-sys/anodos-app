@@ -15,7 +15,7 @@ window.AnodosEnglish = Object.freeze({
   "Anodos підготує котирування у форматі PDF на основі пропозицій страхових компаній.": "Anodos will prepare a PDF quotation based on offers from insurance companies.",
   "АНАЛІТИКА КОМПАНІЇ": "COMPANY ANALYSIS",
   "Назва, юридична особа, код ЄДРПОУ, сайт або опис": "Company or legal name, registration code, website or description",
-  "Наприклад, РІЕЛ, 45247629 або riel.ua": "For example, RIEL, 45247629 or riel.ua",
+  "Умовний приклад: Babylon Tower development": "Fictional example: Babylon Tower development",
   "Дослідити та створити PDF": "Research and create PDF",
   "Завантажити PDF · 1 сторінка ↓": "Download PDF \u00b7 1 page \u2193",
   "Переглянути висновки, докази та межі дослідження": "View findings, evidence and research limitations",
