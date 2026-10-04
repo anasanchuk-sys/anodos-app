@@ -1,10 +1,11 @@
-const CACHE_NAME = "profile-evidence-recovery-20261003-v1-company-research-flow-20261003-v1-fictional-company-example-20261003-v1-hide-expert-cta-20261003-v1-pro-access-20261003-v1-pro-menu-20261002-v1-expert-consultation-v1-pro-menu-20260930-v3-company-profile-20260930-v1-contract-check-link-20260918-v1-quality-access-20260917-v2-quality-findings-only-20260917-v1-focus-music-20260916-v4-spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-5fa99ddea6e1";
+const CACHE_NAME = "profile-evidence-recovery-20261003-v1-company-research-flow-20261003-v1-fictional-company-example-20261003-v1-hide-expert-cta-20261003-v1-pro-access-20261003-v1-pro-menu-20261002-v1-expert-consultation-v1-pro-menu-20260930-v3-company-profile-20260930-v1-contract-check-link-20260918-v1-quality-access-20260917-v2-quality-findings-only-20260917-v1-focus-music-20260916-v4-spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-909123995af9";
 const ASSETS = [
-  "./pro-access.js?v=1",
   // INSURANCE NEWS ASSETS BEGIN
   "./news.html",
   "./insurance-news.css?v=1",
   "./insurance-news.js?v=1",
+  "./articles/eca-war-risk-compensation-payment-status-october-2026.html",
+  "./articles/mshift-pebblerisk-ai-risk-evidence-broker-2026.html",
   "./articles/mckinsey-ai-broker-total-cost-ownership-2026.html",
   "./articles/bold-penguin-dex-ai-broker-market-selection-2026.html",
   "./articles/kynd-ai-discovery-broker-proposal-verification-2026.html",
@@ -57,6 +58,7 @@ const ASSETS = [
   "./articles/ebrd-ese-war-damage-business-assets.html",
   "./articles/nbu-property-insurance-fourth-quarter-2025.html",
   // INSURANCE NEWS ASSETS END
+"./pro-access.js?v=1",
 "./focus-music.js?v=4",
   "./focus-music.css?v=4",
 "./hero-spotlight.js?v=2",
