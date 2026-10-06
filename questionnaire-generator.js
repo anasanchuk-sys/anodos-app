@@ -1948,6 +1948,23 @@
     return finalized;
   }
 
+  // These fields belong to the shared intake, regardless of model wording.
+  // Do not deduplicate domain exposure questions merely mentioning war.
+  function commonIntakeConcept(text) {
+    const value = cleanDesignedText(text, 500).toLocaleLowerCase("uk-UA").replace(/[?.:]$/u, "").trim();
+    // A related company's identity is not the applicant's identity. Likewise,
+    // a specific war sublimit is not the common yes/no coverage preference.
+    if (/власник|оператор|орендар|учасник|бенефіціар|підрядник|девелопер/iu.test(value)) return "";
+    if (/воєн/iu.test(value) && /ліміт|сум|франшиз|територ|період/iu.test(value)) return "";
+    if (/^воєнні ризики[?.:]?$|(?:потріб|бажає|включ|додат|розрахув|покрит)\p{L}*.*воєн|воєн\p{L}*.*(?:потріб|покрит|включ)/iu.test(value)) return "war-cover";
+    if (/^(?:(?:яка|який|яку)\s+)?(?:(?:бажана|бажаний|потрібна|потрібний|запитувана|запитуваний)\s+)?(?:страхова сума(?: або ліміт)?|ліміт(?: страхування| відповідальності)?)$/iu.test(value)) return "requested-limit";
+    if (/(?:бажан|потрібн|запитуван)\p{L}*.*період\p{L}*\s+страхув|^період страхування/iu.test(value)) return "requested-period";
+    if (/^(?:код\s+)?єдрпоу(?:\s+(?:заявника|страхувальника))?[?.:]?$|^повна юридична назва(?:\s+(?:заявника|страхувальника))?[?.:]?$|^назва заявника[?.:]?$/iu.test(value)) return "applicant";
+    if (/^(?:чи є |які )?вимоги (?:банку(?: або договору)?|договору)(?: щодо страхування| до страхування)?$/iu.test(value)) return "contract-requirements";
+    if (/(?:збитк|страхов\p{L}*\s+поді).*(?:п.?ят|5).*(?:рок|річ)|історія\s+(?:збитк|страхов)/iu.test(value)) return "loss-history";
+    return "";
+  }
+
   function prepareFromDesign(subjectValue, designValue) {
     const subject = normalizeSubject(subjectValue);
     if (subject.length < 2 || subject.length > 240) {
@@ -1965,13 +1982,15 @@
         title: cleanDesignedText(section?.title, 80),
         questions: (Array.isArray(section?.questions) ? section.questions : [])
           .map(normalizeDesignedQuestion)
+          .filter((question) => design.mode === "preserve_research_template" || !commonIntakeConcept(question.text))
       }))
-;
+      .filter((section) => section.questions.length);
     const specializedQuestions = specializedSections.flatMap((section) => section.questions);
     if (!specializedSections.length || specializedSections.some((section) => !section.title || !section.questions.length)) {
       throw new Error("Експертний опитувальник містить порожній розділ.");
     }
-    const coverage = insuranceSection(profileId, design.warRiskRelevant === true);
+    const modelAskedWar = (design.sections || []).some((section) => (section.questions || []).some((question) => commonIntakeConcept(question.text) === "war-cover"));
+    const coverage = insuranceSection(profileId, design.warRiskRelevant === true || modelAskedWar);
     coverage.title = "Покриття та збитки";
     coverage.questions.push(...lossesSection().questions);
     const sections = uniqueQuestions([generalSection(), ...specializedSections, coverage]);
@@ -2426,6 +2445,17 @@
         const labels = {found:"Підтверджено джерелами",partial:"[!] Часткова відповідь",unknown:"[?] Потрібно уточнити",conflict:"[!] Суперечливі дані",user:"Внесено користувачем"};
         responseChildren.push(paragraphText(docx, labels[question.answerStatus] || "[?] Потрібно уточнити", {size:17,bold:true,color:["unknown","partial","conflict"].includes(question.answerStatus)?"85601C":"647486",spacing:{after:25,line:230}}));
         if (question.answerNote) responseChildren.push(paragraphText(docx, question.answerNote, {size:17,color:"647486",spacing:{after:30,line:240}}));
+        if (question.detailsLabel) responseChildren.push(paragraphText(docx, question.detailsLabel, {size:17,italics:true,color:"647486",spacing:{before:35,after:25,line:235}}));
+        const missingText = question.answerStatus === "unknown" && ["shortText", "longText"].includes(question.kind);
+        const needsSupplement = ["partial", "conflict"].includes(question.answerStatus);
+        if (missingText || needsSupplement || question.detailsLabel) {
+          if (needsSupplement) responseChildren.push(paragraphText(docx, "Уточнення клієнта", {size:17,color:"647486",spacing:{before:35,after:25}}));
+          const lines = missingText && question.kind === "longText" ? 2 : 1;
+          for (let line = 0; line < lines; line++) responseChildren.push(new docx.Paragraph({
+            spacing:{after:35,line:250},border:{bottom:border(docx,"9DB3BF",3)},
+            children:[new docx.TextRun({text:"\u00A0",font:"Calibri",size:18})]
+          }));
+        }
       } else if (question.detailsLabel) {
         responseChildren.push(
           paragraphText(docx, question.detailsLabel, {
