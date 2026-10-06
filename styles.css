@@ -8495,6 +8495,14 @@ body[data-route="bank-accreditation"] .bank-accreditation-table-shell:focus-visi
 .questionnaire-generator-form [data-questionnaire-object-choices] input { grid-row: span 2; width: 18px; height: 18px; accent-color: #337f6d; }
 .questionnaire-generator-form [data-questionnaire-object-choices] label > span { grid-column: 2; overflow-wrap: anywhere; }
 .questionnaire-generator-form label > span { font-size: .875rem; }
+.questionnaire-research-field[data-completion-status="unknown"], .questionnaire-research-field[data-completion-status="partial"] { background: #fff8e5; border-left: 4px solid #c68b21; padding: 1rem; }
+.questionnaire-research-field[data-completion-status="conflict"] { background: #fff0ee; border-left: 4px solid #b34836; padding: 1rem; }
+.questionnaire-research-claim { padding: .45rem 0 .65rem; }
+.questionnaire-research-claim p { margin: 0 0 .35rem; white-space: pre-line; }
+.questionnaire-source-button { display: inline-flex; align-items: center; min-height: 30px; padding: .2rem .65rem; border: 1px solid #87a99b; border-radius: 5px; font-size: .8rem; font-weight: 600; color: #205d4b; background: #f4faf7; text-decoration: none; }
+.questionnaire-source-button:focus-visible { outline: 2px solid #205d4b; outline-offset: 3px; }
+.questionnaire-missing-note { display: block; font-weight: 600; }
+.questionnaire-answer-editor { margin-top: .5rem; }
 
 /* Property glossary: category browsing, connected definitions and source context. */
 .glossary-controls { display: grid; gap: 8px; min-width: 0; }

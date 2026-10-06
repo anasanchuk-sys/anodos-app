@@ -1974,6 +1974,15 @@
               ]
             })
           ]
+        }),
+        new docx.Paragraph({
+          alignment: docx.AlignmentType.CENTER,
+          spacing: { before: 100, after: 0 },
+          children: [
+            new docx.TextRun({ text: "Опитувальник підготовлено на сервісі ", font: "Calibri", size: 14, color: "C4C4C4" }),
+            new docx.ExternalHyperlink({ link: "https://anodos.com.ua/", children: [new docx.TextRun({ text: "Anodos.com.ua", font: "Calibri", size: 14, color: "C4C4C4" })] }),
+            new docx.TextRun({ text: ".", font: "Calibri", size: 14, color: "C4C4C4" })
+          ]
         })
       ]
     });
@@ -2078,7 +2087,7 @@
     });
   }
 
-  function questionCards(docx, section, startNumber) {
+  function questionCards(docx, section, startNumber, sources = []) {
     const rows = section.questions.map((question, index) => {
       const questionNumber = startNumber + index;
       const responseChildren = [];
@@ -2127,14 +2136,21 @@
       }
 
       if (question.answerStatus) {
-        responseChildren.push(paragraphText(docx, question.answer || "Потрібно уточнити", {
-          color: question.answer ? "243247" : "85601C", size: 19,
-          spacing: { before: 45, after: 35, line: 260 }
-        }));
-        const labels = {found:"Знайдено у джерелі - перевірте актуальність",unknown:"Потрібно уточнити",conflict:"Суперечливі дані",user:"Внесено користувачем"};
-        const refs = (question.evidence || []).map(e => e.sourceId).join(", ");
-        if (question.answer || question.answerStatus !== "unknown") responseChildren.push(paragraphText(docx, `${labels[question.answerStatus] || "Потрібно уточнити"}${refs ? ` [${refs}]` : ""}`, {size:16,color:"647486",spacing:{after:20,line:230}}));
-        if (question.answerNote && question.answerStatus !== "unknown") responseChildren.push(paragraphText(docx, question.answerNote, {size:16,color:"647486",spacing:{after:20,line:230}}));
+        const links = evidence => [...new Set((evidence || []).map(e => e.sourceId))].flatMap((id, i) => {
+          const source = sources.find(s => s.id === id);
+          if (!source || !/^https?:\/\//i.test(source.url)) return [];
+          return [new docx.ExternalHyperlink({link:source.url,children:[new docx.TextRun({text:`Джерело${i ? ` ${i+1}` : ""}  `,style:"Hyperlink",size:17})]})];
+        });
+        const claims = question.claims?.length ? question.claims : question.answer && question.evidence?.length ? [{value:question.answer,evidence:question.evidence}] : [];
+        if (claims.length && question.answerStatus !== "user") {
+          for (const claim of claims) {
+            responseChildren.push(paragraphText(docx, claim.value, {size:19,keepNext:true,spacing:{before:45,after:20,line:260}}));
+            responseChildren.push(new docx.Paragraph({spacing:{after:45,line:230},children:links(claim.evidence)}));
+          }
+        } else if (question.answer) responseChildren.push(paragraphText(docx, question.answer, {color:"243247",size:19,spacing:{before:45,after:35,line:260}}));
+        const labels = {found:"Підтверджено джерелами",partial:"[!] Часткова відповідь",unknown:"[?] Потрібно уточнити",conflict:"[!] Суперечливі дані",user:"Внесено користувачем"};
+        responseChildren.push(paragraphText(docx, labels[question.answerStatus] || "[?] Потрібно уточнити", {size:17,bold:true,color:["unknown","partial","conflict"].includes(question.answerStatus)?"85601C":"647486",spacing:{after:25,line:230}}));
+        if (question.answerNote) responseChildren.push(paragraphText(docx, question.answerNote, {size:17,color:"647486",spacing:{after:30,line:240}}));
       } else if (question.detailsLabel) {
         responseChildren.push(
           paragraphText(docx, question.detailsLabel, {
@@ -2172,6 +2188,11 @@
         );
       }
 
+      if (question.answerStatus) return [new docx.Paragraph({
+        keepNext:true,spacing:{before:160,after:70,line:260},
+        shading:{type:docx.ShadingType.CLEAR,fill:["unknown","partial"].includes(question.answerStatus)?"FFF4D4":question.answerStatus==="conflict"?"FCE7E3":"F0F3F5",color:"auto"},
+        children:[new docx.TextRun({text:`${questionNumber}. ${question.text}`,bold:true,size:21,color:"132961",font:"Calibri"})]
+      }),...responseChildren];
       return new docx.TableRow({
         cantSplit: true,
         height: { value: 470, rule: docx.HeightRule.ATLEAST },
@@ -2206,13 +2227,14 @@
           new docx.TableCell({
             width: { size: 5960, type: docx.WidthType.DXA },
             verticalAlign: docx.VerticalAlign.CENTER,
-            shading: { type: docx.ShadingType.CLEAR, fill: "F5F9FC", color: "auto" },
+            shading: { type: docx.ShadingType.CLEAR, fill: ["unknown","partial"].includes(question.answerStatus) ? "FFF4D4" : question.answerStatus === "conflict" ? "FCE7E3" : "F5F9FC", color: "auto" },
             children: responseChildren
           })
         ]
       });
     });
 
+    if (section.questions.some(question=>question.answerStatus)) return rows.flat();
     return [
       new docx.Table({
         width: { size: 9360, type: docx.WidthType.DXA },
@@ -2251,8 +2273,10 @@
 
     let number = 1;
     if (result.research) {
+      if(result.research.quality?.state==='draft')content.push(paragraphText(docx, "Попередня добірка доказів. Редакційну перевірку не завершено; перевірте відповіді перед використанням.", {size:19,bold:true}));
       if(result.research.objectName)content.push(paragraphText(docx, `Об’єкт: ${result.research.objectName}`, {size:21,bold:true}));
       content.push(paragraphText(docx, `Адреса об’єкта: ${result.research.address}`, {size:21,bold:true}));
+      if(result.research.coverage){const c=result.research.coverage;content.push(paragraphText(docx, `Підтверджені факти у ${c.withEvidence} із ${c.total} питань (${c.percent}%). Повні відповіді ${c.complete} (${c.completePercent}%). Усі питання шаблону збережено.`, {size:19}));content.push(paragraphText(docx, "[?] Потрібно заповнити. [!] Часткова відповідь або суперечність. Жовтим позначено пропуски й уточнення, червоним - суперечливі дані.", {size:18}));}
       content.push(paragraphText(docx, result.research.foundCount > 0
         ? "Попереднє заповнення з відкритих джерел. Перевірте відповіді, актуальність даних та заповніть поля, які потребують уточнення."
         : "Автоматичне заповнення не вдалося. Вебджерела не дали підтверджених відповідей для цього об’єкта. Ця форма потребує ручного заповнення або повторного пошуку.", {size:19}));
@@ -2278,20 +2302,30 @@
           ]
         })
       );
-      content.push(...questionCards(docx, section, number));
+      content.push(...questionCards(docx, section, number, result.research?.sources || []));
       number += section.questions.length;
     });
 
     if (result.research) {
+      if (result.research.entities?.length) {
+        content.push(paragraphText(docx, "Юридичні особи та їхні ролі", {heading:docx.HeadingLevel.HEADING_1,bold:true,size:27}));
+        content.push(paragraphText(docx, "Наведена роль у структурі об’єкта не означає, що ця особа є заявником на страхування.", {size:18}));
+        for (const entity of result.research.entities) {
+          content.push(paragraphText(docx, `${entity.name}. ЄДРПОУ ${entity.edrpou}. ${entity.roleLabel}.`, {size:20}));
+          const links=[...new Set((entity.evidence||[]).map(e=>e.sourceId))].flatMap(id=>{
+            const source=result.research.sources.find(s=>s.id===id);
+            return source && /^https?:\/\//i.test(source.url) ? [new docx.ExternalHyperlink({link:source.url,children:[new docx.TextRun({text:"Джерело  ",style:"Hyperlink",size:17})]})] : [];
+          });
+          content.push(new docx.Paragraph({spacing:{after:100},children:links}));
+        }
+      }
       content.push(paragraphText(docx, "Джерела та підтвердження", {heading:docx.HeadingLevel.HEADING_1,bold:true,size:27}));
       content.push(paragraphText(docx, `Пошук виконано: ${new Date(result.research.researchedAt).toLocaleString("uk-UA")}. ${result.research.scope}`, {size:18}));
-      for (const source of result.research.sources) {
+      const cited=new Set([...result.sections.flatMap(s=>s.questions).flatMap(q=>(q.evidence||[]).map(e=>e.sourceId)),...(result.research.entities||[]).flatMap(e=>(e.evidence||[]).map(x=>x.sourceId))]);
+      for (const source of result.research.sources.filter(s=>cited.has(s.id))) {
         content.push(paragraphText(docx, `[${source.id}] ${source.title}`, {bold:true,size:19}));
         content.push(new docx.Paragraph({spacing:{after:60},children:[new docx.ExternalHyperlink({link:source.url,children:[new docx.TextRun({text:source.url,style:"Hyperlink",size:17})]})]}));
-        const referenced=result.sections.flatMap(s=>s.questions).filter(q=>(q.evidence||[]).some(e=>e.sourceId===source.id));
-        for (const q of referenced) for (const evidence of q.evidence.filter(e=>e.sourceId===source.id)) {
-          content.push(paragraphText(docx, `${q.text}: «${evidence.quote}»`, {size:18,spacing:{after:60,line:255}}));
-        }
+
       }
       for (const warning of result.research.warnings || []) content.push(paragraphText(docx, warning, {size:17,color:"85601C"}));
     }
@@ -2303,7 +2337,7 @@
       subject: `Страховий опитувальник: ${result.subject}`,
       description: "Опитувальник для первинної оцінки страхового ризику.",
       keywords: "BritMark, страхування, опитувальник, Anodos",
-      evenAndOddHeaderAndFooters: true,
+      evenAndOddHeaderAndFooters: false,
       features: { updateFields: true },
       styles: {
         default: {
@@ -2446,12 +2480,10 @@
             }
           },
           headers: {
-            default: buildHeader(docx, logo, result),
-            even: buildHeader(docx, logo, result)
+            default: buildHeader(docx, logo, result)
           },
           footers: {
-            default: buildFooter(docx),
-            even: buildFooter(docx)
+            default: buildFooter(docx)
           },
           children: content
         }

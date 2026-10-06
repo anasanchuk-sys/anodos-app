@@ -7318,7 +7318,7 @@ function renderQuestionnaireGenerator() {
         <div>
           <p class="${automatic ? "anodos-pro-label" : "eyebrow"}">${automatic ? "ANODOS PRO" : "Anodos · робочий інструмент"}</p>
           <h1>${automatic ? "Автоматичне заповнення опитувальника" : "Генератор опитувальників"}</h1>
-          <p class="hero-copy">${automatic ? "Вкажіть назву або адресу об’єкта й потрібний опитувальник. Anodos встановить адресу, знайде доступні відомості та підготує DOCX з відповідями й джерелами." : "Опишіть потрібний опитувальник та отримайте порожню форму BritMark для заповнення."}</p>
+          <p class="hero-copy">${automatic ? "Вкажіть назву або адресу об’єкта й потрібний опитувальник. Anodos прочитає джерела, підготує відповіді та перевірить кожну тезу. Усі питання залишаться у DOCX; пропуски й суперечності буде позначено." : "Опишіть потрібний опитувальник та отримайте порожню форму BritMark для заповнення."}</p>
           ${automatic ? `<button class="secondary-action" type="button" data-lock-questionnaire>Вийти з інструмента</button>` : ""}
         </div>
       </header>
@@ -11812,7 +11812,7 @@ document.addEventListener("submit", async (event) => {
         renderQuestionnaireGenerator();
         const selectionId = String(formData.get("questionnaireObjectSelection") || "");
         if (questionnaireObjectChoices && !selectionId) throw new Error("Оберіть потрібний об’єкт зі списку.");
-        const research = await window.AnodosQuestionnaireResearch.research({objectQuery:questionnaireGeneratorAddress,queryType:questionnaireObjectQueryType,subject:questionnaireGeneratorInput,...(selectionId?{selectionId}:{})}, {
+        const research = await window.AnodosQuestionnaireResearch.research({objectQuery:questionnaireGeneratorAddress,queryType:questionnaireObjectQueryType,subject:questionnaireGeneratorInput,depth:"thorough",...(selectionId?{selectionId}:{})}, {
           signal:questionnaireResearchController.signal,
           progress:message=>{questionnaireResearchProgress=message;const status=document.querySelector("[data-questionnaire-progress]");if(status)status.textContent=message;}
         });
