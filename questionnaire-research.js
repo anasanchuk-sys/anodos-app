@@ -122,7 +122,7 @@
       if(combined.aborted)throw new Error(signal?.aborted||controller.signal.aborted?(designing?'Підготовку опитувальника скасовано.':'Заповнення скасовано.'):(designing?'Підготовка перевищила час очікування.':'Заповнення перевищило час очікування.'));throw e;
     }finally{if(activeController===controller)activeController=null;}
   }
-  const research=(payload,options)=>runJob('research','anodos-questionnaire-web-v2',payload,options);
+  const research=(payload,options)=>runJob('research','anodos-questionnaire-web-v3',payload,options);
   const design=(payload,options)=>runJob('design','anodos-questionnaire-design-v1',payload,options);
   scope.AnodosQuestionnaireResearch=Object.freeze({research,design,apply,render,edit,unlock,lock,authorized});
 })(window);
