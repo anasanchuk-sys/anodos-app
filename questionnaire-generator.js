@@ -3,10 +3,20 @@
 
   const DOCX_VENDOR_URL = "./assets/vendor/docx.iife.js?v=1";
   const BRITMARK_LOGO_URL = "./assets/britmark-logo.png?v=1";
+  const assetBase = typeof document !== "undefined" ? document.currentScript?.src : "";
   const BRITMARK_WEBSITE = "https://brit-mark.com/";
   const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
   const profileRules = [
+    {
+      id: "carrierLiability",
+      label: "Відповідальність перевізника або експедитора",
+      patterns: [
+        /відповідальн\p{L}*.*(?:перевізник|експедитор)/iu,
+        /(?:перевізник|експедитор).*відповідальн\p{L}*/iu,
+        /carrier(?:'s)? liability/i, /freight forwarder liability/i, /cmr/i
+      ]
+    },
     {
       id: "cargo",
       label: "Вантажі та перевезення",
@@ -28,7 +38,7 @@
       label: "Відповідальність за продукцію",
       patterns: [
         /якіст.*продукц/i, /відповідальн.*продукц/i, /відповідальн.*виробник/i,
-        /product liability/i, /дефект.*товар/i, /відкликан.*продукц/i
+        /продуктов.*відповідаль/i, /product liability/i, /дефект.*товар/i, /відкликан.*продукц/i
       ]
     },
     {
@@ -198,11 +208,16 @@
     };
   }
 
-  function insuranceSection(profileId) {
+  const warRiskProfileIds = new Set([
+    "cargo", "construction", "solar", "grain", "commercialProperty", "warehouse",
+    "manufacturing", "hospitality", "motor", "agriculture", "property"
+  ]);
+
+  function insuranceSection(profileId, warRiskRelevant = warRiskProfileIds.has(profileId)) {
     const questions = [
       shortQ("Страхова сума або ліміт", "Сума і валюта")
     ];
-    if (profileId !== "generic") {
+    if (warRiskRelevant) {
       questions.push(
         singleChoiceQ(
           "Воєнні ризики",
@@ -974,13 +989,45 @@
   };
 
   function normalizeSubject(value) {
-    return String(value || "").replace(/\s+/g, " ").trim();
+    return String(value || "")
+      .normalize("NFKC")
+      .replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
   function resolveProfile(subject) {
     const normalized = normalizeSubject(subject);
-    const rule = profileRules.find((item) => item.patterns.some((pattern) => pattern.test(normalized)));
-    return rule || { id: "generic", label: "Універсальний профіль ризику", patterns: [] };
+    const scoreById = new Map(profileRules.map((profile) => [profile.id, 0]));
+    for (const profile of profileRules) {
+      for (const pattern of profile.patterns) {
+        pattern.lastIndex = 0;
+        if (pattern.test(normalized)) {
+          scoreById.set(profile.id, scoreById.get(profile.id) + 4 + Math.min(5, Math.floor(pattern.source.length / 18)));
+        }
+      }
+    }
+    const add = (profileId, value) => scoreById.set(profileId, (scoreById.get(profileId) || 0) + value);
+    if (/відповідальн\p{L}*.*продукц|продуктов\p{L}*.*відповідаль|product liability/iu.test(normalized)) add("productLiability", 30);
+    if (/відповідальн\p{L}*.*(?:перевізник|експедитор)|(?:перевізник|експедитор).*відповідальн\p{L}*|carrier(?:'s)? liability|freight forwarder liability/iu.test(normalized)) add("carrierLiability", 34);
+    if (/професійн\p{L}*.*відповідаль|professional indemnity/iu.test(normalized)) add("professionalLiability", 30);
+    if (/відповідальн\p{L}*.*(?:керівник|директор)|\bd\s*&\s*o\b/iu.test(normalized)) add("managementLiability", 30);
+    if (/логістичн\p{L}*.*комплекс|дистрибуц\p{L}*.*центр|warehouse/iu.test(normalized)) add("warehouse", 25);
+    if (/будівельно[-\s]?монтаж|будівниц|реконструк|пусконалагод|\bear\b/iu.test(normalized)) add("construction", 18);
+    if (/\bcar\b/iu.test(normalized)) {
+      if (/будів|монтаж|проєкт|проект|підряд|страхуван\p{L}*\s+робіт/iu.test(normalized)) add("construction", 18);
+      if (/авто|автомоб|транспорт|каско|vehicle/iu.test(normalized)) add("motor", 20);
+    }
+    if (/доставк/iu.test(normalized) && /програмн|цифров|ліцензі|saas|software/iu.test(normalized) && !/фізичн\p{L}*\s+носі|обладнан|товар|вантаж/iu.test(normalized)) {
+      scoreById.set("cargo", 0);
+      add("cyber", 10);
+    }
+    const best = [...profileRules]
+      .map((profile, index) => ({ profile, index, score: scoreById.get(profile.id) || 0 }))
+      .sort((left, right) => right.score - left.score || left.index - right.index)[0];
+    return best?.score > 0
+      ? best.profile
+      : { id: "generic", label: "Універсальний профіль ризику", patterns: [] };
   }
 
   function uniqueQuestions(sections) {
@@ -1001,6 +1048,7 @@
   }
 
   const questionnaireTitles = {
+    carrierLiability: "Опитувальник для страхування відповідальності перевізника або експедитора",
     cargo: "Опитувальник для страхування вантажу",
     construction: "Опитувальник для страхування будівельно-монтажних робіт",
     productLiability: "Опитувальник для страхування відповідальності за продукцію",
@@ -1136,14 +1184,15 @@
             "дренчерне",
             "газове",
             "пінне / порошкове",
-            "локальне",
-            "увесь об’єкт",
-            "окремі зони",
+            "аерозольне",
+            "інше",
             "немає",
+            "невідомо",
           ]
         ),
         optionsPerLine: 4
       },
+      singleChoiceQ("Охоплення автоматичним пожежогасінням", ["увесь об’єкт", "лише окремі зони", "не встановлено", "невідомо"]),
       {
         ...multiChoiceQ(
           "Пожежне водопостачання та ручні засоби",
@@ -1346,6 +1395,26 @@
         ];
       }
 
+      case "carrierLiability":
+        return [
+          formSection("Діяльність перевізника або експедитора", [
+            singleChoiceQ("Роль компанії", ["автомобільний перевізник", "інший перевізник", "експедитор", "оператор складу", "кілька ролей"]),
+            multiChoiceQ("Види вантажів", ["генеральні", "насипні", "наливні", "температурні", "небезпечні", "цінні", "інші"]),
+            multiChoiceQ("Територія перевезень", ["Україна", "ЄС", "Велика Британія", "Туреччина", "інші країни"]),
+            shortQ("Річний фрахт або оборот від перевезень"),
+            shortQ("Максимальна вартість вантажу в одному транспортному засобі"),
+            singleChoiceQ("Хто фактично виконує перевезення", ["власний парк", "залучені перевізники", "власний і залучений парк"])
+          ]),
+          formSection("Контроль відповідальності", [
+            multiChoiceQ("Договори, за якими виникає відповідальність", ["CMR", "внутрішні ТТН", "експедиторські договори", "складські договори", "інші"]),
+            yesNoQ("Чи перевіряється чинність документів і страхування залучених перевізників?"),
+            multiChoiceQ("Захист вантажу", ["GPS", "пломби", "охорона", "контроль температури", "безпечні стоянки", "немає спеціальних заходів"]),
+            yesNoQ("Чи є проміжне зберігання під відповідальністю компанії?", "Якщо так - максимальний строк і вартість"),
+            yesNoQ("Чи приймає компанія договірну відповідальність понад закон або конвенцію?"),
+            yesNoQ("Чи були претензії щодо втрати, пошкодження або прострочення доставки за п’ять років?", "Якщо так - кількість і найбільша сума")
+          ])
+        ];
+
       case "construction":
         return [
           formSection("Проєкт", [
@@ -1393,7 +1462,9 @@
           ]),
           formSection("Якість і претензії", [
             yesNoQ("Чи є сертифікована система контролю якості?", "Якщо так — назва стандарту"),
+            multiChoiceQ("Перевірка продукції", ["вхідний контроль сировини", "контроль під час виробництва", "фінальні випробування", "незалежна лабораторія", "інше"]),
             yesNoQ("Чи можна простежити кожну партію продукції?"),
+            yesNoQ("Чи містять інструкції правила безпечного використання та попередження?"),
             yesNoQ("Чи є письмова процедура відкликання?"),
             yesNoQ(
               "Чи були скарги, повернення або відкликання за п’ять років?",
@@ -1432,16 +1503,19 @@
               "Критичні дані",
               ["персональні", "платіжні", "медичні", "комерційна таємниця", "дані клієнтів", "інше"]
             ),
-            yesNoQ("Чи є багатофакторна автентифікація?"),
-            yesNoQ("Чи є резервні копії поза основною мережею?"),
-            yesNoQ("Чи є цілодобовий моніторинг кіберподій?")
+            multiChoiceQ("Де обов’язкова багатофакторна автентифікація", ["поштові облікові записи", "віддалений доступ / VPN", "адміністративні облікові записи", "критичні хмарні сервіси", "не використовується"]),
+            singleChoiceQ("Резервні копії критичних систем", ["ізольовані або незмінні", "лише в основній мережі", "не створюються", "невідомо"]),
+            singleChoiceQ("Остання перевірка відновлення з резервної копії", ["до 3 місяців", "3–12 місяців", "понад 12 місяців", "не перевірялося", "невідомо"])
           ]),
           formSection("Інциденти та покриття", [
+            multiChoiceQ("Технічний захист", ["EDR на робочих станціях", "EDR на серверах", "сегментація мережі", "SIEM / SOC", "сканування вразливостей", "немає або невідомо"]),
+            singleChoiceQ("Строк встановлення критичних оновлень", ["до 7 днів", "8–30 днів", "понад 30 днів", "немає встановленого строку", "невідомо"]),
             yesNoQ(
               "Чи були кібератаки або витоки даних за п’ять років?",
               "Якщо так — коротко зазначте подію"
             ),
             yesNoQ("Чи передано ІТ або кібербезпеку зовнішньому підряднику?"),
+            singleChoiceQ("Максимально допустимий простій критичних систем", ["до 4 годин", "до 24 годин", "2–3 дні", "понад 3 дні", "не визначено"]),
             multiChoiceQ(
               "Потрібне покриття",
               ["відновлення даних", "перерва в роботі", "кібервимагання", "відповідальність за дані", "реагування на інцидент"]
@@ -1473,16 +1547,28 @@
         ];
 
       case "solar":
-        return [
+        {
+          const isWind = /вітров|wind/iu.test(subject);
+          const isHydro = /гідро|hydro/iu.test(subject);
+          const isBio = /біогаз|біомас|biogas|biomass/iu.test(subject);
+          const technology = isWind ? "вітрова" : isHydro ? "гідро" : isBio ? "біогаз / біомаса" : "сонячна";
+          const equipmentQuestion = isWind
+            ? multiChoiceQ("Основне обладнання", ["вітротурбіни", "башти", "редуктори", "генератори", "трансформатори", "кабельні мережі"])
+            : isHydro
+              ? multiChoiceQ("Основне обладнання", ["гідротурбіни", "генератори", "затвори", "гідротехнічні споруди", "трансформатори", "кабельні мережі"])
+              : isBio
+                ? multiChoiceQ("Основне обладнання", ["реактори / котли", "газгольдери", "генератори", "системи подачі сировини", "трансформатори", "кабельні мережі"])
+                : multiChoiceQ("Основне обладнання", ["фотомодулі", "інвертори", "трансформатори", "кабельні мережі", "система накопичення BESS"]);
+          return [
           formSection("Об’єкт", [
             shortQ("Адреса"),
-            singleChoiceQ("Тип розміщення", ["наземна", "дахова", "комбінована", "інше"]),
+            singleChoiceQ("Технологія", [technology, "комбінована", "інше"]),
             singleChoiceQ("Право на об’єкт", ["власність", "оренда", "лізинг", "інше"]),
             shortQ("Встановлена потужність", "МВт"),
             singleChoiceQ("Статус об’єкта", ["будується", "тестується", "експлуатується"]),
             shortQ("Рік введення в експлуатацію"),
-            shortQ("Виробник модулів"),
-            shortQ("Виробник інверторів")
+            equipmentQuestion,
+            shortQ("Виробник основних агрегатів")
           ]),
           formSection("Захист об’єкта", [
             yesNoQ("Чи є дистанційний моніторинг роботи?"),
@@ -1499,8 +1585,14 @@
               "Природні небезпеки для адреси",
               ["повінь", "підтоплення", "буря", "град", "пожежа рослинності", "невідомі"]
             )
+          ]),
+          formSection("Надійність і перерва", [
+            yesNoQ("Чи є критичні запасні частини на майданчику?"),
+            singleChoiceQ("Строк заміни найбільш критичного агрегату", ["до 1 місяця", "1–3 місяці", "4–6 місяців", "понад 6 місяців", "невідомо"]),
+            singleChoiceQ("Максимально допустимий простій", ["до 7 днів", "8–30 днів", "1–3 місяці", "понад 3 місяці", "не визначено"])
           ])
         ];
+        }
 
       case "grain":
         return propertyFriendlySections([
@@ -1561,7 +1653,8 @@
         ], { fireIntensive: true });
 
       case "manufacturing":
-        return propertyFriendlySections([
+        return [
+          ...propertyFriendlySections([
           shortQ("Основна продукція"),
           {
             ...multiChoiceQ(
@@ -1589,7 +1682,15 @@
               "невідомо"
             ]
           )
-        ], { fireIntensive: true });
+          ], { fireIntensive: true }),
+          formSection("Обладнання та безперервність", [
+            yesNoQ("Чи виконується планове технічне обслуговування обладнання?"),
+            singleChoiceQ("Критичне обладнання без робочого резерву", ["є кілька одиниць", "є одна ключова одиниця", "немає", "невідомо"]),
+            singleChoiceQ("Найдовший строк заміни критичного обладнання", ["до 1 місяця", "1–3 місяці", "4–6 місяців", "понад 6 місяців", "невідомо"]),
+            multiChoiceQ("Критичні зовнішні залежності", ["електроенергія", "газ", "вода", "пара / тепло", "стиснене повітря", "єдині постачальники", "немає"]),
+            singleChoiceQ("Строк відновлення виробництва після великої пожежі", ["до 1 місяця", "1-3 місяці", "4-6 місяців", "понад 6 місяців", "не оцінювали"])
+          ])
+        ];
 
       case "hospitality":
         return propertyFriendlySections([
@@ -1671,55 +1772,229 @@
 
       default:
         return [
-          formSection("Предмет страхування", [
-            longQ(`Що саме потрібно застрахувати: ${subject}`, "Коротко опишіть об’єкт або діяльність", 2),
-            shortQ("Де виникає ризик?", "Адреса, маршрут або країна"),
+          formSection("Що потрібно захистити", [
+            longQ(`Що саме потрібно застрахувати: ${subject}`, "Один короткий опис об’єкта, діяльності або зобов’язання", 2),
+            singleChoiceQ("Роль заявника", ["власник", "орендар", "підрядник", "виробник / продавець", "надавач послуг", "інше"]),
+            shortQ("Де виникає ризик?", "Адреса, маршрут, територія або країна"),
+            singleChoiceQ("Характер ризику", ["разовий", "постійний", "сезонний", "проєктний", "інше"]),
             singleChoiceQ(
               "Що може бути втрачено?",
               ["майно", "гроші або дохід", "відповідальність перед іншими", "життя або здоров’я", "інше"]
-            ),
+            )
+          ]),
+          formSection("Масштаб і сценарії збитку", [
+            shortQ("Максимальна вартість або розмір відповідальності в одному випадку", "Сума і валюта, якщо можна оцінити"),
             multiChoiceQ(
               "Основні небезпеки",
               ["пожежа", "аварія", "поломка", "крадіжка", "природне явище", "помилка працівника", "кіберподія", "інше"]
-            )
+            ),
+            multiChoiceQ("Хто або що може постраждати", ["власне майно", "клієнти", "треті особи", "працівники", "довкілля", "дохід / безперервність", "інше"]),
+            multiChoiceQ("Основні засоби контролю", ["технічний захист", "фізична охорона", "процедури й навчання", "договори", "резервування", "зовнішній контроль", "немає або невідомо"])
+          ]),
+          formSection("Залежності та відновлення", [
+            multiChoiceQ("Критичні залежності", ["електроенергія", "ІТ", "ключове обладнання", "єдиний постачальник", "ключовий замовник", "транспорт / логістика", "немає"]),
+            singleChoiceQ("Максимально допустимий простій", ["до 24 годин", "2–7 днів", "8–30 днів", "понад 30 днів", "не застосовується / не визначено"]),
+            yesNoQ("Чи є план дій після великої події?", "Якщо так - назва або дата останнього перегляду"),
+            multiChoiceQ("Що можна додати до анкети", ["перелік майна", "договір", "технічний опис", "схема / маршрут", "сертифікати", "звіт про збитки", "нічого на першому етапі"])
           ])
         ];
     }
   }
 
-  function prepare(subjectValue) {
+  function prepare(subjectValue, { strictScope = false } = {}) {
     const subject = normalizeSubject(subjectValue);
     if (subject.length < 2) {
       throw new Error("Опишіть об’єкт, діяльність або відповідальність щонайменше двома символами.");
     }
+    if (subject.length > 240) {
+      throw new Error("Скоротіть опис до 240 символів.");
+    }
 
     const profile = resolveProfile(subject);
+    if (strictScope) assertSupportedOfflineScope(subject, profile.id);
     const coverage = insuranceSection(profile.id);
     coverage.title = "Покриття та збитки";
-    coverage.questions.push(...lossesSection().questions);
+    const profileSections = friendlyProfileSections(profile.id, subject);
+    if (strictScope) for (const section of profileSections) {
+      if (section.title === "Конструктив і пожежозахист") section.questions = industrialConstructionAndFireQuestions();
+    }
+    const hasProfileLossHistory = profileSections
+      .flatMap((section) => section.questions)
+      .some((question) => /збитк|страхов\p{L}*\s+поді|претенз|кібератак|виток|ДТП|викраден|відкликан/iu.test(question.text));
+    if (!hasProfileLossHistory) coverage.questions.push(...lossesSection().questions);
     const sections = uniqueQuestions([
       generalSection(),
-      ...friendlyProfileSections(profile.id, subject),
+      ...profileSections,
       coverage
     ]);
-    const questions = sections.flatMap((section) => section.questions);
-    questions.forEach((question, index) => { question.id = `Q${index + 1}`; });
 
-    return {
+    return finalizeResult({
       subject,
       profileId: profile.id,
       profileLabel: profile.label,
       title: questionnaireTitles[profile.id] || questionnaireTitles.generic,
       preparedAt: new Date().toISOString(),
       sections,
+      generationMode: "offline",
+      templateVersion: "offline-curated-v2"
+    });
+  }
+
+  // A template is a useful fast route for a single known risk, not an AI
+  // substitute. Keep research's stable template path independent of this gate.
+  function assertSupportedOfflineScope(subject, profileId) {
+    const unusual = /гелікоптер|вертоліт|літак|авіаційн|судно|яхт|морськ.*каско|житт[яі]|здоров|медичн.*страх|косміч|супутник|страхування.*кредит/iu.test(subject);
+    const mixed = /(?:майн|будівл|обладнан|завод).*(?:та|і|плюс|\+).*відповідальн|відповідальн.*(?:та|і|плюс|\+).*(?:майн|будівл|обладнан)|(?:кібер|cyber).*(?:та|і|\+).*(?:майн|відповідальн)/iu.test(subject);
+    if (profileId === "generic" || unusual || mixed) {
+      throw new Error("Для цього нестандартного або змішаного ризику немає перевіреної офлайн-форми. Увімкніть експертне проєктування у вебверсії або уточніть один вид страхування. Загальну анкету замість потрібного ризику не створено.");
+    }
+  }
+
+  const allowedProfileIds = new Set(profileRules.map((profile) => profile.id).concat("generic"));
+  const allowedQuestionKinds = new Set(["shortText", "longText", "yesNo", "singleChoice", "multiChoice"]);
+  const forbiddenContactPatterns = [
+    /контактн\p{L}*\s+(?:особ\p{L}*|дан\p{L}*|інформац\p{L}*)/iu,
+    /особ\p{L}*\s+(?:для|з)\s+зв['’ʼ]?язк\p{L}*/iu,
+    /(?:^|[^\p{L}])(?:телефон\p{L}*|тел\.)(?:$|[^\p{L}])/iu,
+    /мобільн\p{L}*\s+(?:номер\p{L}*|телефон\p{L}*)/iu,
+    /(?:електронн\p{L}*\s+пошт\p{L}*|(?:^|[^\p{L}])e[\s-]?mail(?:$|[^\p{L}]))/iu,
+    /(?:^|[^\p{L}])ел\.\s*пошт\p{L}*(?:$|[^\p{L}])/iu,
+    /(?:п\.\s*і\.\s*б\.|піб|ім['’ʼ]?я).{0,60}(?:контактн|відповідальн|уповноважен)\p{L}*/iu,
+    /(?:contact\s+(?:person|name|details|information)|point\s+of\s+contact|phone\s+number|telephone|mobile\s+number|cell\s+phone)/iu,
+    /(?:mailto:|[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.[\p{L}]{2,})/iu
+  ];
+
+  function cleanDesignedText(value, maximum) {
+    return normalizeSubject(value).slice(0, maximum);
+  }
+
+  function assertNoContactPrompt(value) {
+    if (forbiddenContactPatterns.some((pattern) => pattern.test(String(value || "")))) {
+      throw new Error("Опитувальник містить заборонений запит контактних даних.");
+    }
+  }
+
+  function normalizeDesignedQuestion(question) {
+    const kind = allowedQuestionKinds.has(question?.kind) ? question.kind : "";
+    const text = cleanDesignedText(question?.text, 180);
+    const hint = cleanDesignedText(question?.hint, 180);
+    const detailsLabel = cleanDesignedText(question?.detailsLabel, 180);
+    if (!kind || text.length < 3) {
+      throw new Error("Експертна модель повернула неповне питання.");
+    }
+    let options = [...new Set((Array.isArray(question.options) ? question.options : [])
+      .map((option) => cleanDesignedText(option, 80))
+      .filter(Boolean))];
+    if (kind === "yesNo") options = ["Так", "Ні"];
+    if (["shortText", "longText"].includes(kind)) options = [];
+    if (["yesNo", "singleChoice", "multiChoice"].includes(kind) && options.length < 2) {
+      throw new Error(`Для питання «${text}» не вистачає варіантів відповіді.`);
+    }
+    for (const visible of [text, hint, detailsLabel, ...options]) assertNoContactPrompt(visible);
+    return {
+      text,
+      kind,
+      options,
+      hint,
+      detailsLabel: kind === "yesNo" ? detailsLabel : "",
+      responseLines: kind === "longText"
+        ? Math.max(2, Math.min(3, Number(question.responseLines) || 2))
+        : kind === "shortText" ? 1 : 0
+    };
+  }
+
+  function resultFingerprint(result) {
+    const source = JSON.stringify({
+      subject: result.subject,
+      title: result.title,
+      profileId: result.profileId,
+      profileLabel: result.profileLabel,
+      templateVersion: result.templateVersion,
+      sections: result.sections.map((section) => ({
+        title: section.title,
+        questions: section.questions.map((question) => ({
+          text: question.text,
+          kind: question.kind,
+          options: question.options || [],
+          hint: question.hint || "",
+          detailsLabel: question.detailsLabel || "",
+          responseLines: question.responseLines || 0
+        }))
+      }))
+    });
+    let hash = 2166136261;
+    for (let index = 0; index < source.length; index += 1) {
+      hash ^= source.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return `qf-${(hash >>> 0).toString(16).padStart(8, "0")}`;
+  }
+
+  function finalizeResult(result) {
+    const questions = result.sections.flatMap((section) => section.questions);
+    questions.forEach((question, index) => { question.id = `Q${index + 1}`; });
+    const finalized = {
+      ...result,
       questionCount: questions.length,
       choiceCount: questions.filter((question) =>
         ["singleChoice", "multiChoice", "yesNo"].includes(question.kind)
       ).length,
       writingFieldCount: questions.filter((question) =>
         ["shortText", "longText"].includes(question.kind)
-      ).length
+      ).length,
+      templateVersion: result.templateVersion || "curated-v1"
     };
+    finalized.templateFingerprint = resultFingerprint(finalized);
+    return finalized;
+  }
+
+  function prepareFromDesign(subjectValue, designValue) {
+    const subject = normalizeSubject(subjectValue);
+    if (subject.length < 2 || subject.length > 240) {
+      throw new Error("Опишіть потрібний опитувальник, до 240 символів.");
+    }
+    const design = designValue && typeof designValue === "object" ? designValue : {};
+    if (design.subject && normalizeSubject(design.subject) !== subject) throw new Error("Отримано структуру для іншого запиту. Повторіть проєктування.");
+    const profileId = allowedProfileIds.has(design.profileId) ? design.profileId : resolveProfile(subject).id;
+    const profile = profileRules.find((item) => item.id === profileId) || {
+      id: "generic",
+      label: "Спеціалізований профіль ризику"
+    };
+    const specializedSections = (Array.isArray(design.sections) ? design.sections : [])
+      .map((section) => ({
+        title: cleanDesignedText(section?.title, 80),
+        questions: (Array.isArray(section?.questions) ? section.questions : [])
+          .map(normalizeDesignedQuestion)
+      }))
+;
+    const specializedQuestions = specializedSections.flatMap((section) => section.questions);
+    if (!specializedSections.length || specializedSections.some((section) => !section.title || !section.questions.length)) {
+      throw new Error("Експертний опитувальник містить порожній розділ.");
+    }
+    const coverage = insuranceSection(profileId, design.warRiskRelevant === true);
+    coverage.title = "Покриття та збитки";
+    coverage.questions.push(...lossesSection().questions);
+    const sections = uniqueQuestions([generalSection(), ...specializedSections, coverage]);
+    if (sections.flatMap((section) => section.questions).length !== specializedQuestions.length + 3 + coverage.questions.length) {
+      throw new Error("Експертний опитувальник містить дублікати питань.");
+    }
+    const title = cleanDesignedText(design.title, 140) || questionnaireTitles[profileId] || questionnaireTitles.generic;
+    const profileLabel = cleanDesignedText(design.profileLabel, 100) || profile.label;
+    for (const visible of [title, profileLabel, ...sections.flatMap((section) => [
+      section.title,
+      ...section.questions.flatMap((question) => [question.text, question.hint, question.detailsLabel, ...(question.options || [])])
+    ])]) assertNoContactPrompt(visible);
+    return finalizeResult({
+      subject,
+      profileId,
+      profileLabel,
+      title,
+      preparedAt: new Date().toISOString(),
+      sections,
+      templateVersion: cleanDesignedText(design.designVersion, 40) || "expert-v1",
+      designNotes: cleanDesignedText(design.designNotes, 300),
+      generationMode: "expert"
+    });
   }
 
   function isAllowedUser() {
@@ -1756,7 +2031,7 @@
   }
 
   async function logoBytes() {
-    const response = await fetch(BRITMARK_LOGO_URL);
+    const response = await fetch(assetBase ? new URL(BRITMARK_LOGO_URL, assetBase).href : BRITMARK_LOGO_URL);
     if (!response.ok) {
       throw new Error("Не вдалося завантажити логотип BritMark.");
     }
@@ -2118,7 +2393,7 @@
                 uncheckedState: { value: "2610", font: "MS Gothic" }
               }),
               new docx.TextRun({
-                text: ` ${option}${absoluteOptionIndex === options.length - 1 ? "" : "   "}`,
+                text: `\u00A0${option}${absoluteOptionIndex === options.length - 1 ? "" : "   "}`,
                 color: "243247",
                 size: 18,
                 font: "Calibri"
@@ -2195,7 +2470,7 @@
       }),...responseChildren];
       return new docx.TableRow({
         cantSplit: true,
-        height: { value: 470, rule: docx.HeightRule.ATLEAST },
+        height: { value: 440, rule: docx.HeightRule.ATLEAST },
         children: [
           new docx.TableCell({
             width: { size: 3400, type: docx.WidthType.DXA },
@@ -2241,7 +2516,7 @@
         indent: { size: 120, type: docx.WidthType.DXA },
         columnWidths: [3400, 5960],
         layout: docx.TableLayoutType.FIXED,
-        margins: { top: 90, bottom: 80, left: 125, right: 125 },
+        margins: { top: 65, bottom: 65, left: 125, right: 125 },
         borders: {
           top: border(docx, "C7D6E0", 4),
           bottom: border(docx, "C7D6E0", 4),
@@ -2470,12 +2745,12 @@
                 orientation: docx.PageOrientation.PORTRAIT
               },
               margin: {
-                top: 1440,
+                top: 900,
                 right: 1440,
-                bottom: 1440,
+                bottom: 780,
                 left: 1440,
-                header: 708,
-                footer: 708
+                header: 360,
+                footer: 360
               }
             }
           },
@@ -2515,6 +2790,7 @@
 
   window.AnodosQuestionnaireGenerator = Object.freeze({
     prepare,
+    prepareFromDesign,
     resolveProfile,
     isAllowedUser,
     filenameFor,

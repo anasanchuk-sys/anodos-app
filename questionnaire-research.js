@@ -4,8 +4,16 @@
   const labels={found:'Підтверджено джерелом',partial:'[!] Частково підтверджено',unknown:'[?] Потрібно уточнити',conflict:'[!] Суперечливі дані',user:'Внесено вами'};
   const safeURL=value=>{try{const u=new URL(value);return ['http:','https:'].includes(u.protocol)&&!u.username&&!u.password?u.href:'';}catch{return '';}};
   function apply(template,research) {
+    if(research.template){
+      const supplied=research.template;
+      if(supplied.subject!==template.subject||supplied.profileId!==research.profileId||!Array.isArray(supplied.sections)||!supplied.sections.length||supplied.templateFingerprint!==research.templateFingerprint)throw new Error('Не вдалося перевірити шаблон дослідження.');
+      template=JSON.parse(JSON.stringify(supplied));
+    }
     if(research.subject!==template.subject||research.profileId!==template.profileId||!Array.isArray(research.answers)||!Array.isArray(research.sources))throw new Error('Отримано результат для іншого опитувальника. Повторіть пошук.');
+    const questions=template.sections.flatMap(s=>s.questions);
+    const ids=new Set(questions.map(q=>q.id));
     const answers=new Map(research.answers.map(a=>[a.id,a]));
+    if(ids.size!==questions.length||answers.size!==research.answers.length||answers.size!==ids.size||[...answers.keys()].some(id=>!ids.has(id)))throw new Error('Перелік відповідей не відповідає повному шаблону. Питання не скорочено.');
     for(const section of template.sections)for(const q of section.questions){
       const a=answers.get(q.id);
       q.answer=typeof a?.value==='string'?a.value:'';q.answerStatus=labels[a?.status]?a.status:'unknown';
@@ -92,26 +100,29 @@
     if(!opened.capability||!Number.isFinite(opened.expiresAt))throw new Error('Не вдалося підтвердити доступ Anodos Pro.');
     transport=client;capability=opened.capability;expiresAt=opened.expiresAt;
   }
-  async function research(payload,{signal,progress=()=>{}}={}) {
-    if(!authorized())throw new Error('Введіть пароль Anodos Pro для автоматичного заповнення.');
+  async function runJob(op,privacyVersion,payload,{signal,progress=()=>{}}={}) {
+    const designing=op==='design';
+    if(!authorized())throw new Error(designing?'Увійдіть в Anodos Pro для експертної генерації.':'Введіть пароль Anodos Pro для автоматичного заповнення.');
     const client=transport,cap=capability,controller=new AbortController();activeController=controller;
     const signals=[controller.signal,AbortSignal.timeout(32*60*1000)];if(signal)signals.push(signal);
     const combined=AbortSignal.any(signals),started=Date.now();
     const call=input=>requestWith(client,{...input,capability:cap},{signal:combined});
     try{
-      progress('Підключаю сервіс заповнення Anodos...');
-      await call({op:'research',privacyVersion:'anodos-questionnaire-web-v2',payload});
+      progress(designing?'Підключаю експертне проєктування Anodos...':'Підключаю сервіс заповнення Anodos...');
+      await call({op,privacyVersion,payload});
       while(true){
         combined.throwIfAborted();const state=await call({op:'status'});
         if(state.state==='done')return state.result;
-        if(['error','cancelled','closed','expired'].includes(state.state))throw new Error(state.error||'Заповнення зупинено.');
-        progress((state.progress?.message||'Шукаю відомості...')+(Date.now()-started>60000?' Пошук і заповнення тривають, залиште вкладку відкритою.':''));
+        if(['error','cancelled','closed','expired'].includes(state.state))throw new Error(state.error||(designing?'Підготовку опитувальника зупинено.':'Заповнення зупинено.'));
+        progress((state.progress?.message||(designing?'Проєктую опитувальник...':'Шукаю відомості...'))+(Date.now()-started>60000?(designing?' Перевірка структури триває, залиште вкладку відкритою.':' Пошук і заповнення тривають, залиште вкладку відкритою.') :''));
         await new Promise((resolve,reject)=>{const end=()=>{clearTimeout(timer);combined.removeEventListener('abort',abort);};const abort=()=>{end();reject(combined.reason);};const timer=setTimeout(()=>{end();resolve();},1500);combined.addEventListener('abort',abort,{once:true});if(combined.aborted)abort();});
       }
     }catch(e){
       await requestWith(client,{op:'cancel',capability:cap},{cleanup:true}).catch(()=>{});
-      if(combined.aborted)throw new Error(signal?.aborted||controller.signal.aborted?'Заповнення скасовано.':'Заповнення перевищило час очікування.');throw e;
+      if(combined.aborted)throw new Error(signal?.aborted||controller.signal.aborted?(designing?'Підготовку опитувальника скасовано.':'Заповнення скасовано.'):(designing?'Підготовка перевищила час очікування.':'Заповнення перевищило час очікування.'));throw e;
     }finally{if(activeController===controller)activeController=null;}
   }
-  scope.AnodosQuestionnaireResearch=Object.freeze({research,apply,render,edit,unlock,lock,authorized});
+  const research=(payload,options)=>runJob('research','anodos-questionnaire-web-v2',payload,options);
+  const design=(payload,options)=>runJob('design','anodos-questionnaire-design-v1',payload,options);
+  scope.AnodosQuestionnaireResearch=Object.freeze({research,design,apply,render,edit,unlock,lock,authorized});
 })(window);
