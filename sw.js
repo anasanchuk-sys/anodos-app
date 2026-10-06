@@ -1,4 +1,4 @@
-const CACHE_NAME = "questionnaire-scope-20261006-v5-accreditation-load-fix-20261006-v1-professional-tool-description-20261006-v1-document-attribution-20261006-v2-profile-evidence-recovery-20261003-v1-company-research-flow-20261003-v1-fictional-company-example-20261003-v1-hide-expert-cta-20261003-v1-pro-access-20261003-v1-pro-menu-20261002-v1-pro-menu-20260930-v3-company-profile-20260930-v1-contract-check-link-20260918-v1-quality-access-20260917-v2-quality-findings-only-20260917-v1-focus-music-20260916-v4-spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-questionnaire-dossier-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-909123995af9";
+const CACHE_NAME = "questionnaire-scope-20261006-v6-accreditation-load-fix-20261006-v1-professional-tool-description-20261006-v1-document-attribution-20261006-v2-profile-evidence-recovery-20261003-v1-company-research-flow-20261003-v1-fictional-company-example-20261003-v1-hide-expert-cta-20261003-v1-pro-access-20261003-v1-pro-menu-20261002-v1-pro-menu-20260930-v3-company-profile-20260930-v1-contract-check-link-20260918-v1-quality-access-20260917-v2-quality-findings-only-20260917-v1-focus-music-20260916-v4-spotlight-no-pro-20260915-v1-hero-fish-20260914-v1-hero-twenty-20260914-v1-hero-spotlight-20260914-v1-quality-pdf-compact-20260914-v1-quality-tables-war-20260914-v1-hero-fullhd-slow-20260914-v1-osint-addresses-20260913-v1-questionnaire-dossier-20260913-v1-my-documents-20260913-v1-random-hero-20260913-v1-osint-assets-20260913-v2-insurance-uk-defaults-20260913-questionnaire-object-name-20260913-v1-home-scroll-20260913-logo-text-only-20260913-en-v1-platform-shell-anodos-pro-gate-20260912-quality-v6-consultation-v1-analysis-consent-v1-review-layout-v1-review-intro-v1-review-panels-v1-insurance-news-909123995af9";
 const ASSETS = [
   // INSURANCE NEWS ASSETS BEGIN
   "./news.html",
@@ -100,7 +100,7 @@ const ASSETS = [
   "./osint-entry.css?v=5",
   "./",
   "./index.html",
-  "./styles.css?v=20261006-scope5",
+  "./styles.css?v=20261006-scope6",
   "./quotation-writing.css?v=2",
   "./quotation-mail-reader.js?v=1",
   "./quotation-report.js?v=1",
@@ -118,8 +118,8 @@ const ASSETS = [
   "./assets/vendor/pdfmake.min.js?v=1",
   "./assets/vendor/vfs_fonts.js?v=1",
   "./assets/britmark-logo.png?v=1",
-  "./questionnaire-generator.js?v=20261006-scope5",
-  "./questionnaire-research.js?v=20261006-scope5",
+  "./questionnaire-generator.js?v=20261006-scope6",
+  "./questionnaire-research.js?v=20261006-scope6",
   "./client-recommendation.js?v=1",
   "./bank-accreditation-data.js?v=9",
   "./contract-tests-data.js?v=5",
@@ -133,7 +133,7 @@ const ASSETS = [
   "./property-review-semantic.js?v=5",
   "./property-review-report.js?v=7",
   "./glossary-data.js?v=1",
-  "./app.js?v=20261006-scope5",
+  "./app.js?v=20261006-scope6",
   "./assets/contract-tests/arx-zusp-053.pdf",
   "./manifest.webmanifest?v=7",
   "./assets/icon.svg?v=7",

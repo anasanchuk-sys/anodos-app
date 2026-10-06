@@ -2392,6 +2392,7 @@
             italics: true,
             color: "647486",
             size: 16,
+            keepNext: true,
             spacing: { after: 55, line: 235 }
           })
         );
@@ -2423,6 +2424,7 @@
             new docx.Paragraph({
               spacing: { after: offset + optionsPerLine >= options.length ? 15 : 45, line: 255 },
               keepLines: true,
+              keepNext: Boolean(question.answerStatus) || offset + optionsPerLine < options.length,
               children: optionRuns
             })
           );
@@ -2437,22 +2439,23 @@
         });
         const claims = question.claims?.length ? question.claims : question.answer && question.evidence?.length ? [{value:question.answer,evidence:question.evidence}] : [];
         if (claims.length && question.answerStatus !== "user") {
-          for (const claim of claims) {
+          for (const [claimIndex, claim] of claims.entries()) {
             responseChildren.push(paragraphText(docx, claim.value, {size:19,keepNext:true,spacing:{before:45,after:20,line:260}}));
-            responseChildren.push(new docx.Paragraph({spacing:{after:45,line:230},children:links(claim.evidence)}));
+            responseChildren.push(new docx.Paragraph({keepLines:true,keepNext:claimIndex === claims.length - 1,spacing:{after:45,line:230},children:links(claim.evidence)}));
           }
         } else if (question.answer) responseChildren.push(paragraphText(docx, question.answer, {color:"243247",size:19,spacing:{before:45,after:35,line:260}}));
         const labels = {found:"Підтверджено джерелами",partial:"[!] Часткова відповідь",unknown:"[?] Потрібно уточнити",conflict:"[!] Суперечливі дані",user:"Внесено користувачем"};
-        responseChildren.push(paragraphText(docx, labels[question.answerStatus] || "[?] Потрібно уточнити", {size:17,bold:true,color:["unknown","partial","conflict"].includes(question.answerStatus)?"85601C":"647486",spacing:{after:25,line:230}}));
-        if (question.answerNote) responseChildren.push(paragraphText(docx, question.answerNote, {size:17,color:"647486",spacing:{after:30,line:240}}));
-        if (question.detailsLabel) responseChildren.push(paragraphText(docx, question.detailsLabel, {size:17,italics:true,color:"647486",spacing:{before:35,after:25,line:235}}));
         const missingText = question.answerStatus === "unknown" && ["shortText", "longText"].includes(question.kind);
         const needsSupplement = ["partial", "conflict"].includes(question.answerStatus);
+        const hasAnswerLine = Boolean(missingText || needsSupplement || question.detailsLabel);
+        responseChildren.push(paragraphText(docx, labels[question.answerStatus] || "[?] Потрібно уточнити", {size:17,bold:true,keepNext:Boolean(question.answerNote) || hasAnswerLine,color:["unknown","partial","conflict"].includes(question.answerStatus)?"85601C":"647486",spacing:{after:25,line:230}}));
+        if (question.answerNote) responseChildren.push(paragraphText(docx, question.answerNote, {size:17,keepNext:hasAnswerLine,color:"647486",spacing:{after:30,line:240}}));
+        if (question.detailsLabel) responseChildren.push(paragraphText(docx, question.detailsLabel, {size:17,keepNext:true,italics:true,color:"647486",spacing:{before:35,after:25,line:235}}));
         if (missingText || needsSupplement || question.detailsLabel) {
-          if (needsSupplement) responseChildren.push(paragraphText(docx, "Уточнення клієнта", {size:17,color:"647486",spacing:{before:35,after:25}}));
+          if (needsSupplement) responseChildren.push(paragraphText(docx, "Уточнення клієнта", {size:17,keepNext:true,color:"647486",spacing:{before:35,after:25}}));
           const lines = missingText && question.kind === "longText" ? 2 : 1;
           for (let line = 0; line < lines; line++) responseChildren.push(new docx.Paragraph({
-            spacing:{after:35,line:250},border:{bottom:border(docx,"9DB3BF",3)},
+            keepNext:line < lines - 1,spacing:{after:35,line:250},border:{bottom:border(docx,"9DB3BF",3)},
             children:[new docx.TextRun({text:"\u00A0",font:"Calibri",size:18})]
           }));
         }
@@ -2614,9 +2617,9 @@
     if (result.research) {
       if (result.research.entities?.length) {
         content.push(paragraphText(docx, "Юридичні особи та їхні ролі", {heading:docx.HeadingLevel.HEADING_1,bold:true,size:27}));
-        content.push(paragraphText(docx, "Наведена роль у структурі об’єкта не означає, що ця особа є заявником на страхування.", {size:18}));
+        content.push(paragraphText(docx, "Наведена роль у структурі об’єкта не означає, що ця особа є заявником на страхування.", {size:18,keepNext:true}));
         for (const entity of result.research.entities) {
-          content.push(paragraphText(docx, `${entity.name}. ЄДРПОУ ${entity.edrpou}. ${entity.roleLabel}.`, {size:20}));
+          content.push(paragraphText(docx, `${entity.name}. ЄДРПОУ ${entity.edrpou}. ${entity.roleLabel}.`, {size:20,keepNext:true}));
           const links=[...new Set((entity.evidence||[]).map(e=>e.sourceId))].flatMap(id=>{
             const source=result.research.sources.find(s=>s.id===id);
             return source && /^https?:\/\//i.test(source.url) ? [new docx.ExternalHyperlink({link:source.url,children:[new docx.TextRun({text:"Джерело  ",style:"Hyperlink",size:17})]})] : [];
@@ -2628,8 +2631,8 @@
       content.push(paragraphText(docx, `Пошук виконано: ${new Date(result.research.researchedAt).toLocaleString("uk-UA")}. ${result.research.scope}`, {size:18}));
       const cited=new Set([...result.sections.flatMap(s=>s.questions).flatMap(q=>(q.evidence||[]).map(e=>e.sourceId)),...(result.research.entities||[]).flatMap(e=>(e.evidence||[]).map(x=>x.sourceId))]);
       for (const source of result.research.sources.filter(s=>cited.has(s.id))) {
-        content.push(paragraphText(docx, `[${source.id}] ${source.title}`, {bold:true,size:19}));
-        content.push(new docx.Paragraph({spacing:{after:60},children:[new docx.ExternalHyperlink({link:source.url,children:[new docx.TextRun({text:source.url,style:"Hyperlink",size:17})]})]}));
+        content.push(paragraphText(docx, `[${source.id}] ${source.title}`, {bold:true,size:19,keepNext:true}));
+        content.push(new docx.Paragraph({keepLines:true,spacing:{after:60},children:[new docx.ExternalHyperlink({link:source.url,children:[new docx.TextRun({text:source.url,style:"Hyperlink",size:17})]})]}));
 
       }
       for (const warning of result.research.warnings || []) content.push(paragraphText(docx, warning, {size:17,color:"85601C"}));
