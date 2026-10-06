@@ -66,7 +66,13 @@ for (const asset of ["app.js", "styles.css", "bank-accreditation-data.js"]) {
   const find = content => content.split('"').find(s => s.startsWith("./" + asset + "?v="));
   assert.equal(find(read("index.html")), find(read("sw.js")));
 }
-assert.match(read("sw.js"), /platform-shell-v337/);
+assert.match(read("sw.js"), /const CACHE_NAME = "[^"]+"/);
+const indexHtml = read("index.html");
+const dataScript = [...indexHtml.matchAll(/<script\b([^>]*)><\/script>/g)]
+  .find((match) => /\ssrc="\.\/bank-accreditation-data\.js\?v=/.test(match[1]));
+assert.ok(dataScript, "Accreditation data must be loaded by an executable script, not an inert member placeholder");
+assert.doesNotMatch(dataScript[1], /type=|\sasync\b|\sdefer\b/);
+assert.ok(dataScript.index < indexHtml.indexOf('<script src="./app.js?'), "Load accreditation data before the app renders");
 
 // Exercise the delegated highlight handlers with filled and empty cells.
 const elements = [];
