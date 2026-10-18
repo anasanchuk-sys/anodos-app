@@ -373,3 +373,6 @@ body[data-route="bank-accreditation"] .bank-accreditation-workspace { height: au
   .hero-motion-control { display: none; }
   .home-stage .hero-background-video, .home-audiences i { transition: none; }
 }
+
+/* Keep the temporarily disabled Pro block hidden at every viewport size. */
+.site-header .utility-pro-shell[hidden] { display: none !important; }

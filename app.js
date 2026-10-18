@@ -7607,7 +7607,7 @@ function setHomeHeroSlide(index) {
 function renderHomeToolCards() {
   // Use the menu as the single catalog, including its existing access checks.
   return [...document.querySelectorAll('[data-utility-menu-panel] .utility-menu-tool, #anodosProMenu .utility-menu-tool')]
-    .filter((tool) => !tool.hidden)
+    .filter((tool) => !tool.hidden && !tool.closest(".utility-pro-shell[hidden]"))
     .map((tool, index) => {
       const title = tool.querySelector('strong').textContent;
       const isPro = Boolean(tool.closest('#anodosProMenu'));
